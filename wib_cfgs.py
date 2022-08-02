@@ -30,11 +30,25 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
 
     def femb_vol_set(self, vfe=3.0, vcd=3.0, vadc=3.5):
         llc.power_config(self.wib, v1 = vfe, v2=vcd, v3=vadc)
-#        time.sleep(0.1)
 #        llc.get_sensors(self.wib)
 
-    def femb_powering(self, femb0=False, femb1=False,femb2=False, femb3=False):
-#        llc.config_wib(self.wib)
+    def femb_powering(self, fembs = []):
+        if 0 in fembs:
+            femb0 = True
+        else:
+            femb0 = False
+        if 1 in fembs:
+            femb1 = True
+        else:
+            femb1 = False
+        if 2 in fembs:
+            femb2 = True
+        else:
+            femb2 = False
+        if 3 in fembs:
+            femb3 = True
+        else:
+            femb3 = False
         script = bytearray("", 'utf-8')
         if (femb0 | femb1 | femb2 | femb3 ):
             with open("./scripts/bias_on",'rb') as fin:
@@ -67,12 +81,11 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             with open("./scripts/femb3_off",'rb') as fin:
                 script += fin.read()
         llc.wib_script(self.wib, script )
-
         print ("Wait 5 seconds")
+        time.sleep(5)
 
     def get_sensors(self):
-#        time.sleep(5)
-        print (llc.get_sensors(self.wib))
+        return llc.get_sensors(self.wib)
 
     def femb_cd_rst(self):
     #Reset COLDATA
@@ -97,7 +110,6 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             exit()
 
     def femb_cd_cfg(self, femb_id):
-        self.femb_cd_rst()
 #set coldata 8b10 
         self.femb_i2c_wrchk(femb_id, chip_addr=3, reg_page=0, reg_addr=0x03, wrdata=0x3c)
         self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=0, reg_addr=0x03, wrdata=0x3c)
@@ -229,7 +241,6 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         return self.adac_cali_quo
 
     def femb_cfg(self, femb_id, adac_pls_en = False):
-
         self.femb_cd_cfg(femb_id)
         self.femb_adc_cfg(femb_id)
         self.femb_fe_cfg(femb_id)
@@ -242,22 +253,27 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         if femb_id == 2:
             unmask = 0xFFFFF0FF
         if femb_id == 3:
-            unmask = 0xFFFFF0FF
-
+            unmask = 0xFFFF0FFF
         link_mask = llc.wib_peek(self.wib, 0xA00c0008 ) 
         llc.wib_poke(self.wib, 0xA00c0008, link_mask&unmask) #enable the link
 
 
-    def cfg_a_wib(self, adac_pls_en=False):
-        for femb_id in range(4):
-            self.femb_cfg(femb_id, adac_pls_en)
+#    def cfg_a_wib(self, fembs, adac_pls_en=False):
+#        self.femb_cd_rst()
+#        for femb_id in fembs:
+#            self.femb_cfg(femb_id, adac_pls_en)
 
-    def wib_acquire_data(self, num_samples=1): 
-        buf0 = True 
-        buf1 = True
+    def wib_acquire_data(self, fembs,  num_samples=1): 
         data = []
+        #when buf0 is True, there must be FEMB0 or 1 presented
+        #when buf1 is True, there must be FEMB2 or 3 presented
+        buf0 = True if 0 in fembs or 1 in fembs else False
+        buf1 = True if 2 in fembs or 3 in fembs else False 
+        if (buf0 == False) and (buf1 == False):
+            print("Select which FEMBs you want to read out first!")
+            exit()
         for  i in range(num_samples):
-            timestamps,samples = llc.llc_acquire_data(buf0 = buf0, buf1 = buf1)
+            timestamps,samples = llc.llc_acquire_data(wib=self.wib, buf0=buf0, buf1=buf1, ignore_failure=True)
             data.append((timestamps,samples))
         return data
 

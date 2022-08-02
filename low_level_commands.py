@@ -155,7 +155,7 @@ def get_sensors(wib): #request and print sensor data
 
 def llc_acquire_data(wib, buf0=True,buf1=True,deframe=True,channels=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0, print_gui=None ): 
     timestamps,samples = wib.acquire_data(buf0,buf1,deframe,channels,ignore_failure,trigger_command,trigger_rec_ticks,trigger_timeout_ms, print_gui)
-    return timestamps_all,samples_all
+    return timestamps,samples
     
    
 def wib_peek(wib, reg):
