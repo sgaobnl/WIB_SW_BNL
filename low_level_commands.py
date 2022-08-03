@@ -44,7 +44,6 @@ def system_clock_select(wib, pll=False): #select correct timing source with peek
 #        print(f"Success:{rep.success}")
 ##    sys.stdout.flush() 
 #    return rep.success
-   
 def power_config(wib, v1=3.0, v2=2.8, v3=3.5, v4=0.0, ldo0=0.0, ldo1=0.0): 
     ##ref: wib_buttons5.py: send_power_config
     req = wibpb.ConfigurePower()
@@ -59,7 +58,7 @@ def power_config(wib, v1=3.0, v2=2.8, v3=3.5, v4=0.0, ldo0=0.0, ldo1=0.0):
     if not wib.send_command(req,rep,print_gui=print):
         print(f"Success:{rep.success}")
 #    sys.stdout.flush() 
-    return rep.success
+    return rep.success   
 
 def get_sensors(wib): #request and print sensor data
     ##ref: wib_mon.py: WibMon.get_sensors, IVSensor.load_data
@@ -132,31 +131,9 @@ def get_sensors(wib): #request and print sensor data
             print('Power Consumption (including cable dissipation) = %0.3f W\n'%power_consumption)
         return pwr_meas
     
-#def acquire_data(wib,buf0=True,buf1=True,deframe=True,channels=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0, print_gui=None):
-#    print('Reading out WIB spy buffer')
-#    req = wibpb.ReadDaqSpy()
-#    req.buf0 = buf0
-#    req.buf1 = buf1
-#    req.deframe = deframe
-#    req.channels = channels
-#    req.trigger_command = trigger_command
-#    req.trigger_rec_ticks = trigger_rec_ticks
-#    req.trigger_timeout_ms = trigger_timeout_ms
-#    rep = wibpb.ReadDaqSpy.DeframedDaqSpy()
-#    wib.send_command(req,rep,print_gui=print_gui)
-#    print('Successful:',rep.success)
-#    if not ignore_failure and not rep.success:
-#        return None
-#    num = rep.num_samples
-#    print('Acquired %i samples'%num)
-#    timestamps = np.frombuffer(rep.deframed_timestamps,dtype=np.uint64).reshape((2,num))
-#    samples = np.frombuffer(rep.deframed_samples,dtype=np.uint16).reshape((4,128,num))
-#    return timestamps,samples
-
 def llc_acquire_data(wib, buf0=True,buf1=True,deframe=True,channels=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0, print_gui=None ): 
     timestamps,samples = wib.acquire_data(buf0,buf1,deframe,channels,ignore_failure,trigger_command,trigger_rec_ticks,trigger_timeout_ms, print_gui)
     return timestamps,samples
-    
    
 def wib_peek(wib, reg):
     req = wibpb.Peek()
@@ -184,24 +161,24 @@ def dc2dc(s,idx): #for use in get_sensors
     elif idx == 3:
         return s.femb3_dc2dc_ltc2991_voltages    
         
-def print_and_clear_glog(wib):
-    req = wibpb.LogControl()
-    req.return_log = True
-    req.boot_log = False
-    req.clear_log = False       
-    print("Getting Log...")    
-    rep = wibpb.LogControl.Log()
-    if not wib.send_command(req,rep,print_gui=print):
-        print(rep.contents.decode('utf8'))        
-        
-    req = wibpb.LogControl()
-    req.return_log = False
-    req.boot_log = False
-    req.clear_log = True
-    print("Clearing Log...") 
-    rep = wibpb.LogControl.Log()
-    if not wib.send_command(req,rep,print_gui=print):
-        print(rep.contents.decode('utf8'))   
+#def print_and_clear_glog(wib):
+#    req = wibpb.LogControl()
+#    req.return_log = True
+#    req.boot_log = False
+#    req.clear_log = False       
+#    print("Getting Log...")    
+#    rep = wibpb.LogControl.Log()
+#    if not wib.send_command(req,rep,print_gui=print):
+#        print(rep.contents.decode('utf8'))        
+#        
+#    req = wibpb.LogControl()
+#    req.return_log = False
+#    req.boot_log = False
+#    req.clear_log = True
+#    print("Clearing Log...") 
+#    rep = wibpb.LogControl.Log()
+#    if not wib.send_command(req,rep,print_gui=print):
+#        print(rep.contents.decode('utf8'))   
 
 def fast_command(wib, cmd): #use: fast_command(wib,'reset')
     #ref: wib_buttons6.py: WIBFast.fast_command    

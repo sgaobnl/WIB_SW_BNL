@@ -4,7 +4,8 @@ import pickle
 import time, datetime, random, statistics
 
 ####################FEMBs Data taking################################
-fp =  "D:/debug_data/Raw_02_08_2022_14_35_15.bin"
+fp =  "D:/debug_data/Raw_MULTCONFIG_03_08_2022.bin"
+#fp =  "D:/debug_data/Raw_CALI_200mVBL_14_0mVfC_2_0us_0x2c_03_08_2022.bin"
 
 with open(fp, 'rb') as fn:
     raw = pickle.load(fn)
