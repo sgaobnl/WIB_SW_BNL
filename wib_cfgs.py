@@ -95,6 +95,9 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         time.sleep(0.05)
     #note: later all registers should be read and stored (to do)
 
+    def femb_cd_sync(self):
+        llc.fast_command(self.wib, 'sync')
+
     def femb_i2c_wr(self, femb_id, chip_addr, reg_page, reg_addr, wrdata):
         llc.cdpoke(self.wib, femb_id, chip_addr=chip_addr, reg_page=reg_page, reg_addr=reg_addr, data=wrdata)
 

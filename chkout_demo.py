@@ -107,6 +107,7 @@ class FEMB_CHKOUT:
         #for idac in range(0,5,4):
             cfg_paras_rec = []
             chk.femb_cd_rst()
+            chk.femb_cd_sync()
             for femb_id in fembs:
                 chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
                                    [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
@@ -122,6 +123,7 @@ class FEMB_CHKOUT:
                 adac_pls_en = 1 # enable LArASIC interal calibraiton pulser
                 cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
                 chk.femb_cfg(femb_id, adac_pls_en )
+
             time.sleep(0.5)
         
             rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns list of size 1
@@ -228,8 +230,8 @@ if __name__=='__main__':
 
    fembs = FEMB_CHKOUT(fembs, sample_N)
    #fembs.femb_rms()
-   #fembs.femb_asiccali()
-   fembs.femb_difconfig()
+   fembs.femb_asiccali()
+   #fembs.femb_difconfig()
    
 #chk = WIB_CFGS()
 #
