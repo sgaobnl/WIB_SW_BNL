@@ -4,7 +4,8 @@ import sys
 import numpy as np
 import pickle
 import copy
-import time, datetime, random, statstiics
+import os
+import time, datetime, random, statistics
 
 class FEMB_CHKOUT:
     def __init__(self, fembs, sample_N):
@@ -39,7 +40,7 @@ class FEMB_CHKOUT:
 
         save_dir = save_dir+"_{}_{}".format(env,toytpc)
 
-        n=0
+        n=1
         while (os.path.exists(save_dir)):
             if n==0:
                 save_dir = save_dir + "_R{:03d}".format(n)
@@ -214,7 +215,7 @@ class FEMB_CHKOUT:
                     rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
                     if save:
                         fdir = self.save_dir
-                        fp = fdir + "Raw_CALI_{}_{}_{}_0x{:02x}".format(sncs[snci],sgs[sgi],sts,idac)  + ".bin"
+                        fp = fdir + "Raw_CALI_SE_{}_{}_{}_0x{:02x}".format(sncs[snci],sgs[sgi],sts,idac)  + ".bin"
                         with open(fp, 'wb') as fn:
                             pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
         
@@ -312,7 +313,9 @@ if __name__=='__main__':
    fembs = [int(a) for a in sys.argv[1:pos]] 
    print (fembs)
 
-   fembs = FEMB_CHKOUT(fembs, sample_N)
-   fembs.femb_rms()
-   fembs.femb_asiccali()
+   chkout = FEMB_CHKOUT(fembs, sample_N)
+   chkout.pwr_fembs('on')
+   chkout.femb_rms()
+   chkout.femb_asiccali()
+   chkout.pwr_fembs('off')
    
