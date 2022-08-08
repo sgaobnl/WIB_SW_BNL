@@ -183,16 +183,16 @@ class FEMB_CHKOUT:
         chk.femb_cd_rst()
         cfg_paras_rec = []
 
-        cfg_paras = self.femb_one_config(0, chk, '200mVBL', '14_0mVfC', '2_0us', 0x20, 0, 0)
+        cfg_paras = self.femb_one_config(0, chk, '200mVBL', '14_0mVfC', '2_0us', 0x20, 1, 0)
         cfg_paras_rec.append(cfg_paras)
 
-        cfg_paras = self.femb_one_config(1, chk, '900mVBL', '25_0mVfC', '1_0us', 0x10, 0, 0)
+        cfg_paras = self.femb_one_config(1, chk, '900mVBL', '25_0mVfC', '1_0us', 0x10, 1, 0)
         cfg_paras_rec.append(cfg_paras)
 
         cfg_paras = self.femb_one_config(2, chk, '200mVBL', '14_0mVfC', '2_0us', 0x20, 1, 0)
         cfg_paras_rec.append(cfg_paras)
 
-        cfg_paras = self.femb_one_config(3, chk, '900mVBL', '14_0mVfC', '2_0us', 0x20, 0, 1)
+        cfg_paras = self.femb_one_config(3, chk, '900mVBL', '14_0mVfC', '2_0us', 0x20, 1, 0)
         cfg_paras_rec.append(cfg_paras)
 
         time.sleep(0.5)
@@ -230,8 +230,8 @@ if __name__=='__main__':
 
    fembs = FEMB_CHKOUT(fembs, sample_N)
    #fembs.femb_rms()
-   fembs.femb_asiccali()
-   #fembs.femb_difconfig()
+   #fembs.femb_asiccali()
+   fembs.femb_difconfig()
    
 #chk = WIB_CFGS()
 #
