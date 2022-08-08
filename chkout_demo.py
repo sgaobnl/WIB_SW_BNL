@@ -12,15 +12,21 @@ if len(sys.argv) < 2:
     exit()    
 
 if 'save' in sys.argv:
+    i = 0
+    while True:
+        i = i + 1
+        if (sys.argv[i] == 'save'):
+            break
+    pos = i
     save = True
-    sample_N = int(sys.argv[6] )
+    sample_N = int(sys.argv[pos+1] )
     sys.argv.remove('save')
 else:
     save = False
     sample_N = 1
+    pos = len(sys.argv) 
 
-fembs = [int(a) for a in sys.argv[1:5]] 
-print (fembs)
+fembs = [int(a) for a in sys.argv[1:pos]] 
 
 chk = WIB_CFGS()
 
