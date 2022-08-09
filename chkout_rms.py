@@ -81,3 +81,4 @@ if save:
     with open(fp, 'wb') as fn:
         pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
 
+chk.femb_powering(fembs=[])
