@@ -17,12 +17,17 @@ class FEMB_CHKOUT:
         self.sgs = ["14_0mVfC", "25_0mVfC", "7_8mVfC", "4_7mVfC" ]
         self.sts = ["1_0us", "0_5us",  "3_0us", "2_0us"]
 
+        self.logs={}
+
         tester=input("please input your name:  ") 
+        self.logs['tester']=tester
+
         env_cs = input("Test is performed at cold(LN2) (Y/N)? : ")
         if ("Y" in env_cs) or ("y" in env_cs):
             env = "LN"
         else:
             env = "RT"
+        self.logs['env']=env
 
         ToyTPC_en = input("ToyTPC at FE inputs (Y/N) : ")
         note = input("A short note (<200 letters):")
@@ -30,9 +35,12 @@ class FEMB_CHKOUT:
             toytpc = "150pF"
         else:
             toytpc = "0pF"
+        self.logs['toytpc']=toytpc
 
         for i in self.fembs:
             self.fembNo['femb{}'.format(i)]=input("FEMB{} ID: ".format(i))
+
+        self.logs['femb id']=self.fembNo
 
         save_dir = "D:/debug_data/FEMB"
         for femb_no in self.fembNo:
@@ -42,10 +50,10 @@ class FEMB_CHKOUT:
 
         n=1
         while (os.path.exists(save_dir)):
-            if n==0:
+            if n==1:
                 save_dir = save_dir + "_R{:03d}".format(n)
             else:
-                save_dir = save_dir[:-3] + "_R{:03d}".format(n)
+                save_dir = save_dir[:-3] + "{:03d}".format(n)
             n=n+1
             if n>20:
                 raise Exception("There are more than 20 folders...") 
@@ -123,7 +131,7 @@ class FEMB_CHKOUT:
                         fp = fdir + "Raw_RMS_SE_{}_{}_{}.bin".format(sncs[snci],sgs[sgi],sts[sti])
 
                         with open(fp, 'wb') as fn:
-                            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
+                            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
         
         chk.femb_cd_rst()
              
@@ -161,7 +169,7 @@ class FEMB_CHKOUT:
                     fp = fdir + "Raw_RMS_DIFF_{}_{}_{}.bin".format(sncs[snci],sgs[sgi],sts[sti])
 
                     with open(fp, 'wb') as fn:
-                        pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
+                        pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
 
     def femb_asiccali(self):
 
@@ -217,7 +225,7 @@ class FEMB_CHKOUT:
                         fdir = self.save_dir
                         fp = fdir + "Raw_CALI_SE_{}_{}_{}_0x{:02x}".format(sncs[snci],sgs[sgi],sts,idac)  + ".bin"
                         with open(fp, 'wb') as fn:
-                            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
+                            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
         
 
     def femb_one_config(self, femb_id, chk, snci, sgi, sti, dac, sdd=0, sdf=0):
@@ -284,11 +292,10 @@ class FEMB_CHKOUT:
         pwr_meas = chk.get_sensors()
         rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
         if save:
-           fdir = "D:/debug_data/"
-           ts = datetime.datetime.now().strftime("%d_%m_%Y")
-           fp = fdir + "Raw_MULTCONFIG_" + ts  + ".bin"
+           fdir = self.save_dir
+           fp = fdir + "Raw_MULTCONFIG_"  + ".bin"
            with open(fp, 'wb') as fn:
-                pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
+                pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
 
 if __name__=='__main__':
                         
