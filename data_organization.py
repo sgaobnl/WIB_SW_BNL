@@ -9,7 +9,7 @@ from scipy.signal import find_peaks
 
 class data_organization():
     def __init__(self,fdir):
-        save_dir='/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/'+fdir
+        save_dir='D:/debug_data/cleaned_data/'+fdir
 
         n=1
         while (os.path.exists(save_dir)):
@@ -88,20 +88,18 @@ class data_organization():
 
         rawdata = raw[0]
         pwr_meas = raw[1]
-#        logs = raw[3]
+        logs = raw[3]
 
         rms_data = np.array(self.data_valid(rawdata),dtype=object)
         nfemb=len(rms_data[0])//128
 
-#        if nfemb != len(logs['femb id']):
-#            print("The number of FEMBs in data is not equal to that in the logs! Exiting...")
-#            sys.exit()
+        if nfemb != len(logs['femb id']):
+            print("The number of FEMBs in data is not equal to that in the logs! Exiting...")
+            sys.exit()
        
-#        femb_no = []
-#        for key,value in logs['femb id']:
-#            femb_no.append(value) # assume the id is stored in increasing order
-
-        femb_no = [0,1,2,3]
+        femb_no = []
+        for key,value in logs['femb id'].items():
+            femb_no.append(value) # assume the id is stored in increasing order
 
         rms_dic={}
         for i in range(nfemb):
@@ -139,20 +137,19 @@ class data_organization():
              raw = pickle.load(fn)
 
         rawdata = raw[0]
+        logs = raw[3]
 
         pl_data = np.array(self.data_valid(rawdata),dtype=object)
         nfemb = len(pl_data[0])//128
         nevent = len(pl_data)
 
-#        if nfemb != len(logs['femb id']):
-#            print("The number of FEMBs in data is not equal to that in the logs! Exiting...")
-#            sys.exit()
+        if nfemb != len(logs['femb id']):
+            print("The number of FEMBs in data is not equal to that in the logs! Exiting...")
+            sys.exit()
        
-#        femb_no = []
-#        for key,value in logs['femb id']:
-#            femb_no.append(value) # assume the id is stored in increasing order
-
-        femb_no = [0,1,2,3]
+        femb_no = []
+        for key,value in logs['femb id'].items():
+            femb_no.append(value) # assume the id is stored in increasing order
 
         dic={}
         for i in range(nfemb):
@@ -264,19 +261,14 @@ class data_organization():
 
 if __name__=='__main__':
 
-    datafdir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/FEMB_femb0_femb1_femb2_femb3_RT__R001/"
+    fdir = "D:/debug_data/"
+    folder = "FEMB_femb0_femb1_femb2_femb3_RT_0pF_R002"
+    datafdir = fdir+folder+'/'
+
     filename = "Raw_RMS_SE_200mVBL_14_0mVfC_0_5us.bin"
-    results_fdir="/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/WIB_SW_BNL/analysis/results/"
     datafile = datafdir+filename
-    fb = data_organization('FEMB_femb0_femb1_femb2_femb3_RT__R001')
+    fb = data_organization(folder)
+
     fb.GetRMS(datafile,'SE_200mVBL_14_0mVfC_0_5us')
     fb.GetGain(datafdir,'SE_200mVBL_14_0mVfC_2_0us')
     
-#    fp = datafile
-#    with open(fp, 'rb') as fn:
-#         raw = pickle.load(fn)
-#
-#    rawdata = raw[0]
-#    pwr_meas = raw[1]
-#    fembs.PrintPWR(pwr_meas)
-#

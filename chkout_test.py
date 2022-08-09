@@ -42,11 +42,11 @@ class FEMB_CHKOUT:
 
         self.logs['femb id']=self.fembNo
 
-        save_dir = "D:/debug_data/FEMB"
-        for femb_no in self.fembNo:
-            save_dir = save_dir + "_{}".format(femb_no)
+        save_dir = "D:/debug_data/"
+        for key,femb_no in self.fembNo.items():
+            save_dir = save_dir + "femb{}_".format(femb_no)
 
-        save_dir = save_dir+"_{}_{}".format(env,toytpc)
+        save_dir = save_dir+"{}_{}".format(env,toytpc)
 
         n=1
         while (os.path.exists(save_dir)):
