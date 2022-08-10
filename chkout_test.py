@@ -42,11 +42,11 @@ class FEMB_CHKOUT:
 
         self.logs['femb id']=self.fembNo
 
-        save_dir = "D:/debug_data/FEMB"
-        for femb_no in self.fembNo:
-            save_dir = save_dir + "_{}".format(femb_no)
+        save_dir = "D:/debug_data/"
+        for key,femb_no in self.fembNo.items():
+            save_dir = save_dir + "femb{}_".format(femb_no)
 
-        save_dir = save_dir+"_{}_{}".format(env,toytpc)
+        save_dir = save_dir+"{}_{}".format(env,toytpc)
 
         n=1
         while (os.path.exists(save_dir)):
@@ -166,7 +166,7 @@ class FEMB_CHKOUT:
 
                 if save:
                     fdir = self.save_dir
-                    fp = fdir + "Raw_RMS_DIFF_{}_{}_{}.bin".format(sncs[snci],sgs[sgi],sts[sti])
+                    fp = fdir + "Raw_RMS_DIFF_{}_{}_{}.bin".format(sncs[snci],sgs[0],sts[sti])
 
                     with open(fp, 'wb') as fn:
                         pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
