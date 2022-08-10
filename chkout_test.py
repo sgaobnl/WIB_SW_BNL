@@ -166,7 +166,7 @@ class FEMB_CHKOUT:
 
                 if save:
                     fdir = self.save_dir
-                    fp = fdir + "Raw_RMS_DIFF_{}_{}_{}.bin".format(sncs[snci],sgs[sgi],sts[sti])
+                    fp = fdir + "Raw_RMS_DIFF_{}_{}_{}.bin".format(sncs[snci],sgs[0],sts[sti])
 
                     with open(fp, 'wb') as fn:
                         pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)

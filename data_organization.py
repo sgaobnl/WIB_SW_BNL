@@ -74,7 +74,7 @@ class data_organization():
             fig, ax =plt.subplots(figsize=(8,2.5))
             ax.axis('off')
             table = ax.table(cellText=df.values,colLabels=df.columns,loc='center')
-            ax.set_title(key)
+            ax.set_title("{} {}".format(key,outfile))
             table.set_fontsize(14)
             table.scale(1,2)
             fig.savefig(self.fdir+"pwr_meas_{}_{}.png".format(key,outfile))
@@ -114,12 +114,12 @@ class data_organization():
                 a_rms=np.append(a_rms,np.std(ch_np))
                 a_ped=np.append(a_ped,np.mean(ch_np))
 
-            fig, ax =plt.subplots(figsize=(6,4))
+            fig, ax =plt.subplots(figsize=(8,6))
             xx=range(128)
             ax.scatter(xx,a_rms,marker='.')
             ax.set_xlabel('chan')
             ax.set_ylabel('rms')
-            ax.set_title('FEMB{}'.format(femb_no[i]))
+            ax.set_title('FEMB{} {}'.format(femb_no[i],outfile))
             fig.savefig(self.fdir+"rms_femb{}_{}.png".format(femb_no[i], outfile))
             plt.close()
             rms_dic['femb{}'.format(femb_no[i])]=[a_ped,a_rms]
@@ -211,7 +211,7 @@ class data_organization():
 
         gain={}
         for key,values in rms_dic.items():
-            fig, ax =plt.subplots(figsize=(6,4))
+            fig, ax =plt.subplots(figsize=(8,6))
             gain_list=[]
             enc_list=[]
             for ch in range(128):
@@ -238,23 +238,23 @@ class data_organization():
 
             ax.set_xlabel('DAC')
             ax.set_ylabel('Peak value')
-            ax.set_title('{}'.format(key))
+            ax.set_title('{} {}'.format(key,outfile))
             fig.savefig(self.fdir+"cali_peak_dac_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig1, ax1 =plt.subplots(figsize=(6,4))
+            fig1, ax1 =plt.subplots(figsize=(8,6))
             ax1.scatter(range(128),gain_list,marker='.')
             ax1.set_xlabel('chan')
             ax1.set_ylabel('gain')
-            ax1.set_title('{}'.format(key))
+            ax1.set_title('{} {}'.format(key,outfile))
             fig1.savefig(self.fdir+"cali_gain_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig2, ax2 =plt.subplots(figsize=(6,4))
+            fig2, ax2 =plt.subplots(figsize=(8,6))
             ax2.scatter(range(128),enc_list,marker='.')
             ax2.set_xlabel('chan')
             ax2.set_ylabel('ENC')
-            ax2.set_title('{}'.format(key))
+            ax2.set_title('{} {}'.format(key, outfile))
             fig2.savefig(self.fdir+"cali_ENC_{}_{}.png".format(key, outfile))
             plt.close()
 
