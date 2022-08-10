@@ -40,18 +40,3 @@ def Clean_data(fname):
                     fb.GetGain(datafdir,outfile)
 
 
-def Gen_report(fname):    
-    fdir = "D:/debug_data/cleaned_data/"
-    folder = fname
-    datafdir = fdir+folder+'/'
-    
-     
-    sncs = ["900mVBL", "200mVBL"]
-    sgs = ["14_0mVfC", "25_0mVfC", "7_8mVfC", "4_7mVfC" ]
-    sts = ["1_0us", "0_5us",  "3_0us", "2_0us"]
-
-    for snci in sncs:
-        for sgi in sgs:
-            for sti in sts:
-
-

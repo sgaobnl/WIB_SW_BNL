@@ -101,16 +101,6 @@ class FEMB_Basics():
             rms_dic['femb{}'.format(i)]=[a_ped,a_rms]
         return rms_dic
 
-    def FindPulseProperty(self, data):  # use the first event in chan0 to decide the pulse properties for this FEMB
-        
-        pmax = np.amax(data)
-        peaks, _ = find_peaks(data,height=pmax-100)
-
-        xx=range(len(data))
-        plt.plot(xx,data)
-        plt.plot(peaks, data[peaks], "x")
-        plt.show()
-
     def GetPeak(self,datafile):
 
         fp = datafile
