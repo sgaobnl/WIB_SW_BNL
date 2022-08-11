@@ -32,6 +32,26 @@ def data_valid(raw):
         sss.append(chns)
     return sss
 
+def GetPeak(rawdata, femb_no):
+
+    pl_data = np.array(data_valid(rawdata),dtype=object)
+    nfemb = len(pl_data[0])//128
+    nevent = len(pl_data)
+
+    #peaks = np.empty(0)
+    for ch in range(128):
+        global_ch = femb_no*128+ch
+        pmax = np.amax(pl_data[0][global_ch])
+            
+        p_val=np.empty(0)
+        for itr in range(nevent):
+            pos_peaks, _ = find_peaks(pl_data[itr][global_ch],height=pmax-100)
+            p_val = np.hstack([p_val,pl_data[itr][global_ch][pos_peaks]])
+
+        #peaks=np.append(peaks,np.mean(p_val))
+        print(ch,np.mean(p_val))
+
+
 
 def PlotWaveforms(data, femb_no, chan): 
     
@@ -54,8 +74,8 @@ def PlotWaveforms(data, femb_no, chan):
     ax.set_title('FEMB{}'.format(i))
     plt.show()
 
-datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/FEMB_femb0_femb1_femb2_femb3_RT__R001/"
-filename = "Raw_CALI_SE_200mVBL_14_0mVfC_2_0us_0x38.bin"
+datafolder = "D:/debug_data/femb1_femb2_femb3_femb4_RT_0pF/"
+filename = "Raw_CALI_SE_900mVBL_25_0mVfC_2_0us_0x20.bin"
 datafile = datafolder+filename
 
 fp = datafile
@@ -63,5 +83,8 @@ with open(fp, 'rb') as fn:
      raw = pickle.load(fn)
 
 rawdata = raw[0]
-for i in range(13):
-    PlotWaveforms(rawdata,0,i)
+
+#GetPeak(rawdata,3)
+
+for i in range(112,128):
+    PlotWaveforms(rawdata,3,i)

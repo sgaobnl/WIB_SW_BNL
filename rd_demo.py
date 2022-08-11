@@ -40,7 +40,7 @@ def data_valid (raw):
 
 for i in range(1):
     #fp =  "D:/debug_data/Raw_CALI_200mVBL_14_0mVfC_2_0us_0x{:02x}_03_08_2022.bin".format(i)
-    fp =  "D:/debug_data/RawRMS_04_08_2022_16_51_23.bin"
+    fp =  "D:/debug_data/femb1_femb2_femb3_femb4_RT_0pF/Raw_CALI_SE_900mVBL_25_0mVfC_2_0us_0x20.bin"
     
     with open(fp, 'rb') as fn:
         raw = pickle.load(fn)

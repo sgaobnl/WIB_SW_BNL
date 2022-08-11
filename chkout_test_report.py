@@ -7,7 +7,6 @@ import sys
 import time
 from data_organization import data_organization 
 
-
 def Clean_data(fname):
 
     fdir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"
@@ -41,4 +40,4 @@ def Clean_data(fname):
                     fb.GetGain(datafdir,outfile)
 
 
-Clean_data("femb1_femb2_femb3_femb4_RT_0pF")
+Clean_data("femb1_femb2_femb3_femb4_RT_0pF_R001")
