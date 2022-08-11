@@ -107,6 +107,7 @@ class FEMB_CHKOUT:
                     st1=sti%2
      
                     cfg_paras_rec = []
+                    time.sleep(1)
                     for femb_id in fembs:
                         chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
                                             [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
@@ -145,6 +146,7 @@ class FEMB_CHKOUT:
                 st1=sti%2
      
                 cfg_paras_rec = []
+                time.sleep(1)
                 for femb_id in fembs:
                     chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
                                         [0x4, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
@@ -201,6 +203,7 @@ class FEMB_CHKOUT:
                     cfg_paras_rec = []
                     chk.femb_cd_rst()
                     chk.femb_cd_sync()
+                    time.sleep(1)
                     for femb_id in fembs:
                         chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
                                            [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
