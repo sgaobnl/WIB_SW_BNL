@@ -75,7 +75,7 @@ def PlotWaveforms(data, femb_no, chan):
     plt.show()
 
 datafolder = "D:/debug_data/femb1_femb2_femb3_femb4_RT_0pF/"
-filename = "Raw_CALI_SE_900mVBL_25_0mVfC_2_0us_0x20.bin"
+filename = "Raw_CALI_SE_200mVBL_4_7mVfC_2_0us_0x28.bin"
 datafile = datafolder+filename
 
 fp = datafile
@@ -84,7 +84,7 @@ with open(fp, 'rb') as fn:
 
 rawdata = raw[0]
 
-#GetPeak(rawdata,3)
+GetPeak(rawdata,1)
 
-for i in range(112,128):
-    PlotWaveforms(rawdata,3,i)
+#for i in range(112,128):
+#    PlotWaveforms(rawdata,3,i)

@@ -23,6 +23,8 @@ def data_valid (raw):
             for tvi in range(len(tv)-1):
                 tg.append(tv[tvi+1]-tv[tvi])
             pos = np.where(tg == np.max(tg))[0][0]
+            print (tv[pos],tv[pos+1])
+
 
             for chi in range(len(ss[0+link*2])):
                 chns.append(ss[0+link*2][chi][(tv[pos]+1):(tv[pos+1]-1)])
@@ -40,7 +42,7 @@ def data_valid (raw):
 
 for i in range(1):
     #fp =  "D:/debug_data/Raw_CALI_200mVBL_14_0mVfC_2_0us_0x{:02x}_03_08_2022.bin".format(i)
-    fp =  "D:/debug_data/femb1_femb2_femb3_femb4_RT_0pF/Raw_CALI_SE_900mVBL_25_0mVfC_2_0us_0x20.bin"
+    fp =  "D:/debug_data/RawRMS_14_08_2022_09_48_24.bin"
     
     with open(fp, 'rb') as fn:
         raw = pickle.load(fn)
@@ -50,9 +52,9 @@ for i in range(1):
     cfg_paras_rec = raw[2]
     
     #power measurement result
-    print (pwr_meas)
+#    print (pwr_meas)
     #configuration for this run of data
-    print (cfg_paras_rec)
+#    print (cfg_paras_rec)
     
     
     fig = plt.figure(figsize=(10,6))
