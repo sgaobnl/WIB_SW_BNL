@@ -5,12 +5,11 @@ import pandas as pd
 import os
 import sys
 import time
-from data_organization import data_organization
-
+from data_organization import data_organization 
 
 def Clean_data(fname):
 
-    fdir = "D:/debug_data/"
+    fdir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"
     folder = fname
     datafdir = fdir+folder+'/'
     fb = data_organization(folder)

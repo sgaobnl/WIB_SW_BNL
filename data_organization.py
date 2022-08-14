@@ -9,7 +9,8 @@ from scipy.signal import find_peaks
 
 class data_organization():
     def __init__(self,fdir):
-        save_dir='D:/debug_data/cleaned_data/'+fdir
+        #save_dir='D:/debug_data/cleaned_data/'+fdir
+        save_dir='/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/'+fdir
 
         n=1
         while (os.path.exists(save_dir)):
@@ -114,7 +115,7 @@ class data_organization():
                 a_rms=np.append(a_rms,np.std(ch_np))
                 a_ped=np.append(a_ped,np.mean(ch_np))
 
-            fig, ax =plt.subplots(figsize=(8,6))
+            fig, ax =plt.subplots()
             xx=range(128)
             ax.scatter(xx,a_rms,marker='.')
             ax.set_xlabel('chan')
@@ -171,6 +172,49 @@ class data_organization():
 
         return dic
 
+    def ChkLinearty(self, pkval, dac, steps):
+       
+        slope,intercept=np.polyfit(dac[:4],pkval[:4],1)   # ask shanshan what is a good number to use for initial fitting
+
+        y_min = pkval[0]
+        y_max = pkval[-1]
+        linear_dac_max=len(dac)-1
+
+        delta_y=[]
+        first = True
+        for i in range(len(dac)):
+            y_r = pkval[i]
+            y_p = dac[i]*slope + intercept
+            inl = abs(y_r-y_p)/(y_max-y_min)
+            delta_y.append(inl)
+            if inl>0.02 and first:
+               first=False
+               linear_dac_max = i-1
+              
+
+        slope_final,intercept_final = np.polyfit(dac[:(linear_dac_max+1)],pkval[:(linear_dac_max+1)],1)
+
+        INL=[]
+        y_min = pkval[0]
+        y_max = pkval[linear_dac_max]
+        for i in range(linear_dac_max+1):
+            y_r = pkval[i]
+            y_p = dac[i]*slope_final + intercept_final
+            inl = abs(y_r-y_p)/(y_max-y_min)
+            INL.append(inl)
+
+        INL_final = max(INL)
+
+        debug=False
+        if debug:
+           fig,axes = plt.subplots(1,3)
+           axes[0].plot(dac, pkval)
+           axes[1].plot(dac[:(linear_dac_max+1)],INL[:(linear_dac_max+1)])
+           axes[2].plot(dac, delta_y)
+           plt.show()
+ 
+        return [linear_dac_max, INL_final, slope_final]
+
     def GetGain(self,datafdir,outfile):
 
         dac_v = 0
@@ -209,11 +253,12 @@ class data_organization():
 
         nfemb=len(rms_dic)
 
-        gain={}
         for key,values in rms_dic.items():
-            fig, ax =plt.subplots(figsize=(8,6))
+            fig, ax =plt.subplots()
             gain_list=[]
             enc_list=[]
+            linear_range_list=[]
+            inl_list=[]
             for ch in range(128):
                 pk_val=[]
                 for j in range(len(xx)):
@@ -221,12 +266,16 @@ class data_organization():
                         pk_val.append(rms_dic[key][0][ch])
                     else:
                         pk_val.append(pk_list[j-1][key][ch])
+                linearty = self.ChkLinearty(pk_val, xx, 4)
+                tmp_gain = linearty[2]
+                
                 ax.plot(xx, pk_val)
-                slope,intercept=np.polyfit(xx[:10],pk_val[:10],1)
-                gain_list.append(slope)
+                linear_range_list.append(xx[linearty[0]])
+                inl_list.append(linearty[1])
+                gain_list.append(tmp_gain)
+
                 a_rms = rms_dic[key][1][ch]
-                enc_list.append(a_rms/(slope/dac_v)*CC/e)
-            gain[key]=gain_list
+                enc_list.append(a_rms/(tmp_gain/dac_v)*CC/e)
 
             fp_1 = self.fdir+"gain_{}_{}.bin".format(key, outfile)
             with open(fp_1, 'wb') as fn_1:
@@ -242,7 +291,7 @@ class data_organization():
             fig.savefig(self.fdir+"cali_peak_dac_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig1, ax1 =plt.subplots(figsize=(8,6))
+            fig1, ax1 =plt.subplots()
             ax1.scatter(range(128),gain_list,marker='.')
             ax1.set_xlabel('chan')
             ax1.set_ylabel('gain')
@@ -250,7 +299,7 @@ class data_organization():
             fig1.savefig(self.fdir+"cali_gain_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig2, ax2 =plt.subplots(figsize=(8,6))
+            fig2, ax2 =plt.subplots()
             ax2.scatter(range(128),enc_list,marker='.')
             ax2.set_xlabel('chan')
             ax2.set_ylabel('ENC')
@@ -258,17 +307,42 @@ class data_organization():
             fig2.savefig(self.fdir+"cali_ENC_{}_{}.png".format(key, outfile))
             plt.close()
 
+            fig3, ax3 =plt.subplots()
+            ax3.scatter(range(128), linear_range_list)
+            ax3.set_xlabel('chan')
+            ax3.set_ylabel('DAC')
+            ax3.set_title('{} {} Linear range'.format(key, outfile))
+            fig3.savefig(self.fdir+"cali_linear_range_{}_{}.png".format(key, outfile))
+            plt.close()
+
+            fig4, ax4 =plt.subplots()
+            ax4.scatter(range(128),inl_list)
+            ax4.set_xlabel('chan')
+            ax4.set_ylabel('INL')
+            ax4.set_title('{} {} INL (within linear range)'.format(key, outfile))
+            fig4.savefig(self.fdir+"cali_INL_{}_{}.png".format(key, outfile))
+            plt.close()
 
 if __name__=='__main__':
 
-    fdir = "D:/debug_data/"
-    folder = "FEMB_femb0_femb1_femb2_femb3_RT_0pF_R002"
+#    fdir = "D:/debug_data/"
+#    folder = "FEMB_femb0_femb1_femb2_femb3_RT_0pF_R002"
+#    datafdir = fdir+folder+'/'
+#
+#    filename = "Raw_RMS_SE_200mVBL_14_0mVfC_0_5us.bin"
+#    datafile = datafdir+filename
+#    fb = data_organization(folder)
+#
+#    fb.GetRMS(datafile,'SE_200mVBL_14_0mVfC_0_5us')
+#    fb.GetGain(datafdir,'SE_200mVBL_14_0mVfC_2_0us')
+    
+    fdir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"
+    folder = "femb1_femb2_femb3_femb4_RT_0pF_R001"
     datafdir = fdir+folder+'/'
 
     filename = "Raw_RMS_SE_200mVBL_14_0mVfC_0_5us.bin"
     datafile = datafdir+filename
     fb = data_organization(folder)
 
-    fb.GetRMS(datafile,'SE_200mVBL_14_0mVfC_0_5us')
-    fb.GetGain(datafdir,'SE_200mVBL_14_0mVfC_2_0us')
-    
+    #fb.GetRMS(datafile,'SE_200mVBL_14_0mVfC_0_5us')
+    fb.GetGain(datafdir,'SE_200mVBL_7_8mVfC_2_0us')
