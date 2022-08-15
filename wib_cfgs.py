@@ -106,11 +106,17 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         return rddata
 
     def femb_i2c_wrchk(self, femb_id, chip_addr, reg_page, reg_addr, wrdata):
-        self.femb_i2c_wr(femb_id, chip_addr, reg_page, reg_addr, wrdata)
-        rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
-        if wrdata != rddata:
-            print (f"Error, cd_lvds_current: wrdata {wrdata} != redata {rddata}, exit anyway!")
-            exit()
+        i = 0 
+        while True:
+            self.femb_i2c_wr(femb_id, chip_addr, reg_page, reg_addr, wrdata)
+            rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
+            i = i + 1
+            if wrdata != rddata:
+                print (f"Error, cd_lvds_current: wrdata {wrdata} != redata {rddata}, retry!")
+                if i >= 10:
+                    exit()
+            else:
+                break
 
     def femb_cd_cfg(self, femb_id):
 #set coldata 8b10 
@@ -259,6 +265,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             unmask = 0xFFFF0FFF
         link_mask = llc.wib_peek(self.wib, 0xA00c0008 ) 
         llc.wib_poke(self.wib, 0xA00c0008, link_mask&unmask) #enable the link
+        #self.femb_cd_sync()
 
 
 #    def cfg_a_wib(self, fembs, adac_pls_en=False):
@@ -279,6 +286,22 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             timestamps,samples = llc.llc_acquire_data(wib=self.wib, buf0=buf0, buf1=buf1, ignore_failure=True)
             data.append((timestamps,samples))
         return data
+
+
+    def wib_acquire_rawdata(self, fembs,  num_samples=1): 
+        data = []
+        #when buf0 is True, there must be FEMB0 or 1 presented
+        #when buf1 is True, there must be FEMB2 or 3 presented
+        buf0 = True if 0 in fembs or 1 in fembs else False
+        buf1 = True if 2 in fembs or 3 in fembs else False 
+        if (buf0 == False) and (buf1 == False):
+            print("Select which FEMBs you want to read out first!")
+            exit()
+        for  i in range(num_samples):
+            rawdata = self.wib.acquire_rawdata(buf0, buf1)
+            data.append(rawdata)
+        return data
+   
 
 #        llc.acquire_data(self.wib, fembs, num_samples)
 

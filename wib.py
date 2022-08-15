@@ -144,7 +144,22 @@ class WIB:
         timestamps = np.frombuffer(rep.deframed_timestamps,dtype=np.uint64).reshape((2,num))
         samples = np.frombuffer(rep.deframed_samples,dtype=np.uint16).reshape((4,128,num))
         return timestamps,samples
-    
+
+    def acquire_rawdata(self,buf0=True,buf1=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0):
+        print('Reading out WIB spy buffer')
+        req = wibpb.ReadDaqSpy()
+        req.buf0 = buf0
+        req.buf1 = buf1
+        req.trigger_command = trigger_command
+        req.trigger_rec_ticks = trigger_rec_ticks
+        req.trigger_timeout_ms = trigger_timeout_ms
+        rep = wibpb.ReadDaqSpy.DaqSpy()
+        self.send_command(req,rep)
+        print('Successful:',rep.success)
+        if not ignore_failure and not rep.success:
+            return None
+        return rep.buf0, rep.buf1
+   
     def print_timing_status(self,timing_status):
         print('--- PLL INFO ---')
         print('LOS:         0x%x'%(timing_status.los_val & 0x0f))
