@@ -1,4 +1,5 @@
 from wib_cfgs import WIB_CFGS
+import low_level_commands as llc
 import time
 import sys
 import numpy as np
@@ -69,13 +70,28 @@ for femb_id in fembs:
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
 #step 3
     chk.femb_cfg(femb_id, adac_pls_en )
+chk.femb_cd_edge()
 chk.femb_cd_sync()
+chk.femb_cd_sync()
+
+rdreg = llc.wib_peek(chk.wib, 0xA00c000C)
+#disable fake time stamp
+llc.wib_poke(chk.wib, 0xA00c000C, (rdreg&0xFFFFFFF1))
+#llc.wib_poke(chk.wib, 0xA00c000C, (rdreg&0xFFFFFFFD))
+#set the init time stamp
+llc.wib_poke(chk.wib, 0xA00c0018, 0x00000000)
+llc.wib_poke(chk.wib, 0xA00c001C, 0x00000000)
+#enable fake time stamp
+#llc.wib_poke(chk.wib, 0xA00c000C, (rdreg|0x02))
+llc.wib_poke(chk.wib, 0xA00c000C, (rdreg|0x0e))
+
 time.sleep(0.5)
 
-pwr_meas = chk.get_sensors()
 ####################FEMBs Data taking################################
 #rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns list of size 1
 rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
+
+pwr_meas = chk.get_sensors()
 
 if save:
     fdir = "D:/debug_data/"

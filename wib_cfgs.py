@@ -98,6 +98,9 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
     def femb_cd_sync(self):
         llc.fast_command(self.wib, 'sync')
 
+    def femb_cd_edge(self):
+        llc.fast_command(self.wib, 'edge')
+
     def femb_i2c_wr(self, femb_id, chip_addr, reg_page, reg_addr, wrdata):
         llc.cdpoke(self.wib, femb_id, chip_addr=chip_addr, reg_page=reg_page, reg_addr=reg_addr, data=wrdata)
 
