@@ -39,7 +39,7 @@ chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
 #power on FEMBs
 chk.femb_powering(fembs)
 #Measure powers on FEMB
-pwr_meas = chk.get_sensors()
+#pwr_meas = chk.get_sensors()
 
 ####################FEMBs Configuration################################
 #step 1
@@ -101,4 +101,4 @@ if save:
         pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
 
 chk.femb_powering(fembs=[])
-pwr_meas = chk.get_sensors()
+#pwr_meas = chk.get_sensors()

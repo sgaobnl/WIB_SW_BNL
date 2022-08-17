@@ -301,7 +301,10 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             print("Select which FEMBs you want to read out first!")
             exit()
         for  i in range(num_samples):
-            rawdata = self.wib.acquire_rawdata(buf0, buf1)
+            #software trigger : trigger_command = 0
+            rawdata = self.wib.acquire_rawdata(buf0=True,buf1=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0)
+            #DTS trigger
+            #rawdata = self.wib.acquire_rawdata(buf0=True,buf1=True,ignore_failure=False,trigger_command=1,trigger_rec_ticks=1000,trigger_timeout_ms=1000)
             data.append(rawdata)
         return data
    
