@@ -8,27 +8,56 @@ import time
 from scipy.signal import find_peaks
 
 class data_organization():
-    def __init__(self,fdir):
-        #save_dir='D:/debug_data/cleaned_data/'+fdir
-        save_dir='/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/'+fdir
+    def __init__(self,fdir, needfolder=False):
 
-        n=1
-        while (os.path.exists(save_dir)):
-            if n==1:
-                save_dir = save_dir + "_{:02d}".format(n)
-            else:
-                save_dir = save_dir[:-2] + "{:02d}".format(n)
-            n=n+1
-            if n>20:
-                raise Exception("There are more than 20 folders...")
+        if needfolder:
+           #save_dir='D:/debug_data/cleaned_data/'+fdir
+           save_dir='/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/'+fdir
+   
+           n=1
+           while (os.path.exists(save_dir)):
+               if n==1:
+                   save_dir = save_dir + "_{:02d}".format(n)
+               else:
+                   save_dir = save_dir[:-2] + "{:02d}".format(n)
+               n=n+1
+               if n>20:
+                   raise Exception("There are more than 20 folders...")
+   
+           try:
+               os.makedirs(save_dir)
+           except OSError:
+               print ("Error to create folder %s"%save_dir)
+               sys.exit()
 
+           fdir = save_dir
+
+        self.fdir_plots = fdir+'/plots/'
         try:
-            os.makedirs(save_dir)
+            os.makedirs(self.fdir_plots)
         except OSError:
-            print ("Error to create folder %s"%save_dir)
+            print ("Error to create folder %s"%self.fdir_plots)
             sys.exit()
 
-        self.fdir = save_dir+'/'
+        self.fdir_data = fdir+'/data/'
+        try:
+            os.makedirs(self.fdir_data)
+        except OSError:
+            print ("Error to create folder %s"%self.fdir_data)
+            sys.exit()
+
+        dac_v = {}  # mV/bit
+        dac_v['4_7mVfC']=18.66
+        dac_v['7_8mVfC']=14.33
+        dac_v['14_0mVfC']=8.08
+        dac_v['25_0mVfC']=4.61
+
+        CC=1.85*pow(10,-13)
+        e=1.602*pow(10,-19)
+
+        self.dac_v = dac_v
+        self.CC = CC
+        self.e = e
 
     def data_valid(self, raw):
         sss  = []
@@ -78,7 +107,7 @@ class data_organization():
             ax.set_title("{} {}".format(key,outfile))
             table.set_fontsize(14)
             table.scale(1,2)
-            fig.savefig(self.fdir+"pwr_meas_{}_{}.png".format(key,outfile))
+            fig.savefig(self.fdir_plots+"pwr_meas_{}_{}.png".format(key,outfile))
            
 
     def GetRMS(self,datafile,outfile):
@@ -115,17 +144,17 @@ class data_organization():
                 a_rms=np.append(a_rms,np.std(ch_np))
                 a_ped=np.append(a_ped,np.mean(ch_np))
 
-            fig, ax =plt.subplots()
+            fig, ax =plt.subplots(figsize=(8,4))
             xx=range(128)
             ax.scatter(xx,a_rms,marker='.')
             ax.set_xlabel('chan')
             ax.set_ylabel('rms')
             ax.set_title('FEMB{} {}'.format(femb_no[i],outfile))
-            fig.savefig(self.fdir+"rms_femb{}_{}.png".format(femb_no[i], outfile))
+            fig.savefig(self.fdir_plots+"rms_femb{}_{}.png".format(femb_no[i], outfile))
             plt.close()
             rms_dic['femb{}'.format(femb_no[i])]=[a_ped,a_rms]
 
-            fp = self.fdir+"rms_femb{}_{}.bin".format(femb_no[i], outfile)
+            fp = self.fdir_data+"rms_femb{}_{}.bin".format(femb_no[i], outfile)
             with open(fp, 'wb') as fn:
                 pickle.dump( {'Ped':a_ped,'RMS':a_rms}, fn)
 
@@ -217,23 +246,22 @@ class data_organization():
 
     def GetGain(self,datafdir,outfile):
 
-        dac_v = 0
         if '4_7mVfC' in outfile:  # mV/bit
-            dac_v = 18.66
+            dac_v = self.dac_v['4_7mVfC']
 
         if '7_8mVfC' in outfile:  # mV/bit
-            dac_v = 14.33
+            dac_v = self.dac_v['7_8mVfC']
 
         if '14_0mVfC' in outfile:  # mV/bit
-            dac_v = 8.08
+            dac_v = self.dac_v['14_0mVfC']
 
         if '25_0mVfC' in outfile:  # mV/bit
-            dac_v = 4.61
+            dac_v = self.dac_v['25_0mVfC']
 
         dac_v = dac_v/1000 # V/bit
 
-        CC=1.85*pow(10,-13)
-        e=1.602*pow(10,-19)
+        CC=self.CC
+        e=self.e
 
         datafile = datafdir+"Raw_CALI_{}_0x00.bin".format(outfile)
         rms_dic=self.GetRMS(datafile, "CALI_{}".format(outfile))
@@ -254,7 +282,7 @@ class data_organization():
         nfemb=len(rms_dic)
 
         for key,values in rms_dic.items():
-            fig, ax =plt.subplots()
+            fig, ax =plt.subplots(figsize=(8,4))
             gain_list=[]
             enc_list=[]
             linear_range_list=[]
@@ -277,50 +305,50 @@ class data_organization():
                 a_rms = rms_dic[key][1][ch]
                 enc_list.append(a_rms/(tmp_gain/dac_v)*CC/e)
 
-            fp_1 = self.fdir+"gain_{}_{}.bin".format(key, outfile)
+            fp_1 = self.fdir_data+"gain_{}_{}.bin".format(key, outfile)
             with open(fp_1, 'wb') as fn_1:
                 pickle.dump( gain_list, fn_1)
 
-            fp_2 = self.fdir+"enc_{}_{}.bin".format(key, outfile)
+            fp_2 = self.fdir_data+"enc_{}_{}.bin".format(key, outfile)
             with open(fp_2, 'wb') as fn_2:
                 pickle.dump( enc_list, fn_2)
 
             ax.set_xlabel('DAC')
             ax.set_ylabel('Peak value')
             ax.set_title('{} {}'.format(key,outfile))
-            fig.savefig(self.fdir+"cali_peak_dac_{}_{}.png".format(key, outfile))
+            fig.savefig(self.fdir_plots+"cali_peak_dac_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig1, ax1 =plt.subplots()
+            fig1, ax1 =plt.subplots(figsize=(8,4))
             ax1.scatter(range(128),gain_list,marker='.')
             ax1.set_xlabel('chan')
             ax1.set_ylabel('gain')
             ax1.set_title('{} {}'.format(key,outfile))
-            fig1.savefig(self.fdir+"cali_gain_{}_{}.png".format(key, outfile))
+            fig1.savefig(self.fdir_plots+"cali_gain_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig2, ax2 =plt.subplots()
+            fig2, ax2 =plt.subplots(figsize=(8,4))
             ax2.scatter(range(128),enc_list,marker='.')
             ax2.set_xlabel('chan')
             ax2.set_ylabel('ENC')
             ax2.set_title('{} {}'.format(key, outfile))
-            fig2.savefig(self.fdir+"cali_ENC_{}_{}.png".format(key, outfile))
+            fig2.savefig(self.fdir_plots+"cali_ENC_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig3, ax3 =plt.subplots()
+            fig3, ax3 =plt.subplots(figsize=(8,4))
             ax3.scatter(range(128), linear_range_list)
             ax3.set_xlabel('chan')
             ax3.set_ylabel('DAC')
             ax3.set_title('{} {} Linear range'.format(key, outfile))
-            fig3.savefig(self.fdir+"cali_linear_range_{}_{}.png".format(key, outfile))
+            fig3.savefig(self.fdir_plots+"cali_linear_range_{}_{}.png".format(key, outfile))
             plt.close()
 
-            fig4, ax4 =plt.subplots()
+            fig4, ax4 =plt.subplots(figsize=(8,4))
             ax4.scatter(range(128),inl_list)
             ax4.set_xlabel('chan')
             ax4.set_ylabel('INL')
             ax4.set_title('{} {} INL (within linear range)'.format(key, outfile))
-            fig4.savefig(self.fdir+"cali_INL_{}_{}.png".format(key, outfile))
+            fig4.savefig(self.fdir_plots+"cali_INL_{}_{}.png".format(key, outfile))
             plt.close()
 
 if __name__=='__main__':
@@ -331,7 +359,7 @@ if __name__=='__main__':
 #
 #    filename = "Raw_RMS_SE_200mVBL_14_0mVfC_0_5us.bin"
 #    datafile = datafdir+filename
-#    fb = data_organization(folder)
+#    fb = data_organization(folder, True)
 #
 #    fb.GetRMS(datafile,'SE_200mVBL_14_0mVfC_0_5us')
 #    fb.GetGain(datafdir,'SE_200mVBL_14_0mVfC_2_0us')
@@ -342,7 +370,7 @@ if __name__=='__main__':
 
     filename = "Raw_RMS_SE_200mVBL_14_0mVfC_0_5us.bin"
     datafile = datafdir+filename
-    fb = data_organization(folder)
+    fb = data_organization(folder, needfolder=True)
 
     #fb.GetRMS(datafile,'SE_200mVBL_14_0mVfC_0_5us')
     fb.GetGain(datafdir,'SE_200mVBL_7_8mVfC_2_0us')

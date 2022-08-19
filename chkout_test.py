@@ -30,12 +30,14 @@ class FEMB_CHKOUT:
         self.logs['env']=env
 
         ToyTPC_en = input("ToyTPC at FE inputs (Y/N) : ")
-        note = input("A short note (<200 letters):")
         if ("Y" in ToyTPC_en) or ("y" in ToyTPC_en):
             toytpc = "150pF"
         else:
             toytpc = "0pF"
         self.logs['toytpc']=toytpc
+
+        note = input("A short note (<200 letters):")
+        self.logs['note']=note
 
         for i in self.fembs:
             self.fembNo['femb{}'.format(i)]=input("FEMB{} ID: ".format(i))
@@ -65,6 +67,10 @@ class FEMB_CHKOUT:
             sys.exit()
 
         self.save_dir = save_dir+"/"
+
+        fp = self.save_dir + "logs_env.bin"
+        with open(fp, 'wb') as fn:
+             pickle.dump(self.logs, fn)
 
     def pwr_fembs(self, status):
 
