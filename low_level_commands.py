@@ -31,7 +31,7 @@ def system_clock_select(wib, pll=False): #select correct timing source with peek
     # missing. PLL clock should only be used on test stand when timing master 
     # is not available.            
     reg_read = wib_peek(wib, 0xA00C0004)
-    val = reg_read | (int(pll) << 16)
+    val = (reg_read&0xFFFEFFFF) | (int(pll) << 16)
     wib_poke(wib, 0xA00C0004, val)    
     return wib_peek(wib, 0xA00C0004)
 

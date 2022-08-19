@@ -20,13 +20,13 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                           ]
         self.adac_cali_quo = False
 
-    def wib_init(self):
+    def wib_init(self, pll=True):
         self.wib = llc.test_connection(self.wib)
         if self.wib==1: #Connection failed
             print ("no WIB is found")
             sys.exit() 
         time.sleep(0.1)
-        llc.system_clock_select(self.wib, pll=True)    
+        llc.system_clock_select(self.wib, pll=pll)    
 
     def femb_vol_set(self, vfe=3.0, vcd=3.0, vadc=3.5):
         llc.power_config(self.wib, v1 = vfe, v2=vcd, v3=vadc)
