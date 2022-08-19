@@ -31,7 +31,7 @@ chk = WIB_CFGS()
 
 ####################WIB init################################
 #check if WIB is in position
-chk.wib_init()
+chk.wib_init(pll=False)
 
 ####################FEMBs powering################################
 #set FEMB voltages
@@ -43,7 +43,7 @@ print (hex(rdreg))
 llc.wib_poke(chk.wib, 0xA00c0004, 0x20)
 rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
 print (hex(rdreg))
-#exit()
+exit()
 
 #power on FEMBs
 chk.femb_powering(fembs)
