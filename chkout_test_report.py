@@ -9,7 +9,7 @@ from data_organization import data_organization
 
 def Clean_data(fname):
 
-    fdir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"
+    fdir = "D:/debug_data/"
     folder = fname
     datafdir = fdir+folder+'/'
     fb = data_organization(folder)

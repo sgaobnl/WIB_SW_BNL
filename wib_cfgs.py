@@ -26,7 +26,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             print ("no WIB is found")
             sys.exit() 
         time.sleep(0.1)
-        llc.system_clock_select(self.wib, pll=True)    
+        llc.system_clock_select(self.wib, pll=False)    
 
     def femb_vol_set(self, vfe=3.0, vcd=3.0, vadc=3.5):
         llc.power_config(self.wib, v1 = vfe, v2=vcd, v3=vadc)

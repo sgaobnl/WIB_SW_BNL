@@ -9,8 +9,8 @@ from scipy.signal import find_peaks
 
 class data_organization():
     def __init__(self,fdir):
-        #save_dir='D:/debug_data/cleaned_data/'+fdir
-        save_dir='/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/'+fdir
+        save_dir='D:/debug_data/cleaned_data/'+fdir
+        #save_dir='/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/'+fdir
 
         n=1
         while (os.path.exists(save_dir)):

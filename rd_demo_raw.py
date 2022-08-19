@@ -15,6 +15,7 @@ for xxxx in range(1):
     fp =  "D:/debug_data/RawRMS_15_08_2022_19_06_40.bin"
     fp =  "D:/debug_data/RawRMS_16_08_2022_05_30_26.bin"
 #    fp =  "D:/debug_data/RawRMS_16_08_2022_06_23_22.bin"
+    fp =  "D:/debug_data/RawRMS_18_08_2022_16_06_02.bin"
     
     with open(fp, 'rb') as fn:
         raw = pickle.load(fn)
@@ -33,9 +34,9 @@ for xxxx in range(1):
         words = len(rawdata[runi][0])//4
         frames = words//120
         dd =struct.unpack_from("<%dI"%(words),rawdata[runi][0])
-#        print ([hex(ddi) for ddi in dd[120*0:120*1]])
-#        print ([hex(ddi) for ddi in dd[120*1:120*2]])
-#        print ([hex(ddi) for ddi in dd[120*2:120*3]])
+        print ([hex(ddi) for ddi in dd[120*0:120*1]])
+        print ([hex(ddi) for ddi in dd[120*1:120*2]])
+        print ([hex(ddi) for ddi in dd[120*2:120*3]])
 #        print ([hex(ddi) for ddi in dd[120*3:120*4]])
 #        print ([hex(ddi) for ddi in dd[120*4:120*5]])
 #        print ([hex(ddi) for ddi in dd[120*5:120*6]])
@@ -52,16 +53,17 @@ for xxxx in range(1):
         dts = []
         print ("word#1, word#2, word#3, word#4, timing master time stamp, CDTS-ID[0-2], Coldata time stampe")
         for i in range(words//120):
-            dt = (dd[N*i+2] + dd[N*i+1])>>5
+            dt = ((dd[N*i+2]<<32) + dd[N*i+1])>>5
             ts_link = (dd[N*i+3] & 0x0000e000)>>13
             ts = (dd[N*i+4]>>21)&0x3ff
-            dt_low5 = (dd[N*i+2] + dd[N*i+1])&0x1f
+            dt_low5 = (dd[N*i+1])&0x1f
             ts_low5 = (dd[N*i+4]>>16)&0x1f
             if dt_low5 != ts_low5:
                 print ("error....")
+                print (dt_low5, ts_low5)
                 exit()
-            if i >= words//120 - 20:
-            #if i < 20:
+            #if i >= words//120 - 20:
+            if i < 20:
             #if (i > 480) and (i <500):
                 print (hex(dd[N*i+1]),hex(dd[N*i+2]), hex(dd[N*i+3]), hex(dd[N*i+4]), hex(dt), hex(ts_link), hex(ts))
             ts_links.append(ts_link)
