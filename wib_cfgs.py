@@ -8,6 +8,8 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
     def __init__(self):
         super().__init__()
         self.wib = WIB("192.168.121.1")
+        #self.wib = WIB("10.73.137.24")
+        #self.wib = WIB("10.73.137.22")
         self.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
                             [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                             [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
