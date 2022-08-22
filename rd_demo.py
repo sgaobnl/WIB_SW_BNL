@@ -42,7 +42,8 @@ def data_valid (raw):
 
 for i in range(1):
     #fp =  "D:/debug_data/Raw_CALI_200mVBL_14_0mVfC_2_0us_0x{:02x}_03_08_2022.bin".format(i)
-    fp =  "D:/debug_data/RawRMS_14_08_2022_16_42_00.bin"
+    #fp =  "D:/debug_data/femb1_femb3_RT_0pF/data/Raw_SE_200mVBL_14_0mVfC_2_0us_0x20.bin"
+    fp =  "D:/debug_data/Raw_MULTCONFIG_22_08_2022.bin"
     
     with open(fp, 'rb') as fn:
         raw = pickle.load(fn)
@@ -50,7 +51,7 @@ for i in range(1):
     rawdata = raw[0]
     pwr_meas = raw[1]
     cfg_paras_rec = raw[2]
-    
+
     #power measurement result
 #    print (pwr_meas)
     #configuration for this run of data
@@ -67,6 +68,11 @@ for i in range(1):
     sss = data_valid(rawdata)
     N = 0
     ss = sss[N]
+
+    print('111:   ',len(sss))
+    print('333:   ', len(sss[0]))
+    print('333:   ', sss[0][128:180])
+    
     fembs=[0, 1,2,3]
     for fembi in fembs:
         for chi in range(128):

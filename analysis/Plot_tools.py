@@ -74,10 +74,10 @@ def PlotWaveforms(data, femb_no, chan):
     ax.set_title('FEMB{}'.format(i))
     plt.show()
 
-#datafolder = "D:/debug_data/femb1_femb2_femb3_femb4_RT_0pF/"
-datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb1_femb2_femb3_femb4_RT_0pF_R001/"
+datafolder = "D:/debug_data/femb1_femb3_RT_0pF_R003/data/"
+#datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb1_femb2_femb3_femb4_RT_0pF_R001/"
 
-filename = "Raw_CALI_SE_200mVBL_4_7mVfC_2_0us_0x28.bin"
+filename = "Raw_SE_200mVBL_14_0mVfC_2_0us_0x20.bin"
 datafile = datafolder+filename
 
 fp = datafile
@@ -88,5 +88,5 @@ rawdata = raw[0]
 
 #GetPeak(rawdata,1)
 
-for i in range(112,128):
-    PlotWaveforms(rawdata,3,i)
+for i in range(0,1):
+    PlotWaveforms(rawdata,0,i)

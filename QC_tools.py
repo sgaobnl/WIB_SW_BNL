@@ -1,8 +1,12 @@
 import numpy as np
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
+import sys
 
 class QC_tools:
+    def __init__(self):
+        x='hello'
+
     def data_valid(self,raw):
         sss  = []
         for rawi in raw:
@@ -57,7 +61,7 @@ class QC_tools:
                 pmax = np.amax(evtdata)
                 pos = np.argmax(evtdata)
 
-                pos_peaks, _ = find_peaks(data[itr][global_ch],height=pmax-100)
+                pos_peaks, _ = find_peaks(evtdata,height=pmax-100)
 
                 for ipos in pos_peaks:
                     startpos=ipos-50
@@ -88,7 +92,11 @@ class QC_tools:
             pkp.append(ch_pkp)
             pkn.append(ch_pkn)
  
-            avgwf.append(wfdata/npulse)
+            if npulse>0:
+                avgwf.append(wfdata/npulse)
+            else:
+                print("femb {} ch{} doesn't have pulse!".format(nfemb,ich))
+                sys.exit()
 
         return rms,ped,pkp,pkn,onewf,avgwf 
 
