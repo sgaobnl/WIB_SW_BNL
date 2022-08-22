@@ -66,15 +66,17 @@ def PlotWaveforms(data, femb_no, chan):
     p_val=np.empty(0)
     fig, ax =plt.subplots(figsize=(6,4))
     for itr in range(nevent):
-        xx = range(len(pl_data[itr][global_ch]))
-        ax.plot(xx,pl_data[itr][global_ch])
+        xx = range(len(pl_data[itr][global_ch][:]))
+        ax.plot(xx,pl_data[itr][global_ch][:])
     
     ax.set_xlabel('tick')
     ax.set_ylabel('ADC')
     ax.set_title('FEMB{}'.format(i))
     plt.show()
 
-datafolder = "D:/debug_data/femb1_femb2_femb3_femb4_RT_0pF/"
+#datafolder = "D:/debug_data/femb1_femb2_femb3_femb4_RT_0pF/"
+datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb1_femb2_femb3_femb4_RT_0pF_R001/"
+
 filename = "Raw_CALI_SE_200mVBL_4_7mVfC_2_0us_0x28.bin"
 datafile = datafolder+filename
 
@@ -84,7 +86,7 @@ with open(fp, 'rb') as fn:
 
 rawdata = raw[0]
 
-GetPeak(rawdata,1)
+#GetPeak(rawdata,1)
 
-#for i in range(112,128):
-#    PlotWaveforms(rawdata,3,i)
+for i in range(112,128):
+    PlotWaveforms(rawdata,3,i)
