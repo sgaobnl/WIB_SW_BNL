@@ -12,7 +12,6 @@ from fpdf import FPDF
 
 ####### Input FEMB slots #######
 
-
 if len(sys.argv) < 2:
     print('Please specify at least one FEMB # to test')
     print('Usage: python wib.py 0')
@@ -118,7 +117,7 @@ pwr_meas = chk.get_sensors()
 
 chk.femb_cd_rst()
 
-snc = 0 # 900 mV
+snc = 1 # 200 mV
 sg0 = 0
 sg1 = 0 # 14mV/fC
 st0 = 1 
@@ -148,7 +147,7 @@ rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti 
 
 ####### Save data #######
 if save:
-    fp = datadir + "Raw_SE_{}_{}_{}_0x{:02x}.bin".format("900mVBL","14_0mVfC","2_0us",0x20)
+    fp = datadir + "Raw_SE_{}_{}_{}_0x{:02x}.bin".format("200mVBL","14_0mVfC","2_0us",0x20)
 
     with open(fp, 'wb') as fn:
         pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
@@ -168,8 +167,11 @@ for i in fembs:
 
     femb_id = fembNo['femb{}'.format(i)]
     ana = qc_tools.data_ana(pldata,i)
-    fp = plotdir+"FEMB{}_SE_response".format(femb_id)
-    qc_tools.FEMB_CHK_PLOT(ana[0], ana[1], ana[2], ana[3], ana[4], ana[5], fp)
+    fp_data = plotdir+"FEMB{}_SE_response".format(femb_id)
+    qc_tools.FEMB_CHK_PLOT(ana[0], ana[1], ana[2], ana[3], ana[4], ana[5], fp_data)
+
+    fp_pwr = plotdir+"FEMB{}_pwr_meas".format(femb_id)
+    qc_tools.PrintPWR( pwr_meas['femb{}'.format(i)], fp_pwr)
 
     pdf = FPDF(orientation = 'P', unit = 'mm', format='Letter')
     pdf.alias_nb_pages()
@@ -189,14 +191,16 @@ for i in fembs:
     pdf.cell(80)
     pdf.cell(30, 5, 'Input Capacitor(Cd): {}'.format(logs["toytpc"]), 0, 1)
     pdf.cell(30, 5, 'Note: {}'.format(logs["note"][0:80]), 0, 1)
-    pdf.cell(30, 5, 'FEMB configuration: {}, {}, {}, {}, DAC=0x{:02x}'.format("900mVBL","14_0mVfC","2_0us","500pA",0x20), 0, 1)
+    pdf.cell(30, 5, 'FEMB configuration: {}, {}, {}, {}, DAC=0x{:02x}'.format("200mVBL","14_0mVfC","2_0us","500pA",0x20), 0, 1)
 
-    chk_image = fp+".png"
+    pwr_image = fp_pwr+".png"
+    pdf.image(pwr_image,3,45,200,80)
 
-    pdf.image(chk_image,3,45,200,120)
+    chk_image = fp_data+".png"
+    pdf.image(chk_image,3,125,200,120)
+
     outfile = save_dir+'CHK_femb{}.pdf'.format(femb_id)
     pdf.output(outfile, "F")
-
      
     
      

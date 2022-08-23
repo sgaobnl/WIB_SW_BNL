@@ -43,7 +43,6 @@ def data_valid (raw):
 for i in range(1):
     #fp =  "D:/debug_data/Raw_CALI_200mVBL_14_0mVfC_2_0us_0x{:02x}_03_08_2022.bin".format(i)
     #fp =  "D:/debug_data/femb1_femb3_RT_0pF/data/Raw_SE_200mVBL_14_0mVfC_2_0us_0x20.bin"
-    fp =  "D:/debug_data/Raw_MULTCONFIG_22_08_2022.bin"
     
     with open(fp, 'rb') as fn:
         raw = pickle.load(fn)
@@ -56,7 +55,7 @@ for i in range(1):
 #    print (pwr_meas)
     #configuration for this run of data
 #    print (cfg_paras_rec)
-    
+
     
     fig = plt.figure(figsize=(10,6))
     ax1 = plt.subplot2grid((4, 4), (0, 0), colspan=2, rowspan=2)
@@ -65,13 +64,9 @@ for i in range(1):
     ax4 = plt.subplot2grid((4, 4), (2, 2), colspan=2, rowspan=2)
     axs = [ax1, ax2, ax3, ax4]
     
-    sss = data_valid(rawdata)
+   sss = data_valid(rawdata)
     N = 0
     ss = sss[N]
-
-    print('111:   ',len(sss))
-    print('333:   ', len(sss[0]))
-    print('333:   ', sss[0][128:180])
     
     fembs=[0, 1,2,3]
     for fembi in fembs:

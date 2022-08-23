@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 import sys
@@ -142,3 +143,30 @@ class QC_tools:
         fn = fp + ".png"
         plt.savefig(fn)
         plt.close()
+
+    def PrintPWR(self, pwr_data, fp):
+
+        pwr_names=['BIAS','LArASIC','ColdDATA','ColdADC']
+        pwr_set=[5,3,3,3.5]
+        pwr_dic={'name':[],'V_set/V':[],'V_meas/V':[],'I_meas/A':[],'P_meas/W':[]}
+        i=0
+        total_p = 0
+        for ilist in pwr_data:
+            pwr_dic['name'].append(pwr_names[i])
+            pwr_dic['V_set/V'].append(pwr_set[i])
+            i=i+1
+            pwr_dic['V_meas/V'].append(round(ilist[1],3))
+            pwr_dic['I_meas/A'].append(round(ilist[2],3))
+            pwr_dic['P_meas/W'].append(round(ilist[3],3))
+            total_p = total_p + ilist[3]
+
+        df=pd.DataFrame(data=pwr_dic)
+
+        fig, ax =plt.subplots(figsize=(8,2.5))
+        ax.axis('off')
+        table = ax.table(cellText=df.values,colLabels=df.columns,loc='center')
+        ax.set_title("Power Consumption = {} W".format(round(total_p,3)))
+        table.set_fontsize(14)
+        table.scale(1,2)
+        fig.savefig(fp+".png")
+
