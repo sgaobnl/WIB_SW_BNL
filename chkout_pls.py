@@ -31,7 +31,7 @@ chk = WIB_CFGS()
 
 ####################WIB init################################
 #check if WIB is in position
-chk.wib_init()
+chk.wib_init(pll=True)
 
 ####################FEMBs powering################################
 #set FEMB voltages

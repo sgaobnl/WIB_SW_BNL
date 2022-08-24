@@ -15,7 +15,7 @@ for xxxx in range(1):
     fp =  "D:/debug_data/RawRMS_15_08_2022_19_06_40.bin"
     fp =  "D:/debug_data/RawRMS_16_08_2022_05_30_26.bin"
 #    fp =  "D:/debug_data/RawRMS_16_08_2022_06_23_22.bin"
-    fp =  "D:/debug_data/RawRMS_18_08_2022_16_06_02.bin"
+    fp =  "D:/debug_data/RawRMS_23_08_2022_16_28_45.bin"
     
     with open(fp, 'rb') as fn:
         raw = pickle.load(fn)

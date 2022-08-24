@@ -31,18 +31,19 @@ chk = WIB_CFGS()
 
 ####################WIB init################################
 #check if WIB is in position
+#chk.wib_init(pll=False)
 chk.wib_init(pll=True)
 
 ####################FEMBs powering################################
 #set FEMB voltages
-chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
-rdreg = llc.wib_peek(chk.wib, 0xA00c0090)
-print (hex(rdreg))
-rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
-print (hex(rdreg))
+#chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
+#rdreg = llc.wib_peek(chk.wib, 0xA00c0090)
+#print (hex(rdreg))
+#rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
+#print (hex(rdreg))
 #llc.wib_poke(chk.wib, 0xA00c0004, 0x20)
-rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
-print (hex(rdreg))
+#rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
+#print (hex(rdreg))
 #exit()
 
 #power on FEMBs
@@ -88,9 +89,9 @@ rdreg = llc.wib_peek(chk.wib, 0xA00c000C)
 llc.wib_poke(chk.wib, 0xA00c000C, (rdreg&0xFFFFFFF3))
 llc.wib_poke(chk.wib, 0xA00c000C, (rdreg&0xFFFFFFFD))
 #set the init time stamp
-#llc.wib_poke(chk.wib, 0xA00c0018, 0x00000000)
-#llc.wib_poke(chk.wib, 0xA00c001C, 0x00000000)
-llc.wib_poke(chk.wib, 0xA00c000C, (rdreg|0x0c))
+llc.wib_poke(chk.wib, 0xA00c0018, 0x00000000)
+llc.wib_poke(chk.wib, 0xA00c001C, 0x00000000)
+llc.wib_poke(chk.wib, 0xA00c000C, (rdreg|0x0D))
 
 time.sleep(0.5)
 
