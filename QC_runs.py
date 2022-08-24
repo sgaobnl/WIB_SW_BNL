@@ -7,7 +7,7 @@ import copy
 import os
 import time, datetime, random, statistics
 
-class FEMB_CHKOUT:
+class QC_Runs:
     def __init__(self, fembs, sample_N):
         self.fembs = fembs
         self.sample_N = sample_N
@@ -16,6 +16,8 @@ class FEMB_CHKOUT:
         self.sncs = ["900mVBL", "200mVBL"]
         self.sgs = ["14_0mVfC", "25_0mVfC", "7_8mVfC", "4_7mVfC" ]
         self.sts = ["1_0us", "0_5us",  "3_0us", "2_0us"]
+ 
+        ####### Test enviroment logs #######
 
         self.logs={}
 
@@ -43,6 +45,8 @@ class FEMB_CHKOUT:
             self.fembNo['femb{}'.format(i)]=input("FEMB{} ID: ".format(i))
 
         self.logs['femb id']=self.fembNo
+
+        ####### Create data saving directory #######
 
         save_dir = "D:/debug_data/"
         for key,femb_no in self.fembNo.items():
@@ -72,17 +76,67 @@ class FEMB_CHKOUT:
         with open(fp, 'wb') as fn:
              pickle.dump(self.logs, fn)
 
+        self.chk=None   # WIB pointer
+
     def pwr_fembs(self, status):
 
-        chk = WIB_CFGS()
-        chk.wib_init()
-        chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
+        self.chk = WIB_CFGS()
+        self.chk.wib_init()
+        self.chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
         if status=='on':
-            chk.femb_powering(fembs)
-            pwr_meas = chk.get_sensors()
+            self.chk.femb_powering(fembs)
+            pwr_meas = self.chk.get_sensors()
         if status=='off':
             print("Turning off FEMBs")
-            chk.femb_powering([])
+            self.chk.femb_powering([])
+
+    def femb_pwr_consumption(self):
+
+        datadir = self.save_dir+"PWR_Meas/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+      
+        self.chk.femb_cd_rst()
+        
+        snc = 1 # 200 mV
+        sg0 = 0
+        sg1 = 0 # 14mV/fC
+        st0 = 1
+        st1 = 1 # 2us 
+        
+        cfg_paras_rec = []
+        for femb_id in self.fembs:
+            chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
+                                [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                              ]
+            chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20 )
+            adac_pls_en = 1
+            cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
+            chk.femb_cfg(femb_id, adac_pls_en )
+        
+        ####### Take data #######
+        time.sleep(0.5)
+        pwr_meas = chk.get_sensors()
+        rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
+        
+        ####### Save data #######
+        fp = datadir + "PWR_SE_{}_{}_{}_0x{:02x}.bin".format("200mVBL","14_0mVfC","2_0us",0x20)
+        
+        with open(fp, 'wb') as fn:
+            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
+        
+ 
+        
 
     def femb_rms(self):
 
@@ -329,7 +383,7 @@ if __name__=='__main__':
    fembs = [int(a) for a in sys.argv[1:pos]] 
    print (fembs)
 
-   chkout = FEMB_CHKOUT(fembs, sample_N)
+   chkout = QC_Runs(fembs, sample_N)
    chkout.pwr_fembs('on')
    chkout.femb_rms()
    chkout.femb_asiccali()
