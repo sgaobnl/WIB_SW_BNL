@@ -362,12 +362,12 @@ class QC_Runs:
         print(" Check LArASIC rms with single-ended interface between FE and ADC")
         for snci in range(2):  # 0=900mV, 1=200mV
             for sgi in range(4):
-                sg0=sgi//2
-                sg1=sgi%2
+                sg0=sgi%2
+                sg1=sgi//2
 
                 for sti in range(4):
-                    st0=sti//2
-                    st1=sti%2
+                    st0=sti%2
+                    st1=sti//2
      
                     cfg_paras_rec = []
                     time.sleep(1)
@@ -405,8 +405,8 @@ class QC_Runs:
             sg1=0 # 14mV/fC
 
             for sti in range(4):
-                st0=sti//2
-                st1=sti%2
+                st0=sti%2
+                st1=sti//2
      
                 cfg_paras_rec = []
                 time.sleep(1)
@@ -460,8 +460,8 @@ class QC_Runs:
         for idac in range(0,64,4):  # dac 
             for snci in range(2):
                 for sgi in range(4):
-                    sg0=sgi//2
-                    sg1=sgi%2
+                    sg0=sgi%2
+                    sg1=sgi//2
 
                     cfg_paras_rec = []
                     chk.femb_cd_rst()
@@ -501,10 +501,10 @@ class QC_Runs:
         sts = self.sts
 
         snc = sncs.index(snci)
-        sg0 = sgs.index(sgi)//2
-        sg1 = sgs.index(sgi)%2
-        st0 = sts.index(sti)//2
-        st1 = sts.index(sti)%2
+        sg0 = sgs.index(sgi)%2
+        sg1 = sgs.index(sgi)//2
+        st0 = sts.index(sti)%2
+        st1 = sts.index(sti)//2
 
         cfg_paras_rec = []
         chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali

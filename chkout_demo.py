@@ -43,8 +43,8 @@ class FEMB_CHKOUT:
 
         for isnc in range(2):  # 0=900mV, 1=200mV
             for ist in range(4):
-                st0=ist//2
-                st1=ist%2
+                st0=ist%2
+                st1=ist//2
 
                 cfg_paras_rec = []
                 for femb_id in fembs:
@@ -142,10 +142,10 @@ class FEMB_CHKOUT:
         sts = ["1_0us", "0_5us",  "3_0us", "2_0us"]
 
         snc = sncs.index(snci)
-        sg0 = sgs.index(sgi)//2
-        sg1 = sgs.index(sgi)%2
-        st0 = sts.index(sti)//2
-        st1 = sts.index(sti)%2
+        sg0 = sgs.index(sgi)%2
+        sg1 = sgs.index(sgi)//2
+        st0 = sts.index(sti)%2
+        st1 = sts.index(sti)//2
 
         cfg_paras_rec = []
         chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali

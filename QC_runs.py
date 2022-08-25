@@ -98,17 +98,52 @@ class QC_Runs:
        for i in self.fembs:
            pwr_meas = pwr_infor['femb{}'.format(i)]
   
-           if (pwr_meas[0]][1] < 0.5) and (pwr_meas[1][1] < 0.5) and (pwr_meas[2][1] < 0.5) and (pwr_meas[3][1] < 3) :
+           if (pwr_meas[0][1] < 0.5) and (pwr_meas[1][1] < 0.5) and (pwr_meas[2][1] < 0.5) and (pwr_meas[3][1] < 3):
                print ("FEMB {} is turned off".format(i))        
                n=n+1
 
-        if n==4:
-           return True
-        else:
-           return False
-         
+       if n==4:
+          return True
+       else:
+          return False
 
-    def femb_pwr_consumption(self):
+    def take_data(self, snc, sg0, sg1, st0, st1, dac, fp, sdd=0, sdf=0, slk0=0, slk1=0, sgp=0):
+         
+        cfg_paras_rec = []
+
+        self.chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
+                            [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                            [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                            [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                            [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                            [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                            [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                            [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                            [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                          ]
+        if sdd==1:
+           for i in range(8):
+               self.chk.adcs_paras[i][2]=1   # enable differential 
+
+        for femb_id in self.fembs:
+            if dac>0:
+               self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=dac, sdd=sdd, sdf=sdf, slk0=slk0, slk1=slk1, sgp=sgp)
+               adac_pls_en = 1
+            if dac==0:
+               self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=0, dac=0x0, sdd=sdd, sdf=sdf, slk0=slk0, slk1=slk1, sgp=sgp)
+               adac_pls_en = 0
+
+            cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
+            self.chk.femb_cfg(femb_id, adac_pls_en )
+
+        time.sleep(0.5)
+        pwr_meas = self.chk.get_sensors()
+        rawdata = self.chk.wib_acquire_data(fembs=self.fembs, num_samples=self.sample_N) 
+        
+        with open(fp, 'wb') as fn:
+            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
+
+    def pwr_consumption(self):
 
         datadir = self.save_dir+"PWR_Meas/"
         try:
@@ -122,93 +157,24 @@ class QC_Runs:
         sg1 = 0 # 14mV/fC
         st0 = 1
         st1 = 1 # 2us 
+        dac = 0x20
         
         ####### SE #######
         self.chk.femb_cd_rst()
-        cfg_paras_rec = []
-        for femb_id in self.fembs:
-            self.chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                              ]
-            self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20 )
-            adac_pls_en = 1
-            cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
-            self.chk.femb_cfg(femb_id, adac_pls_en )
-
-        time.sleep(0.5)
-        pwr_meas = self.chk.get_sensors()
-        rawdata = self.chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) 
-        
         fp = datadir + "PWR_SE_{}_{}_{}_0x{:02x}.bin".format("200mVBL","14_0mVfC","2_0us",0x20)
-        
-        with open(fp, 'wb') as fn:
-            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
-        
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp) 
+
         ####### SE with LArASIC buffer on #######
         self.chk.femb_cd_rst()
-        cfg_paras_rec = []
-        for femb_id in self.fembs:
-            self.chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                              ]
-
-            self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20, sdf=1)
-            adac_pls_en = 1
-            cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
-            self.chk.femb_cfg(femb_id, adac_pls_en )
-
-        time.sleep(0.5)
-        pwr_meas = self.chk.get_sensors()
-        rawdata = self.chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) 
-        
         fp = datadir + "PWR_SE_SDF_{}_{}_{}_0x{:02x}.bin".format("200mVBL","14_0mVfC","2_0us",0x20)
-        
-        with open(fp, 'wb') as fn:
-            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
- 
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, sdf=1) 
+
         ####### DIFF #######
         self.chk.femb_cd_rst()
-        cfg_paras_rec = []
-        for femb_id in self.fembs:
-            self.chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                [0x4, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x5, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x6, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x7, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x8, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x9, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xA, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xB, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                              ]
-            self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20, sdd=1)
-            adac_pls_en = 1
-            cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
-            self.chk.femb_cfg(femb_id, adac_pls_en )
-
-        time.sleep(0.5)
-        pwr_meas = self.chk.get_sensors()
-        rawdata = self.chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) 
-        
         fp = datadir + "PWR_DIFF_{}_{}_{}_0x{:02x}.bin".format("200mVBL","14_0mVfC","2_0us",0x20)
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, sdd=1) 
         
-        with open(fp, 'wb') as fn:
-            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
-        
-    def femb_pwr_cycle(self):
+    def pwr_cycle(self):
 
         if self.logs['env']=='RT':
            print ("Test is at room temperature, ignore power cycle test")
@@ -226,42 +192,20 @@ class QC_Runs:
         sg1 = 0 # 14mV/fC
         st0 = 1
         st1 = 1 # 2us 
+        dac = 0x20
         
         ####### SE 3 cycles #######
         self.chk.femb_cd_rst()
         for i in range(3):
-            cfg_paras_rec = []
-            for femb_id in self.fembs:
-                self.chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                    [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                  ]
-                self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20 )
-                adac_pls_en = 1
-                cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
-                self.chk.femb_cfg(femb_id, adac_pls_en )
-
-            time.sleep(0.5)
-            pwr_meas = self.chk.get_sensors()
-            rawdata = self.chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) 
-            
             fp = datadir + "PWR_cycle{}_SE_{}_{}_{}_0x{:02x}.bin".format(i,"200mVBL","14_0mVfC","2_0us",0x20)
-            
-            with open(fp, 'wb') as fn:
-                pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
+            self.take_data(snc, sg0, sg1, st0, st1, dac, fp) 
 
             self.pwr_fembs('off')
             pwr_info = self.chk.get_sensors()
             pwr_status = self.check_pwr_off(pwr_info)
 
             nn=0
-            while (nn<20 || pwr_status==False):
+            while nn<20 or pwr_status==False:
                   time.sleep(1)
                   nn=nn+1
                   pwr_info = self.chk.get_sensors()
@@ -272,39 +216,15 @@ class QC_Runs:
 
         ####### SE with LArASIC buffer on (1 cycle)#######
         self.chk.femb_cd_rst()
-        cfg_paras_rec = []
-        for femb_id in self.fembs:
-            self.chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                              ]
-
-            self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20, sdf=1)
-            adac_pls_en = 1
-            cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
-            self.chk.femb_cfg(femb_id, adac_pls_en )
-
-        time.sleep(0.5)
-        pwr_meas = self.chk.get_sensors()
-        rawdata = self.chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) 
-        
         fp = datadir + "PWR_SE_SDF_{}_{}_{}_0x{:02x}.bin".format("200mVBL","14_0mVfC","2_0us",0x20)
-        
-        with open(fp, 'wb') as fn:
-            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, sdf=1) 
 
         self.pwr_fembs('off')
         pwr_info = self.chk.get_sensors()
         pwr_status = self.check_pwr_off(pwr_info)
 
         nn=0
-        while (nn<20 || pwr_status==False):
+        while nn<20 or pwr_status==False:
               time.sleep(1)
               nn=nn+1
               pwr_info = self.chk.get_sensors()
@@ -315,35 +235,12 @@ class QC_Runs:
  
         ####### DIFF (1 cycle) #######
         self.chk.femb_cd_rst()
-        cfg_paras_rec = []
-        for femb_id in self.fembs:
-            self.chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                [0x4, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x5, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x6, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x7, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x8, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x9, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xA, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xB, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                              ]
-            self.chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20, sdd=1)
-            adac_pls_en = 1
-            cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
-            self.chk.femb_cfg(femb_id, adac_pls_en )
-
-        time.sleep(0.5)
-        pwr_meas = self.chk.get_sensors()
-        rawdata = self.chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) 
-        
         fp = datadir + "PWR_DIFF_{}_{}_{}_0x{:02x}.bin".format("200mVBL","14_0mVfC","2_0us",0x20)
-        
-        with open(fp, 'wb') as fn:
-            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, sdd=1) 
 
     def femb_leakage_cur(self):
 
-        datadir = self.save_dir+"Leak_Current/"
+        datadir = self.save_dir+"Leakage_Current/"
         try:
             os.makedirs(datadir)
         except OSError:
@@ -355,209 +252,168 @@ class QC_Runs:
         sg1 = 0 # 14mV/fC
         st0 = 1
         st1 = 1 # 2us 
-        
-        
-        chk.femb_cd_rst()
-        
-        sncs = self.sncs
-        sgs = self.sgs
-        sts = "2_0us"
+        dac = 0x20
+         
+        ####### 500 pA #######
+        self.chk.femb_cd_rst()
+        fp = datadir + "LC_SE_{}_{}_{}_0x{:02x}_{}.bin".format("200mVBL","14_0mVfC","2_0us",0x20, "500pA")
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, slk0=0, slk1=0) 
 
-        st0=1 
-        st1=1 # 2us
+        ####### 100 pA #######
+        self.chk.femb_cd_rst()
+        fp = datadir + "LC_SE_{}_{}_{}_0x{:02x}_{}.bin".format("200mVBL","14_0mVfC","2_0us",0x20, "100pA")
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, slk0=1, slk1=0) 
 
-        for idac in range(0,64,4):  # dac 
-            for snci in range(2):
-                for sgi in range(4):
-                    sg0=sgi//2
-                    sg1=sgi%2
+        ####### 5 nA #######
+        self.chk.femb_cd_rst()
+        fp = datadir + "LC_SE_{}_{}_{}_0x{:02x}_{}.bin".format("200mVBL","14_0mVfC","2_0us",0x20, "5nA")
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, slk0=0, slk1=1) 
 
-                    cfg_paras_rec = []
-                    chk.femb_cd_rst()
-                    chk.femb_cd_sync()
-                    time.sleep(1)
-                    for femb_id in fembs:
-                        chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                           [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                         ]
-                        chk.set_fe_board(sts=1, snc=snci, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=idac )
-                        adac_pls_en = 1 # enable LArASIC interal calibraiton pulser
-                        cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
-                        chk.femb_cfg(femb_id, adac_pls_en )
-        
-                    time.sleep(0.5)
-                    pwr_meas = chk.get_sensors()
-                
-                    rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
-                    if save:
-                        fdir = self.save_dir
-                        fp = fdir + "Raw_CALI_SE_{}_{}_{}_0x{:02x}".format(sncs[snci],sgs[sgi],sts,idac)  + ".bin"
-                        with open(fp, 'wb') as fn:
-                            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
+        ####### 1 nA #######
+        self.chk.femb_cd_rst()
+        fp = datadir + "LC_SE_{}_{}_{}_0x{:02x}_{}.bin".format("200mVBL","14_0mVfC","2_0us",0x20, "1nA")
+        self.take_data(snc, sg0, sg1, st0, st1, dac, fp, slk0=1, slk1=1) 
+
+    def femb_chk_pulse(self):
+
+        datadir = self.save_dir+"CHK/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
+        sncs = self.sncs = ["900mVBL", "200mVBL"]
+        sgs = self.sgs = ["14_0mVfC", "25_0mVfC", "7_8mVfC", "4_7mVfC" ]
+        sts = self.sts = ["1_0us", "0_5us",  "3_0us", "2_0us"]
+ 
+        dac = 0x10
+ 
+        for snci in range(2):
+            for sgi in  range(4):
+                sg0 = sgi%2
+                sg1 = sgi//2 
+                for sti in range(4):
+                    st0 = sti%2
+                    st1 = sti//2 
+ 
+                    self.chk.femb_cd_rst()
+                    fp = datadir + "CHK_SE_{}_{}_{}_0x{:02x}.bin".format(sncs[snci],sgs[sgi],sts[sti],dac)
+                    self.take_data(snci, sg0, sg1, st0, st1, dac, fp) 
 
     def femb_rms(self):
 
-        fembs = self.fembs
-        sample_N = self.sample_N
-        chk = WIB_CFGS()
-        
-        chk.wib_init()
-        
-        chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
-        chk.femb_powering(fembs)
-        pwr_meas = chk.get_sensors()
-        
-        chk.femb_cd_rst()
-        
+        datadir = self.save_dir+"RMS/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
         sncs = self.sncs
         sgs = self.sgs
         sts = self.sts
-
-        print(" Check LArASIC rms with single-ended interface between FE and ADC")
-        for snci in range(2):  # 0=900mV, 1=200mV
-            for sgi in range(4):
-                sg0=sgi//2
-                sg1=sgi%2
-
+ 
+        dac = 0
+ 
+        for snci in range(2):
+            for sgi in  range(4):
+                sg0 = sgi%2
+                sg1 = sgi//2 
                 for sti in range(4):
-                    st0=sti//2
-                    st1=sti%2
-     
-                    cfg_paras_rec = []
-                    time.sleep(1)
-                    for femb_id in fembs:
-                        chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                            [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                            [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                            [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                            [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                            [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                            [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                            [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                            [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                          ]
-                        chk.set_fe_board(sts=1, snc=snci, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=0, dac=0x0 )
-                        adac_pls_en = 0 # disable LArASIC interal calibraiton pulser
-                        cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
-                        chk.femb_cfg(femb_id, adac_pls_en )
-                    time.sleep(0.5)
-                    pwr_meas = chk.get_sensors()
-                    rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
+                    st0 = sti%2
+                    st1 = sti//2 
+ 
+                    self.chk.femb_cd_rst()
+                    fp = datadir + "RMS_SE_{}_{}_{}_0x{:02x}.bin".format(sncs[snci],sgs[sgi],sts[sti],dac)
+                    self.take_data(snci, sg0, sg1, st0, st1, dac, fp) 
 
-                    if save:
-                        fdir = self.save_dir
-                        fp = fdir + "Raw_RMS_SE_{}_{}_{}.bin".format(sncs[snci],sgs[sgi],sts[sti])
+    def femb_CALI_1(self):
 
-                        with open(fp, 'wb') as fn:
-                            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
-        
-        chk.femb_cd_rst()
-             
-        print(" Check LArASIC rms with Differential interface between FE and ADC")
-        for snci in range(2):  # 0=900mV, 1=200mV
-            sg0=0
-            sg1=0 # 14mV/fC
+        datadir = self.save_dir+"CALI1/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
 
-            for sti in range(4):
-                st0=sti//2
-                st1=sti%2
-     
-                cfg_paras_rec = []
-                time.sleep(1)
-                for femb_id in fembs:
-                    chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                        [0x4, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                        [0x5, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                        [0x6, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                        [0x7, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                        [0x8, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                        [0x9, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                        [0xA, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                        [0xB, 0x08, 1, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                      ]
-                    chk.set_fe_board(sts=1, snc=snci, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=0, dac=0x0, sdd=1)
-                    adac_pls_en = 0 # disable LArASIC interal calibraiton pulser
-                    cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
-                    chk.femb_cfg(femb_id, adac_pls_en )
-                time.sleep(0.5)
-                pwr_meas = chk.get_sensors()
-                rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
-
-                if save:
-                    fdir = self.save_dir
-                    fp = fdir + "Raw_RMS_DIFF_{}_{}_{}.bin".format(sncs[snci],sgs[0],sts[sti])
-
-                    with open(fp, 'wb') as fn:
-                        pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
-
-    def femb_asiccali(self):
-
-        fembs = self.fembs
-        sample_N = self.sample_N
-        chk = WIB_CFGS()
-        
-        chk.wib_init()
-        
-        chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
-        chk.femb_powering(fembs)
-        pwr_meas = chk.get_sensors()
-        
-        chk.femb_cd_rst()
-        
-        sncs = self.sncs
+        snc = 1 # 200 mV BL
         sgs = self.sgs
-        sts = "2_0us"
+        st0 = 1
+        st1 = 1 # 2 us
+ 
+        for sgi in  range(4):
+            sg0 = sgi%2
+            sg1 = sgi//2 
 
-        st0=1 
-        st1=1 # 2us
+            for dac in range(0,64,4):
+                self.chk.femb_cd_rst()
+                fp = datadir + "CALI1_SE_{}_{}_{}_0x{:02x}.bin".format("200mVBL",sgs[sgi],"2_0us",dac)
+                self.take_data(snc, sg0, sg1, st0, st1, dac, fp) 
 
-        for idac in range(0,64,4):  # dac 
-            for snci in range(2):
-                for sgi in range(4):
-                    sg0=sgi//2
-                    sg1=sgi%2
+    def femb_CALI_2(self):
 
-                    cfg_paras_rec = []
-                    chk.femb_cd_rst()
-                    chk.femb_cd_sync()
-                    time.sleep(1)
-                    for femb_id in fembs:
-                        chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                           [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                           [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
-                                         ]
-                        chk.set_fe_board(sts=1, snc=snci, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=idac )
-                        adac_pls_en = 1 # enable LArASIC interal calibraiton pulser
-                        cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
-                        chk.femb_cfg(femb_id, adac_pls_en )
-        
-                    time.sleep(0.5)
-                    pwr_meas = chk.get_sensors()
-                
-                    rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
-                    if save:
-                        fdir = self.save_dir
-                        fp = fdir + "Raw_CALI_SE_{}_{}_{}_0x{:02x}".format(sncs[snci],sgs[sgi],sts,idac)  + ".bin"
-                        with open(fp, 'wb') as fn:
-                            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
+        datadir = self.save_dir+"CALI2/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
+        snc = 0 # 900 mV BL
+        sg0 = 0
+        sg1 = 0 # 14_0 mv/fC
+        st0 = 1
+        st1 = 1 # 2 us
+ 
+        for dac in range(0,64,4):
+            self.chk.femb_cd_rst()
+            fp = datadir + "CALI2_SE_{}_{}_{}_0x{:02x}.bin".format("900mVBL","14_0mVfC","2_0us",dac)
+            self.take_data(snc, sg0, sg1, st0, st1, dac, fp) 
+
+    def femb_CALI_3(self):
+
+        datadir = self.save_dir+"CALI3/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
+        snc = 1 # 200 mV BL
+        sg0 = 0
+        sg1 = 0 # 14_0 mv/fC
+        st0 = 1
+        st1 = 1 # 2 us
+ 
+        for dac in range(0,64):
+            self.chk.femb_cd_rst()
+            fp = datadir + "CALI3_SE_{}_{}_{}_0x{:02x}_sgp1.bin".format("200mVBL","14_0mVfC","2_0us",dac)
+            self.take_data(snc, sg0, sg1, st0, st1, dac, fp, sgp=1) 
+
+    def femb_CALI_4(self):
+
+        datadir = self.save_dir+"CALI4/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
+        snc = 0 # 900 mV BL
+        sg0 = 0
+        sg1 = 0 # 14_0 mv/fC
+        st0 = 1
+        st1 = 1 # 2 us
+ 
+        for dac in range(0,64):
+            self.chk.femb_cd_rst()
+            fp = datadir + "CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin".format("900mVBL","14_0mVfC","2_0us",dac)
+            self.take_data(snc, sg0, sg1, st0, st1, dac, fp, sgp=1) 
         
 
 if __name__=='__main__':
                         
-
    if len(sys.argv) < 2:
        print('Please specify at least one FEMB # to test')
        print('Usage: python wib.py 0')
@@ -581,6 +437,5 @@ if __name__=='__main__':
    chkout = QC_Runs(fembs, sample_N)
    chkout.pwr_fembs('on')
    chkout.femb_rms()
-   chkout.femb_asiccali()
    chkout.pwr_fembs('off')
    
