@@ -10,6 +10,17 @@ from spymemory_decode import wib_spy_dec_syn
 
 
 fp ="D:/debug_data/RawRMS_23_08_2022_16_28_45.bin" 
+
+save = False
+if 'save' in sys.argv:
+    save = True
+    # for i in range(len(sys.argv)):
+        # if sys.argv[i] == 'save':
+            # pos = i
+            # break
+    # sample_N = int(sys.argv[pos+1] )
+    # sys.argv.remove('save')
+
 with open(fp, 'rb') as fn:
     raw = pickle.load(fn)
 
@@ -21,6 +32,13 @@ buf0 = rawdata[runi][0]
 buf1 = rawdata[runi][1]
 
 wib_data = wib_spy_dec_syn(buf0, buf1)
+
+if save:
+    fdir = "D:/debug_data/"
+    fp = fdir + fp[:-4] + "_decoded.bin" #[:-4] removes the .bin from the buffer filename
+    with open(fp, 'wb') as fn:
+        pickle.dump(unpacked_bufs, fn)
+    print("Wrote into: "+fp)
 
 flen = len(wib_data[0])
 
