@@ -44,6 +44,6 @@ for tm in tasks:
     if tm==9:
        qc.femb_CALI_4()
 
-    time.sleep(1)
+    time.sleep(3)
 
 qc.pwr_fembs('off')

@@ -345,7 +345,8 @@ class QC_Runs:
         for sgi in  range(4):
             sg0 = sgi%2
             sg1 = sgi//2 
-
+            
+            time.sleep(5)
             for dac in range(0,64,4):
                 self.chk.femb_cd_rst()
                 fp = datadir + "CALI1_SE_{}_{}_{}_0x{:02x}.bin".format("200mVBL",sgs[sgi],"2_0us",dac)
