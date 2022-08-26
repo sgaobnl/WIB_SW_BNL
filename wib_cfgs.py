@@ -132,6 +132,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
     #Reset COLDATA
     #This fixes the problem where some COLDATAs don't toggle the pulse when they're told to
         print ("Sending Fast command reset")
+        self.adcs_paras = self.adcs_paras_init
         llc.fast_command(self.wib, 'reset')
         self.adac_cali_quo = False
         time.sleep(0.05)
@@ -449,20 +450,20 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
 #        for femb_id in fembs:
 #            self.femb_cfg(femb_id, adac_pls_en)
 
-    def wib_acquire_data(self, fembs,  num_samples=1): 
-        print (f"Data collection for FEMB {fembs}")
-        data = []
-        #when buf0 is True, there must be FEMB0 or 1 presented
-        #when buf1 is True, there must be FEMB2 or 3 presented
-        buf0 = True if 0 in fembs or 1 in fembs else False
-        buf1 = True if 2 in fembs or 3 in fembs else False 
-        if (buf0 == False) and (buf1 == False):
-            print("Select which FEMBs you want to read out first!")
-            exit()
-        for  i in range(num_samples):
-            timestamps,samples = llc.llc_acquire_data(wib=self.wib, buf0=buf0, buf1=buf1, ignore_failure=True)
-            data.append((timestamps,samples))
-        return data
+#    def wib_acquire_data(self, fembs,  num_samples=1): 
+#        print (f"Data collection for FEMB {fembs}")
+#        data = []
+#        #when buf0 is True, there must be FEMB0 or 1 presented
+#        #when buf1 is True, there must be FEMB2 or 3 presented
+#        buf0 = True if 0 in fembs or 1 in fembs else False
+#        buf1 = True if 2 in fembs or 3 in fembs else False 
+#        if (buf0 == False) and (buf1 == False):
+#            print("Select which FEMBs you want to read out first!")
+#            exit()
+#        for  i in range(num_samples):
+#            timestamps,samples = llc.llc_acquire_data(wib=self.wib, buf0=buf0, buf1=buf1, ignore_failure=True)
+#            data.append((timestamps,samples))
+#        return data
 
 
     def wib_acquire_rawdata(self, fembs,  num_samples=1): 

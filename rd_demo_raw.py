@@ -1,5 +1,4 @@
-import sys
-import numpy as np
+import sys import numpy as np
 import pickle
 import time, datetime, random, statistics
 import matplotlib.pyplot as plt
@@ -35,6 +34,10 @@ fp ="D:/debug_data/Raw_26_08_2022_10_58_00.bin" #external pls, fake timing, 1 ed
 fp ="D:/debug_data/Raw_26_08_2022_10_59_02.bin" #external pls, fake timing, 1 edge fc, 2 sync fc, 1 offset
 fp ="D:/debug_data/Raw_26_08_2022_11_00_34.bin" #external pls, fake timing, 1 edge fc, 2 sync fc, 1 offset
 fp ="D:/debug_data/Raw_26_08_2022_11_01_39.bin" #external pls, fake timing, 2 edge fc, 2 sync fc, synced
+fp ="D:/debug_data/Raw_26_08_2022_15_58_27.bin" #internal pls, 1 offset between CD1 & CD2 on each FEMB
+fp ="D:/debug_data/Raw_26_08_2022_16_06_42.bin"  #internal pls, 1 offset between CD1 & CD2 on each FEMB
+fp ="D:/debug_data/Raw_26_08_2022_16_30_04.bin"  #ext pls, 1 offset between CD1 & CD2 on each FEMB
+fp ="D:/debug_data/Raw_26_08_2022_16_33_47.bin" 
 
 
 
@@ -77,7 +80,8 @@ wibs = [femb0, femb1, femb2, femb3]
 
 x = np.arange(len(tmts))
 
-if False:
+#if False:
+if True:
     fig = plt.figure(figsize=(10,6))
     plt.plot(x, np.array(tmts)-tmts[0], label ="Time Master Timestamp")
     plt.plot(x, np.array(cdts_l0)-cdts_l0[0], label ="Coldata Timestamp")
@@ -99,6 +103,7 @@ if False:
 fig = plt.figure(figsize=(10,6))
 for fembi in range(4):
     plt.plot(x, wibs[fembi][0], label = f"FEMB{fembi} Ch0")
+    plt.plot(x, wibs[fembi][64], marker='.', label = f"FEMB{fembi} Ch64")
 plt.legend()
 plt.show()
 plt.close()
