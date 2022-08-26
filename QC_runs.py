@@ -96,7 +96,7 @@ class QC_Runs:
        pwr_name=['Bias5V', 'PWR_FE', 'PWR_ADC', 'PWR_CD']
        n=0
        for i in self.fembs:
-           pwr_meas = pwr_infor['femb{}'.format(i)]
+           pwr_meas = pwr_info['femb{}'.format(i)]
   
            if (pwr_meas[0][1] < 0.5) and (pwr_meas[1][1] < 0.5) and (pwr_meas[2][1] < 0.5) and (pwr_meas[3][1] < 3):
                print ("FEMB {} is turned off".format(i))        
@@ -141,7 +141,7 @@ class QC_Runs:
         rawdata = self.chk.wib_acquire_data(fembs=self.fembs, num_samples=self.sample_N) 
         
         with open(fp, 'wb') as fn:
-            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
+            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
 
     def pwr_consumption(self):
 
