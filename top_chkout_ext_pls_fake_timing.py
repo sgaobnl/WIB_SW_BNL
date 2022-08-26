@@ -7,6 +7,16 @@ import pickle
 import copy
 import time, datetime, random, statistics
 
+
+ext_cali_flg = True
+print ("External Calibration pulse from Signal generator")
+gen_on = input ("did you set the generator, Y/N?")
+if ("Y" in gen_on) or ("y" in gen_on):
+    pass
+else:
+    print ("Please set the generator first, exit")
+    exit()
+
 if len(sys.argv) < 2:
     print('Please specify at least one FEMB # to test')
     print('Usage: python wib.py 0')
@@ -25,37 +35,18 @@ else:
     sample_N = 1
 
 fembs = [int(a) for a in sys.argv[1:pos]] 
-print (fembs)
 
 chk = WIB_CFGS()
 
 ####################WIB init################################
 #check if WIB is in position
-#chk.wib_init(pll=False)
-chk.wib_init(pll=True)
-
-####################FEMBs powering################################
-#set FEMB voltages
-#chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
-#rdreg = llc.wib_peek(chk.wib, 0xA00c0090)
-#print (hex(rdreg))
-#rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
-#print (hex(rdreg))
-#llc.wib_poke(chk.wib, 0xA00c0004, 0x20)
-#rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
-#print (hex(rdreg))
-#exit()
-
-#power on FEMBs
-chk.femb_powering(fembs)
-#Measure powers on FEMB
-pwr_meas = chk.get_sensors()
+chk.wib_init()
+chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
 ####################FEMBs Configuration################################
 #step 1
 #reset all FEMBs on WIB
 chk.femb_cd_rst()
-
 
 cfg_paras_rec = []
 for femb_id in fembs:
@@ -75,28 +66,32 @@ for femb_id in fembs:
                       ]
 
 #LArASIC register configuration
-    chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=1, sdd=0,dac=0x10 )
-    adac_pls_en = 1 #enable LArASIC interal calibraiton pulser
+    if ext_cali_flg == True:
+        swdac = 2
+        dac = 0
+    else:
+        swdac = 0
+        dac = 0
+    chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
+    adac_pls_en = 0 #disable LArASIC interal calibraiton pulser
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
 #step 3
     chk.femb_cfg(femb_id, adac_pls_en )
+    if ext_cali_flg == True:
+        chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
+chk.femb_cd_edge()
 chk.femb_cd_edge()
 chk.femb_cd_sync()
-#chk.femb_cd_sync()
+chk.femb_cd_sync()
 
-rdreg = llc.wib_peek(chk.wib, 0xA00c000C)
-#disable fake time stamp
-llc.wib_poke(chk.wib, 0xA00c000C, (rdreg&0xFFFFFFF3))
-llc.wib_poke(chk.wib, 0xA00c000C, (rdreg&0xFFFFFFFD))
-#set the init time stamp
-llc.wib_poke(chk.wib, 0xA00c0018, 0x00000000)
-llc.wib_poke(chk.wib, 0xA00c001C, 0x00000000)
-llc.wib_poke(chk.wib, 0xA00c000C, (rdreg|0x0D))
+if ext_cali_flg == True:
+    #enable 10MHz output 
+    chk.en_ref10MHz(ref_en = True)
+    #external calibration from generator through P5 
+    chk.wib_mon_switches(dac0_sel=0,dac1_sel=0,dac2_sel=0,dac3_sel=0, mon_vs_pulse_sel=1, inj_cal_pulse=0) 
 
 time.sleep(0.5)
-
 ####################FEMBs Data taking################################
-#rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns list of size 1
 rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
 
 pwr_meas = chk.get_sensors()
@@ -104,9 +99,7 @@ pwr_meas = chk.get_sensors()
 if save:
     fdir = "D:/debug_data/"
     ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    fp = fdir + "RawRMS_" + ts  + ".bin"
+    fp = fdir + "Raw_" + ts  + ".bin"
     with open(fp, 'wb') as fn:
         pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
 
-chk.femb_powering(fembs=[])
-pwr_meas = chk.get_sensors()
