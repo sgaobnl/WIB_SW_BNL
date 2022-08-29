@@ -110,6 +110,7 @@ except OSError:
 chk = WIB_CFGS()
 
 chk.wib_init()
+chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
 chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
 chk.femb_powering(fembs)
@@ -140,10 +141,15 @@ for femb_id in fembs:
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
     chk.femb_cfg(femb_id, adac_pls_en )
 
-####### Take data #######
+chk.femb_cd_edge()
+chk.femb_cd_edge()
+chk.femb_cd_sync()
+chk.femb_cd_sync()
 time.sleep(0.5)
+
+####### Take data #######
+rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
 pwr_meas = chk.get_sensors()
-rawdata = chk.wib_acquire_data(fembs=fembs, num_samples=sample_N) #returns lsti of size 1
 
 ####### Save data #######
 if save:
@@ -151,6 +157,30 @@ if save:
 
     with open(fp, 'wb') as fn:
         pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, logs], fn)
+
+####### Take monitoring data #######
+
+sps=1
+print ("monitor bandgap reference")
+mon_refs = {}
+for i in range(8):   # 8 chips per femb
+    adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=2, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
+    mon_refs[f"chip{i}"] = adcrst
+
+print ("monitor temperature")
+mon_temps = {}
+for i in range(8):
+    adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=1, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
+    mon_temps[f"chip{i}"] = adcrst
+
+print ("monitor ColdADCs")
+mon_adcs = chk.wib_adc_mon(femb_ids=fembs, sps=sps  )
+
+if save:
+    fp = datadir + "Mon_{}_{}.bin".format("200mVBL","14_0mVfC")
+
+    with open(fp, 'wb') as fn:
+        pickle.dump( [mon_refs, mon_temps, mon_adcs, logs], fn)
 
 ####### Power off FEMBs #######
 print("Turning off FEMBs")

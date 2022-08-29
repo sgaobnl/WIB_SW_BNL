@@ -24,7 +24,7 @@ def test_connection(wib, tries=10):
     print("Failed")
     return 1
     
-def system_clock_select(wib, pll=False): #select correct timing source with peek/poke
+def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff): #select correct timing source with peek/poke
     #See WIB_firmware.docx table 4.9.1 ts_clk_sel
     # 0[pll=False]  = CDR recovered clock(default)
     # 1[pll=True]   = PLL clock synchronized with CDR or running independently if CDR clock is 
@@ -33,6 +33,39 @@ def system_clock_select(wib, pll=False): #select correct timing source with peek
     reg_read = wib_peek(wib, 0xA00C0004)
     val = (reg_read&0xFFFEFFFF) | (int(pll) << 16)
     wib_poke(wib, 0xA00C0004, val)    
+    if pll == True:
+        print ("PLL clock synchronized with CDR or running independently if CDR clock is missing")
+        print ("PLL clock should only be used on test stand when timing master is not available.")
+        print ("Enable fake timing system")
+        rdreg = wib_peek(wib, 0xA00c000C)
+        #disable fake time stamp
+        wib_poke(wib, 0xA00c000C, (rdreg&0xFFFFFFF1))
+        #set the init time stamp
+        wib_poke(wib, 0xA00c0018, 0x00000000)
+        wib_poke(wib, 0xA00c001C, 0x00000000)
+        #enable fake time stamp
+        wib_poke(wib, 0xA00c000C, (rdreg|0x0e))
+    else:
+        rdreg = wib_peek(wib, 0xA00c0004)
+        if fp1_ptc0_sel == 0:
+            print ("timing master is available through backplane (PTC)")
+            wib_poke(wib, 0xA00c0004, (rdreg&0xFFFFFFDF)) #backplane
+        else:
+            print ("timing master is available through front_panel")
+            wib_poke(wib, 0xA00c0004, (rdreg&0xFFFFFFFF)|0x20) #front_panel
+        time.sleep(1)
+        rdreg = wib_peek(wib, 0xA00c0090)
+        print ("External timing is selected")
+
+        rdreg = wib_peek(wib, 0xA00c000C)
+        #disable fake time stamp
+        wib_poke(wib, 0xA00c000C, (rdreg&0xFFFFFFF1))
+        #set the init time stamp
+        #align_en = 1, cmd_stamp_sync_en = 1
+        wib_poke(wib, 0xA00c000C, (rdreg|0x0C))
+        rdreg = wib_peek(wib, 0xA00c000C)
+        #send SYNC_FAST command when cmd_stamp_syn match the DTS time stamp
+        wib_poke(wib, 0xA00c000C, (cmd_stamp_sync<<16) + ((rdreg&0x8000FFFF)|0x0C) )
     return wib_peek(wib, 0xA00C0004)
 
 #def config_wib(wib ): 
@@ -69,8 +102,6 @@ def get_sensors(wib): #request and print sensor data
         print("Successfully sent command")
         pwr_meas = {"femb0":[],"femb1":[],"femb2":[],"femb3":[],}
         for idx in range(4):
-            print('\n#####FEMB %d####'%idx)
-            
             # print('\nLDO A0')
             # before, after = rep.femb_ldo_a0_ltc2991_voltages[idx*2:(idx+1)*2]
             # print_VI(before, after)
@@ -80,76 +111,79 @@ def get_sensors(wib): #request and print sensor data
             # print_VI(before, after)
             power_consumption = 0
             
-            print('\n5V Bias')
+            #print('\n5V Bias')
             before, after = rep.femb_bias_ltc2991_voltages[idx*2:(idx+1)*2]
-            print('Vset: 5V')
+            #print('Vset: 5V')
             sense_ohms=0.1
             current = (before-after)/sense_ohms #A
             power = before * current
             power_consumption = power_consumption + power
-            print('%0.3f V'%before)
-            print('%0.3f A'%current)
-            print('%0.3f W'%power)
+            #print('%0.3f V'%before)
+            #print('%0.3f A'%current)
+            #print('%0.3f W'%power)
             pwr_meas[f"femb{idx}"].append(["Bias5V", before, current, power])
             
-            print('\nDC/DC V1 = PWR_LArASIC')
+            #print('\nDC/DC V1 = PWR_LArASIC')
             before, after = dc2dc(rep,idx)[0:2]
-            print('Vset: 3V')
+            #print('Vset: 3V')
             sense_ohms=0.1
             current = (before-after)/sense_ohms #A
             power = before * current
             power_consumption = power_consumption + power
-            print('%0.3f V'%before)
-            print('%0.3f A'%current)
-            print('%0.3f W'%power)
+            #print('%0.3f V'%before)
+            #print('%0.3f A'%current)
+            #print('%0.3f W'%power)
             pwr_meas[f"femb{idx}"].append(["PWR_FE", before, current, power])
             
-            print('\nDC/DC V2 = PWR_COLDATA')
+            #print('\nDC/DC V2 = PWR_COLDATA')
             before, after = dc2dc(rep,idx)[2:4]
-            print('Vset: 3.5V')
+            #print('Vset: 3.5V')
             sense_ohms=0.1
             current = (before-after)/sense_ohms #A
             power = before * current
             power_consumption = power_consumption + power
-            print('%0.3f V'%before)
-            print('%0.3f A'%current)
-            print('%0.3f W'%power)
+            #print('%0.3f V'%before)
+            #print('%0.3f A'%current)
+            #print('%0.3f W'%power)
             pwr_meas[f"femb{idx}"].append(["PWR_CD", before, current, power])
             
-            print('\nDC/DC V3 = PWR_ColdADC')
+            #print('\nDC/DC V3 = PWR_ColdADC')
             before, after = dc2dc(rep,idx)[4:6]
-            print('Vset: 2.8V')
+            #print('Vset: 2.8V')
             sense_ohms=0.01
             current = (before-after)/sense_ohms #A
             power = before * current
             power_consumption = power_consumption + power
-            print('%0.3f V'%before)
-            print('%0.3f A'%current)
-            print('%0.3f W'%power)
+            #print('%0.3f V'%before)
+            #print('%0.3f A'%current)
+            #print('%0.3f W'%power)
             pwr_meas[f"femb{idx}"].append(["PWR_ADC", before, current, power])
             
-            print('Power Consumption (including cable dissipation) = %0.3f W\n'%power_consumption)
+            #print('Power Consumption (including cable dissipation) = %0.3f W\n'%power_consumption)
+        #print (pwr_meas)
         return pwr_meas
     
 def llc_acquire_data(wib, buf0=True,buf1=True,deframe=True,channels=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0, print_gui=None ): 
     timestamps,samples = wib.acquire_data(buf0,buf1,deframe,channels,ignore_failure,trigger_command,trigger_rec_ticks,trigger_timeout_ms, print_gui)
     return timestamps,samples
    
-def wib_peek(wib, reg):
+def wib_peek(wib, reg, print_flg=False):
     req = wibpb.Peek()
     rep = wibpb.RegValue()
     req.addr = reg
     if not wib.send_command(req,rep,print_gui=print):
-        print(f"Register 0x{rep.addr:016X} was read as 0x{rep.value:08X}")
+        if print_flg:
+            print(f"Register 0x{rep.addr:016X} was read as 0x{rep.value:08X}")
     return rep.value
     
-def wib_poke(wib, reg, val):
+def wib_poke(wib, reg, val, print_flg=False):
     req = wibpb.Poke()
     rep = wibpb.RegValue()
     req.addr = reg
     req.value = val
     if not wib.send_command(req,rep,print_gui=print):
-        print(f"Register 0x{rep.addr:016X} was set to 0x{rep.value:08X}") 
+        if print_flg:
+            print(f"Register 0x{rep.addr:016X} was set to 0x{rep.value:08X}") 
         
 def dc2dc(s,idx): #for use in get_sensors
     if idx == 0:
@@ -180,18 +214,19 @@ def dc2dc(s,idx): #for use in get_sensors
 #    if not wib.send_command(req,rep,print_gui=print):
 #        print(rep.contents.decode('utf8'))   
 
-def fast_command(wib, cmd): #use: fast_command(wib,'reset')
+def fast_command(wib, cmd, print_flg=False): #use: fast_command(wib,'reset')
     #ref: wib_buttons6.py: WIBFast.fast_command    
     fast_cmds = { 'reset':1, 'act':2, 'sync':4, 'edge':8, 'idle':16, 'edge_act':32 }
     req = wibpb.CDFastCmd()
     req.cmd = fast_cmds[cmd]
     rep = wibpb.Empty()
     wib.send_command(req,rep,print_gui=print)
-    print(f"Fast command {req.cmd} sent")    
+    if print_flg:
+        print(f"Fast command {req.cmd} sent")    
     if "reset" in cmd:
         time.sleep(1)
 
-def cdpeek(wib,femb_id, chip_addr, reg_page, reg_addr):
+def cdpeek(wib,femb_id, chip_addr, reg_page, reg_addr, print_flg=False):
     req = wibpb.CDPeek()
     rep = wibpb.CDRegValue()
     req.femb_idx = femb_id #0, 1, 2, 3
@@ -200,10 +235,11 @@ def cdpeek(wib,femb_id, chip_addr, reg_page, reg_addr):
     req.reg_page = reg_page
     req.reg_addr = reg_addr
     wib.send_command(req,rep)
-    print('femb:%i coldata:%i chip:0x%02X page:0x%02X reg:0x%02X -> 0x%02X'%(rep.femb_idx,rep.coldata_idx,rep.chip_addr,rep.reg_page,rep.reg_addr,rep.data))
+    if print_flg:
+        print('femb:%i coldata:%i chip:0x%02X page:0x%02X reg:0x%02X -> 0x%02X'%(rep.femb_idx,rep.coldata_idx,rep.chip_addr,rep.reg_page,rep.reg_addr,rep.data))
     return rep.data
 
-def cdpoke(wib,femb_id, chip_addr, reg_page, reg_addr, data):
+def cdpoke(wib,femb_id, chip_addr, reg_page, reg_addr, data, print_flg=False):
     req = wibpb.CDPoke()
     rep = wibpb.CDRegValue()
     req.femb_idx = femb_id
@@ -214,7 +250,8 @@ def cdpoke(wib,femb_id, chip_addr, reg_page, reg_addr, data):
     wib.send_command(req,rep)
     req.data = data
     wib.send_command(req,rep)
-    print('femb:%i coldata:%i chip:0x%02X page:0x%02X reg:0x%02X <- 0x%02X'%(rep.femb_idx,rep.coldata_idx,rep.chip_addr,rep.reg_page,rep.reg_addr,rep.data))
+    if print_flg:
+        print('femb:%i coldata:%i chip:0x%02X page:0x%02X reg:0x%02X <- 0x%02X'%(rep.femb_idx,rep.coldata_idx,rep.chip_addr,rep.reg_page,rep.reg_addr,rep.data))
 
 def wib_script(wib,script):
     req = wibpb.Script()
@@ -223,7 +260,7 @@ def wib_script(wib,script):
     wib.send_command(req,rep)
     print('Successful:',rep.success)
 
-def spi_read(self):
+def spi_read():
     pass 
     #cdpoke(0, 0, 2, 0, 0x20, 8)
     #req = wibpb.CDFastCmd()
