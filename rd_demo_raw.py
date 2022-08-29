@@ -39,6 +39,26 @@ fp ="D:/debug_data/Raw_26_08_2022_15_58_27.bin" #internal pls, 1 offset between 
 fp ="D:/debug_data/Raw_26_08_2022_16_06_42.bin"  #internal pls, 1 offset between CD1 & CD2 on each FEMB
 fp ="D:/debug_data/Raw_26_08_2022_16_30_04.bin"  #ext pls, 1 offset between CD1 & CD2 on each FEMB
 #fp ="D:/debug_data/Raw_26_08_2022_16_33_47.bin" 
+fp ="D:/debug_data/Raw_29_08_2022_13_30_53.bin"
+fp ="D:/debug_data/Raw_29_08_2022_13_32_41.bin"
+fp ="D:/debug_data/Raw_29_08_2022_14_04_03.bin"
+fp ="D:/debug_data/Raw_29_08_2022_14_15_54.bin"
+fp ="D:/debug_data/Raw_29_08_2022_14_18_38.bin"
+fp ="D:/debug_data/Raw_29_08_2022_14_17_12.bin"
+fp ="D:/debug_data/Raw_29_08_2022_14_45_52.bin" #synced all 4 FEMBs
+#fp ="D:/debug_data/Raw_29_08_2022_14_45_53.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_45_54.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_45_56.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_45_57.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_45_58.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_45_59.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_46_00.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_46_01.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_14_46_02.bin" #unsynced
+#fp ="D:/debug_data/Raw_29_08_2022_15_52_53.bin"
+fp ="D:/debug_data/Raw_29_08_2022_15_53_11.bin"
+
+
 
 
 
@@ -80,9 +100,12 @@ femb3 = list(zip(*femb3))
 wibs = [femb0, femb1, femb2, femb3]
 
 x = np.arange(len(tmts))
+maxpos = np.where(wibs[0][0][0:1500] == np.max(wibs[0][0][0:1500]))[0][0]
 
-#if False:
-if True:
+x = np.arange(20)
+
+if False:
+#if True:
     fig = plt.figure(figsize=(10,6))
     plt.plot(x, np.array(tmts)-tmts[0], label ="Time Master Timestamp")
     plt.plot(x, np.array(cdts_l0)-cdts_l0[0], label ="Coldata Timestamp")
@@ -95,16 +118,28 @@ if True:
     
     for fembi in range(4):
         fig = plt.figure(figsize=(10,6))
-        for i in range(128):
-            plt.plot(x, wibs[fembi][i])
+        for chip in range(8):
+            for chn in range(16):
+                i = chip*16 + chn
+                if chn == 0:
+                    plt.plot(x, wibs[fembi][i],color = 'C%d'%chip, label = "Chip%dCH0"%chip )
+                else:
+                    plt.plot(x, wibs[fembi][i],color = 'C%d'%chip )
         plt.title(f"Waveform of FEMB{fembi}")
+        plt.legend()
         plt.show()
         plt.close()
 
 fig = plt.figure(figsize=(10,6))
 for fembi in range(4):
-    plt.plot(x, wibs[fembi][0], label = f"FEMB{fembi} Ch0")
-    plt.plot(x, wibs[fembi][64], marker='.', label = f"FEMB{fembi} Ch64")
+    plt.plot(x, wibs[fembi][0][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch0")
+    plt.plot(x, wibs[fembi][16][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch16")
+    plt.plot(x, wibs[fembi][32][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch32")
+    plt.plot(x, wibs[fembi][48][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch48")
+    plt.plot(x, wibs[fembi][64][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch64")
+    plt.plot(x, wibs[fembi][80][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch80")
+    plt.plot(x, wibs[fembi][96][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch96")
+    plt.plot(x, wibs[fembi][112][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch112")
 plt.legend()
 plt.show()
 plt.close()

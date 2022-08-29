@@ -79,8 +79,9 @@ for femb_id in fembs:
     chk.femb_cfg(femb_id, adac_pls_en )
     if ext_cali_flg == True:
         chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
-chk.femb_cd_edge()
-chk.femb_cd_edge()
+#chk.femb_cd_edge()
+#chk.femb_cd_edge()
+
 chk.femb_cd_sync()
 chk.femb_cd_sync()
 
@@ -92,14 +93,23 @@ if ext_cali_flg == True:
 
 time.sleep(0.5)
 ####################FEMBs Data taking################################
-rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
-
 pwr_meas = chk.get_sensors()
 
-if save:
-    fdir = "D:/debug_data/"
-    ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    fp = fdir + "Raw_" + ts  + ".bin"
-    with open(fp, 'wb') as fn:
-        pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
+for i in range(20):
+    rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
+    
+    
+    if save:
+        fdir = "D:/debug_data/"
+        ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+        fp = fdir + "Raw_" + ts  + ".bin"
+        with open(fp, 'wb') as fn:
+            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
+    
+    chk.femb_cd_edge()
+#    chk.femb_cd_edge()
+
+    time.sleep(1)
+
+
 
