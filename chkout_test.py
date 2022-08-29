@@ -62,7 +62,7 @@ logs['femb id']=fembNo
 
 ####### Create data save directory #######
 
-save_dir = "D:/debug_data/"
+save_dir = "D:/debug_data/CHK_"
 for key,femb_no in fembNo.items():
     save_dir = save_dir + "femb{}_".format(femb_no)
 
@@ -166,12 +166,14 @@ mon_refs = {}
 for i in range(8):   # 8 chips per femb
     adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=2, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
     mon_refs[f"chip{i}"] = adcrst
+time.sleep(1)
 
 print ("monitor temperature")
 mon_temps = {}
 for i in range(8):
     adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=1, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
     mon_temps[f"chip{i}"] = adcrst
+time.sleep(1)
 
 print ("monitor ColdADCs")
 mon_adcs = chk.wib_adc_mon(femb_ids=fembs, sps=sps  )
