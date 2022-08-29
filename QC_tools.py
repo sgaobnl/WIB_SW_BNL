@@ -3,6 +3,8 @@ import pandas as pd
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 import sys
+from spymemory_decode import wib_spy_dec_syn
+import time
 
 class QC_tools:
     def __init__(self):
@@ -33,6 +35,37 @@ class QC_tools:
                     chns.append(ss[1+link*2][chi][(tv[pos]+1):(tv[pos+1]-1)])
             sss.append(chns)
         return sss
+
+    def data_decode(self,raw):
+
+        nevent = len(raw) 
+        sss=[]
+     
+        t1 = time.time()
+
+        for i in range(nevent):
+            buf0 = raw[i][0]
+            buf1 = raw[i][1]
+            
+            wib_data = wib_spy_dec_syn(buf0, buf1)
+            nsamples = len(wib_data[0])
+
+            chns=[]
+            for j in range(nsamples):
+                a0 = wib_data[0][j]["FEMB0_2"]
+                a1 = wib_data[0][j]["FEMB1_3"]
+                a2 = wib_data[1][j]["FEMB0_2"]
+                a3 = wib_data[1][j]["FEMB1_3"]
+                aa=a0+a1+a2+a3
+                chns.append(aa)
+
+            chns = list(zip(*chns))    
+            sss.append(chns) 
+                
+        t3 = time.time()
+        print(t3-t1)
+               
+        return sss        
 
     def data_ana(self, data, nfemb):
         

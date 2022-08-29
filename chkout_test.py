@@ -190,9 +190,11 @@ chk.femb_powering([])
 
 ####### Generate report #######
 qc_tools = QC_tools()
-pldata = qc_tools.data_valid(rawdata)
+#pldata = qc_tools.data_valid(rawdata)  # old data format decoder
+#pldata = np.array(pldata,dtype=object)
 
-pldata = np.array(pldata,dtype=object)
+pldata = qc_tools.data_decode(rawdata)
+pldata = np.array(pldata)
 
 for i in fembs:
     i=int(i)
