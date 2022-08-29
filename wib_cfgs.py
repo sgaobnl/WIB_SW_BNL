@@ -443,6 +443,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 mon_dict[f"chip{mon_chip}"] = [mon_chip, mons[mon_i], self.adcs_paras[mon_chip], adcss]
                 print (mon_dict[f"chip{mon_chip}"])
             mon_items.append(mon_dict)
+        return mon_items
 
 
 #    def cfg_a_wib(self, fembs, adac_pls_en=False):
