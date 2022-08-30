@@ -233,7 +233,7 @@ for i in fembs:
     pwr_image = fp_pwr+".png"
     pdf.image(pwr_image,0,40,200,40)
 
-    mon_image = save_dir+"FEMB{}_mon_meas.png".format(femb_id)
+    mon_image = plotdir+"FEMB{}_mon_meas.png".format(femb_id)
     pdf.image(mon_image,0,80,200,90)
 
     chk_image = fp_data+".png"
