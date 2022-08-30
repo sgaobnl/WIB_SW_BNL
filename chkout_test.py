@@ -61,6 +61,7 @@ for i in fembs:
 logs['femb id']=fembNo
 
 ####### Create data save directory #######
+t1 = time.time()
 
 save_dir = "D:/debug_data/CHK_"
 for key,femb_no in fembNo.items():
@@ -240,4 +241,6 @@ for i in fembs:
 
     outfile = save_dir+'CHK_femb{}.pdf'.format(femb_id)
     pdf.output(outfile, "F")
-     
+
+t2=time.time()
+print(t2-t1)
