@@ -57,6 +57,7 @@ fp ="D:/debug_data/Raw_29_08_2022_14_45_52.bin" #synced all 4 FEMBs
 #fp ="D:/debug_data/Raw_29_08_2022_14_46_02.bin" #unsynced
 #fp ="D:/debug_data/Raw_29_08_2022_15_52_53.bin"
 fp ="D:/debug_data/Raw_29_08_2022_15_53_14.bin"
+fp ="D:/debug_data/Raw_30_08_2022_12_28_39.bin"
 
 
 

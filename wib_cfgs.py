@@ -160,7 +160,8 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
             i = i + 1
             if wrdata != rddata:
-                print (f"Error, cd_lvds_current: wrdata {wrdata} != redata {rddata}, retry!")
+                print (f"Error, I2C: wrdata {wrdata} != redata {rddata}, retry!")
+                time.sleep(0.01)
                 if i >= 5:
                     exit()
             else:
@@ -341,7 +342,8 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             chn=mon_chipchn
 
         self.set_fe_reset()
-        self.set_fechn_reg(chip=mon_chip&0x07, chn=chn, snc=snc, sg0=sg0, sg1=sg1, smn=1, sdf=1)
+        #ONlY one channel of a FEMB can set smn to 1 at a time
+        self.set_fechn_reg(chip=mon_chip&0x07, chn=chn, snc=snc, sg0=sg0, sg1=sg1, smn=1, sdf=1) 
         self.set_fechip_global(chip=mon_chip&0x07, stb1=stb1, stb=stb0)
         self.set_fe_sync()
 

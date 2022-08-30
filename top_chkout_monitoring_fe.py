@@ -42,33 +42,43 @@ if True:
     print ("monitor bandgap reference")
     mon_refs = {}
     for mon_chip in range(chips):
+    #for mon_chip in [0]:
         adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=2, mon_chip=mon_chip, sps=sps)
         mon_refs[f"chip{mon_chip}"] = adcrst
+    print (mon_refs)
 
 if True:
     print ("monitor temperature")
     mon_temps = {}
     for mon_chip in range(chips):
+    #for mon_chip in [0]:
         adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=1, mon_chip=mon_chip, sps=sps)
         mon_temps[f"chip{mon_chip}"] = adcrst
+    print (mon_temps)
 
 #if False:
 if True:
     print ("monitor BL 200mV")
     mon_200bls = {}
     for mon_chip in range(chips):
+    #for mon_chip in [0]:
         for mon_chipchn in range(16):
+        #for mon_chipchn in [0]:
             adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=0, snc=1, mon_chip=mon_chip, mon_chipchn=mon_chipchn, sps=sps)
             mon_200bls["chip%dchn%02d"%(mon_chip, mon_chipchn)] = adcrst
+    print (mon_200bls) 
 
 #if False:
 if True:
     print ("monitor BL 900mV")
     mon_900bls = {}
     for mon_chip in range(chips):
+    #for mon_chip in [0]:
         for mon_chipchn in range(16):
+        #for mon_chipchn in [0]:
             adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=0, snc=0, mon_chip=mon_chip, mon_chipchn=mon_chipchn, sps=sps)
             mon_900bls["chip%dchn%02d"%(mon_chip, mon_chipchn)] = adcrst
+    print (mon_900bls) 
    
 #for i in range(4,64,8):
 #    b = chk.wib_fe_dac_mon(femb_ids=fembs, mon_chip=0, sgp=True, sg0=0, sg1=0, vdac=i, sps=1 )
