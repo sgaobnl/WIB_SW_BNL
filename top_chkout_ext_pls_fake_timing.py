@@ -38,6 +38,11 @@ fembs = [int(a) for a in sys.argv[1:pos]]
 
 chk = WIB_CFGS()
 
+for i in range(1000000):
+    rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
+    print (i, rdreg)
+exit()
+
 ####################WIB init################################
 #check if WIB is in position
 chk.wib_init()
