@@ -41,8 +41,6 @@ class QC_tools:
         nevent = len(raw) 
         sss=[]
      
-        t1 = time.time()
-
         for i in range(nevent):
             buf0 = raw[i][0]
             buf1 = raw[i][1]
@@ -61,9 +59,6 @@ class QC_tools:
 
             chns = list(zip(*chns))    
             sss.append(chns) 
-                
-        t3 = time.time()
-        print(t3-t1)
                
         return sss        
 
@@ -151,7 +146,7 @@ class QC_tools:
             ax.plot(x,y, marker=marker, color=color)
 
     def FEMB_CHK_PLOT(self, chn_rmss,chn_peds, chn_pkps, chn_pkns, chn_onewfs, chn_avgwfs, fp):
-        fig = plt.figure(figsize=(10,6))
+        fig = plt.figure(figsize=(10,5))
         fn = fp.split("/")[-1]
         print (fn)
         ax1 = plt.subplot2grid((4, 4), (0, 0), colspan=2, rowspan=2)
@@ -171,7 +166,7 @@ class QC_tools:
             self.FEMB_SUB_PLOT(ax3, x, y3, title="Waveform Overlap", xlabel="Time / $\mu$s", ylabel="ADC /bin", color='C%d'%(chni%9))
             self.FEMB_SUB_PLOT(ax4, x, y4, title="Averaging(100 Cycles) Waveform Overlap", xlabel="Time / $\mu$s", ylabel="ADC /bin", color='C%d'%(chni%9))
 
-        fig.suptitle(fn)
+        #fig.suptitle(fn)
         plt.tight_layout( rect=[0.05, 0.05, 0.95, 0.95])
         fn = fp + ".png"
         plt.savefig(fn)
@@ -195,11 +190,37 @@ class QC_tools:
 
         df=pd.DataFrame(data=pwr_dic)
 
-        fig, ax =plt.subplots(figsize=(8,2.5))
+        fig, ax =plt.subplots(figsize=(10,2))
         ax.axis('off')
         table = ax.table(cellText=df.values,colLabels=df.columns,loc='center')
         ax.set_title("Power Consumption = {} W".format(round(total_p,3)))
         table.set_fontsize(14)
         table.scale(1,2)
         fig.savefig(fp+".png")
+
+    def PrintMON(self, fembs, fembs_no, mon_bgp, mon_t, mon_adcs, fp):
+
+       
+        for femb in fembs: 
+            mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[]}
+
+            for i in range(8): # 8 chips per board
+                mon_dic['ASIC#'].append(i)
+                mon_dic['FE T'].append(mon_t[f'chip{i}'][0][femb])
+                mon_dic['FE BGP'].append(mon_bgp[f'chip{i}'][0][femb])
+                mon_dic['ADC VCMI'].append(mon_adcs[1][f'chip{i}'][3][0][femb])
+                mon_dic['ADC VCMO'].append(mon_adcs[2][f'chip{i}'][3][0][femb])
+                mon_dic['ADC VREFP'].append(mon_adcs[3][f'chip{i}'][3][0][femb])
+                mon_dic['ADC VREFN'].append(mon_adcs[4][f'chip{i}'][3][0][femb])
+
+            df=pd.DataFrame(data=mon_dic)
+
+            fig, ax =plt.subplots(figsize=(10,4.5))
+            ax.axis('off')
+            table = ax.table(cellText=df.values,colLabels=df.columns,loc='center')
+            ax.set_title("Monitoring path for FE-ADC")
+            table.set_fontsize(14)
+            table.scale(1,2.2)
+            newfp=fp+"FEMB{}_mon_meas.png".format(fembs_no[f'femb{femb}'])
+            fig.savefig(newfp)
 

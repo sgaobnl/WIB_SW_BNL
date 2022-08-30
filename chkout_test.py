@@ -196,6 +196,8 @@ qc_tools = QC_tools()
 pldata = qc_tools.data_decode(rawdata)
 pldata = np.array(pldata)
 
+qc_tools.PrintMON(fembs, fembNo, mon_refs, mon_temps, mon_adcs, plotdir)
+
 for i in fembs:
     i=int(i)
 
@@ -228,18 +230,14 @@ for i in fembs:
     pdf.cell(30, 5, 'FEMB configuration: {}, {}, {}, {}, DAC=0x{:02x}'.format("200mVBL","14_0mVfC","2_0us","500pA",0x20), 0, 1)
 
     pwr_image = fp_pwr+".png"
-    pdf.image(pwr_image,3,45,200,80)
+    pdf.image(pwr_image,0,40,200,40)
+
+    mon_image = save_dir+"FEMB{}_mon_meas.png".format(femb_id)
+    pdf.image(mon_image,0,80,200,90)
 
     chk_image = fp_data+".png"
-    pdf.image(chk_image,3,125,200,120)
+    pdf.image(chk_image,3,160,200,120)
 
     outfile = save_dir+'CHK_femb{}.pdf'.format(femb_id)
     pdf.output(outfile, "F")
      
-    
-     
-
-
-
-
-
