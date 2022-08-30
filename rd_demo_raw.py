@@ -57,7 +57,9 @@ fp ="D:/debug_data/Raw_29_08_2022_14_45_52.bin" #synced all 4 FEMBs
 #fp ="D:/debug_data/Raw_29_08_2022_14_46_02.bin" #unsynced
 #fp ="D:/debug_data/Raw_29_08_2022_15_52_53.bin"
 fp ="D:/debug_data/Raw_29_08_2022_15_53_14.bin"
-fp ="D:/debug_data/Raw_30_08_2022_12_28_39.bin"
+fp ="D:/debug_data/Raw_30_08_2022_15_26_37.bin"
+fp ="D:/debug_data/Raw_30_08_2022_15_26_40.bin"
+fp ="D:/debug_data/Raw_30_08_2022_16_40_19.bin"
 
 
 
@@ -78,6 +80,8 @@ wib_data = wib_spy_dec_syn(buf0, buf1)
 flen = len(wib_data[0])
 
 tmts = []
+sfs0 = []
+sfs1 = []
 cdts_l0 = []
 cdts_l1 = []
 femb0 = []
@@ -86,12 +90,17 @@ femb2 = []
 femb3 = []
 for i in range(flen):
     tmts.append(wib_data[0][i]["TMTS"])
+    sfs0.append(wib_data[0][i]["FEMB_SF"])
+    sfs1.append(wib_data[1][i]["FEMB_SF"])
     cdts_l0.append(wib_data[0][i]["FEMB_CDTS"])
     cdts_l1.append(wib_data[1][i]["FEMB_CDTS"])
     femb0.append(wib_data[0][i]["FEMB0_2"])
     femb1.append(wib_data[0][i]["FEMB1_3"])
     femb2.append(wib_data[1][i]["FEMB0_2"])
     femb3.append(wib_data[1][i]["FEMB1_3"])
+
+print (sfs0)
+print (sfs1)
 
 femb0 = list(zip(*femb0))
 femb1 = list(zip(*femb1))
@@ -131,17 +140,17 @@ if False:
         plt.show()
         plt.close()
 
-fig = plt.figure(figsize=(10,6))
 for fembi in range(4):
-    plt.plot(x, wibs[fembi][0][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch0")
-    plt.plot(x, wibs[fembi][16][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch16")
-    plt.plot(x, wibs[fembi][32][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch32")
-    plt.plot(x, wibs[fembi][48][maxpos-10: maxpos+10], label = f"FEMB{fembi} Ch48")
-    plt.plot(x, wibs[fembi][64][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch64")
-    plt.plot(x, wibs[fembi][80][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch80")
-    plt.plot(x, wibs[fembi][96][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch96")
+    fig = plt.figure(figsize=(10,6))
+    plt.plot(x, wibs[fembi][0][maxpos-10: maxpos+10], marker='s', label = f"FEMB{fembi} Ch0")
+    plt.plot(x, wibs[fembi][16][maxpos-10: maxpos+10], marker='o', label = f"FEMB{fembi} Ch16")
+    plt.plot(x, wibs[fembi][32][maxpos-10: maxpos+10], marker='^', label = f"FEMB{fembi} Ch32")
+    plt.plot(x, wibs[fembi][48][maxpos-10: maxpos+10], marker='*', label = f"FEMB{fembi} Ch48")
+    plt.plot(x, wibs[fembi][64][maxpos-10: maxpos+10], marker='>', label = f"FEMB{fembi} Ch64")
+    plt.plot(x, wibs[fembi][80][maxpos-10: maxpos+10], marker='<', label = f"FEMB{fembi} Ch80")
+    plt.plot(x, wibs[fembi][96][maxpos-10: maxpos+10], marker='+', label = f"FEMB{fembi} Ch96")
     plt.plot(x, wibs[fembi][112][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch112")
-plt.legend()
-plt.show()
-plt.close()
+    plt.legend()
+    plt.show()
+    plt.close()
 

@@ -38,11 +38,6 @@ fembs = [int(a) for a in sys.argv[1:pos]]
 
 chk = WIB_CFGS()
 
-for i in range(1000000):
-    rdreg = llc.wib_peek(chk.wib, 0xA00c0004)
-    print (i, rdreg)
-exit()
-
 ####################WIB init################################
 #check if WIB is in position
 chk.wib_init()
@@ -84,8 +79,9 @@ for femb_id in fembs:
     chk.femb_cfg(femb_id, adac_pls_en )
     if ext_cali_flg == True:
         chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
-#chk.femb_cd_edge()
-#chk.femb_cd_edge()
+
+chk.femb_cd_edge()
+chk.femb_cd_edge()
 
 chk.femb_cd_sync()
 chk.femb_cd_sync()
@@ -103,7 +99,19 @@ pwr_meas = chk.get_sensors()
 for i in range(20):
     rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
     
-    
+#    chk.femb_cd_edge()
+#    chk.femb_cd_edge()
+
+    time.sleep(1)
+    rdreg = llc.wib_peek(chk.wib, 0xA00C000C)
+    print ( 0xA00C000C, hex(rdreg) )
+    print (hex( llc.wib_peek(chk.wib, 0xA00C00A8) ))
+    print (hex( llc.wib_peek(chk.wib, 0xA00C00AC) ))
+    print (hex( llc.wib_peek(chk.wib, 0xA00C00B0) ))
+    print (hex( llc.wib_peek(chk.wib, 0xA00C00B4) ))
+    print (hex( llc.wib_peek(chk.wib, 0xA00C00BC) ))
+    input ("continue")
+   
     if save:
         fdir = "D:/debug_data/"
         ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
@@ -111,10 +119,6 @@ for i in range(20):
         with open(fp, 'wb') as fn:
             pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
     
-    chk.femb_cd_edge()
-#    chk.femb_cd_edge()
-
-    time.sleep(1)
 
 
 

@@ -36,7 +36,7 @@ chk.wib_init()
 chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
 
-sps = 1
+sps = 5
 chips = 8
 if True:
     print ("monitor bandgap reference")

@@ -39,16 +39,16 @@ chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 sps = 1
 chips = 1
 mon_fedacs_sgp1 = {}
-for vdac in range(0, 64, 4):
-#for vdac in range(64):
+#for vdac in range(0, 64, 4):
+for vdac in range(64):
     for mon_chip in range(chips):
         adcrst = chk.wib_fe_dac_mon(femb_ids=fembs, mon_chip=mon_chip, sgp=True, vdac=vdac, sps=sps )
         mon_fedacs_sgp1["VDAC%02dCHIP%d_SGP1"%(vdac, mon_chip)] = adcrst
 #print (mon_fedacs_sgp1)
 
 mon_fedacs_14mVfC = {}
-#for vdac in range(0,64,4):
-for vdac in range(0, 64, 16):
+for vdac in range(0,64,4):
+#for vdac in range(0, 64, 16):
     for mon_chip in range(chips):
         adcrst = chk.wib_fe_dac_mon(femb_ids=fembs, mon_chip=mon_chip, sgp=False, sg0=0, sg1=0, vdac=vdac, sps=sps )
         mon_fedacs_14mVfC["VDAC%02dCHIP%d_SGP1"%(vdac, mon_chip)] = adcrst
