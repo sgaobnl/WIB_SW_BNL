@@ -198,13 +198,13 @@ class QC_tools:
         table.scale(1,2)
         fig.savefig(fp+".png")
 
-    def PrintMON(self, fembs, fembs_no, mon_bgp, mon_t, mon_adcs, fp):
+    def PrintMON(self, fembs, fembs_no, nchips, mon_bgp, mon_t, mon_adcs, fp):
         f=1/(2**14)*2048 # mV
        
         for femb in fembs: 
             mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[]}
 
-            for i in range(8): # 8 chips per board
+            for i in range(nchips): # 8 chips per board
                 mon_dic['ASIC#'].append(i)
                 mon_dic['FE T'].append(mon_t[f'chip{i}'][0][femb])
                 mon_dic['FE BGP'].append(mon_bgp[f'chip{i}'][0][femb])

@@ -198,7 +198,7 @@ qc_tools = QC_tools()
 pldata = qc_tools.data_decode(rawdata)
 pldata = np.array(pldata)
 
-qc_tools.PrintMON(fembs, fembNo, mon_refs, mon_temps, mon_adcs, plotdir)
+qc_tools.PrintMON(fembs, fembNo, mon_refs, 2, mon_temps, mon_adcs, plotdir)
 
 for i in fembs:
     i=int(i)
