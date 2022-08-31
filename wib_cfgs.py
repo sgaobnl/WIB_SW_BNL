@@ -415,7 +415,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         self.femb_i2c_wrchk(femb_id=femb_id, chip_addr=adcs_addr[mon_chip], reg_page=1, reg_addr=0x9b, wrdata=vcmi) #vcmi
         self.femb_i2c_wr(femb_id=femb_id,    chip_addr=adcs_addr[mon_chip], reg_page=1, reg_addr=0xaf, wrdata=(mon_i<<2)|0x01)
 
-    def wib_adc_mon(self, femb_ids, sps=10, adcs_paras=self.adcs_paras_init): 
+    def wib_adc_mon(self, femb_ids, adcs_paras, sps=10): 
         self.wib_mon_switches(dac0_sel=1,dac1_sel=1,dac2_sel=1,dac3_sel=1, mon_vs_pulse_sel=0, inj_cal_pulse=0) 
         #step 1
         #reset all FEMBs on WIB
