@@ -415,12 +415,14 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         self.femb_i2c_wrchk(femb_id=femb_id, chip_addr=adcs_addr[mon_chip], reg_page=1, reg_addr=0x9b, wrdata=vcmi) #vcmi
         self.femb_i2c_wr(femb_id=femb_id,    chip_addr=adcs_addr[mon_chip], reg_page=1, reg_addr=0xaf, wrdata=(mon_i<<2)|0x01)
 
-    def wib_adc_mon(self, femb_ids, sps=10  ): 
+    def wib_adc_mon(self, femb_ids, sps=10, adcs_paras=self.adcs_paras_init): 
         self.wib_mon_switches(dac0_sel=1,dac1_sel=1,dac2_sel=1,dac3_sel=1, mon_vs_pulse_sel=0, inj_cal_pulse=0) 
         #step 1
         #reset all FEMBs on WIB
         self.femb_cd_rst()
-        
+           
+        self.adcs_paras = adcs_paras
+ 
         #step 2
         mon_items = []
         mons = ["VBGR", "VCMI", "VCMO", "VREFP", "VREFN", "VBGR", "VSSA", "VSSA"]
@@ -444,6 +446,29 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 print (mon_dict[f"chip{mon_chip}"])
             mon_items.append(mon_dict)
         return mon_items
+
+    def wib_adc_mon_chip(self, femb_ids, mon_chip=0, sps=10): 
+        self.wib_mon_switches(dac0_sel=1,dac1_sel=1,dac2_sel=1,dac3_sel=1, mon_vs_pulse_sel=0, inj_cal_pulse=0) 
+        #reset all FEMBs on WIB
+        self.femb_cd_rst()
+        
+        mon_dict = {}
+        mons = ["VBGR", "VCMI", "VCMO", "VREFP", "VREFN", "VBGR", "VSSA", "VSSA"]
+        for mon_i in range(len(mons)):
+            print (f"Monitor ADC {mons[mon_i]}")
+            for femb_id in femb_ids:
+                self.femb_adc_cfg(femb_id)
+                self.femb_adc_mon(femb_id, mon_chip=mon_chip, mon_i=mon_i  )
+                print (f"FEMB{femb_id} is configurated")
+            adcss = []
+            time.sleep(0.5)
+            self.wib_mon_adcs() #get rid of previous result
+            self.wib_mon_adcs() #get rid of previous result
+            for i in range(sps):
+                adcs = self.wib_mon_adcs()
+                adcss.append(adcs)
+            mon_dict[mons[mon_i]] = [self.adcs_paras[mon_chip], adcss]
+        return mon_dict
 
 
 #    def cfg_a_wib(self, fembs, adac_pls_en=False):

@@ -82,7 +82,9 @@ class QC_Runs:
 
         self.chk = WIB_CFGS()
         self.chk.wib_init()
+        self.chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
         self.chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
+
         if status=='on':
             print("Turning on FEMBs")
             self.chk.femb_powering(self.fembs)
@@ -98,7 +100,7 @@ class QC_Runs:
        for i in self.fembs:
            pwr_meas = pwr_info['femb{}'.format(i)]
   
-           if (pwr_meas[0][1] < 0.5) and (pwr_meas[1][1] < 0.5) and (pwr_meas[2][1] < 0.5) and (pwr_meas[3][1] < 3):
+           if (pwr_meas[0][1] < 1) and (pwr_meas[1][1] < 0.5) and (pwr_meas[2][1] < 0.5) and (pwr_meas[3][1] < 3):
                print ("FEMB {} is turned off".format(i))        
                n=n+1
 
@@ -136,9 +138,13 @@ class QC_Runs:
             cfg_paras_rec.append( (femb_id, copy.deepcopy(self.chk.adcs_paras), copy.deepcopy(self.chk.regs_int8), adac_pls_en) )
             self.chk.femb_cfg(femb_id, adac_pls_en )
 
+        self.chk.femb_cd_edge()
+        self.chk.femb_cd_edge()
+        self.chk.femb_cd_sync()
+        self.chk.femb_cd_sync()
         time.sleep(0.5)
         pwr_meas = self.chk.get_sensors()
-        rawdata = self.chk.wib_acquire_data(fembs=self.fembs, num_samples=self.sample_N) 
+        rawdata = self.chk.wib_acquire_rawdata(fembs=self.fembs, num_samples=self.sample_N) 
         
         with open(fp, 'wb') as fn:
             pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, self.logs], fn)
@@ -412,6 +418,120 @@ class QC_Runs:
             fp = datadir + "CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin".format("900mVBL","14_0mVfC","2_0us",dac)
             self.take_data(snc, sg0, sg1, st0, st1, dac, fp, sgp=1) 
         
+    def femb_MON_1(self, sps=5):
+
+        datadir = self.save_dir+"MON_FE/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
+        self.chk.femb_cd_rst()
+        chips = 8
+        print ("monitor bandgap reference")
+        mon_refs = {}
+        for mon_chip in range(chips):
+            adcrst = self.chk.wib_fe_mon(femb_ids=self.fembs, mon_type=2, mon_chip=mon_chip, sps=sps)
+            mon_refs[f"chip{mon_chip}"] = adcrst
+
+        print ("monitor temperature")
+        mon_temps = {}
+        for mon_chip in range(chips):
+            adcrst = self.chk.wib_fe_mon(femb_ids=self.fembs, mon_type=1, mon_chip=mon_chip, sps=sps)
+            mon_temps[f"chip{mon_chip}"] = adcrst
+
+        print ("monitor BL 200mV")
+        mon_200bls = {}
+        for mon_chip in range(chips):
+            for mon_chipchn in range(16):
+                adcrst = self.chk.wib_fe_mon(femb_ids=self.fembs, mon_type=0, snc=1, mon_chip=mon_chip, mon_chipchn=mon_chipchn, sps=sps)
+                mon_200bls["chip%dchn%02d"%(mon_chip, mon_chipchn)] = adcrst
+
+        print ("monitor BL 900mV")
+        mon_900bls = {}
+        for mon_chip in range(chips):
+            for mon_chipchn in range(16):
+                adcrst = self.chk.wib_fe_mon(femb_ids=self.fembs, mon_type=0, snc=0, mon_chip=mon_chip, mon_chipchn=mon_chipchn, sps=sps)
+                mon_900bls["chip%dchn%02d"%(mon_chip, mon_chipchn)] = adcrst
+        
+        fp = datadir + "LArASIC_mon.bin"
+        with open(fp, 'wb') as fn:
+            pickle.dump( [mon_refs, mon_temps, mon_200bls, mon_900bls, self.logs], fn)
+
+    def femb_MON_2(self, sps=5):
+
+        datadir = self.save_dir+"MON_FE/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
+        self.chk.femb_cd_rst()
+
+        chips = 8
+        print ("monitor LArASIC DAC sgp=1")
+        mon_fedacs_sgp1 = {}
+        for vdac in range(64):
+            for mon_chip in range(chips):
+                adcrst = self.chk.wib_fe_dac_mon(femb_ids=self.fembs, mon_chip=mon_chip, sgp=True, vdac=vdac, sps=sps )
+                mon_fedacs_sgp1["VDAC%02dCHIP%d_SGP1"%(vdac, mon_chip)] = adcrst
+        
+        print ("monitor LArASIC DAC sgp=0")
+        mon_fedacs_14mVfC = {}
+        for vdac in range(0,64,4):
+            for mon_chip in range(chips):
+                adcrst = self.chk.wib_fe_dac_mon(femb_ids=self.fembs, mon_chip=mon_chip, sgp=False, sg0=0, sg1=0, vdac=vdac, sps=sps)
+                mon_fedacs_14mVfC["VDAC%02dCHIP%d_SGP1"%(vdac, mon_chip)] = adcrst
+                
+        fp = datadir + "LArASIC_mon_DAC.bin"
+        with open(fp, 'wb') as fn:
+            pickle.dump( [mon_fedacs_sgp1, mon_fedacs_14mVfC, self.logs], fn)
+
+    def femb_MON_3(self, sps=5):
+
+        datadir = self.save_dir+"MON_ADC/"
+        try:
+            os.makedirs(datadir)
+        except OSError:
+            print ("Error to create folder %s !!! Continue to next test........"%datadir)
+            return 
+
+        self.chk.femb_cd_rst()
+
+        print ("monitor LArASIC-ColdADC reference (default)")
+        mon_adc_default = self.chk.wib_adc_mon(femb_ids=self.fembs, sps=sps)
+                
+
+        adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
+                       [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                       [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                       [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                       [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                       [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                       [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                       [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                       [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                     ]
+
+        print ("monitor LArASIC-ColdADC reference")
+        vset=[0x0,0x20,0x40,0x60,0x80,0xa0,0xc0,0xe0,0xff]
+        mon_adc=[]
+        for i in range(len(vset)): 
+            tmp_adcs_paras = adcs_paras
+            for j in range(8):
+                tmp_adcs_paras[j][4]=vset[i]
+                tmp_adcs_paras[j][5]=vset[i]
+                tmp_adcs_paras[j][6]=vset[i]
+                tmp_adcs_paras[j][7]=vset[i]
+
+            mondata = self.chk.wib_adc_mon(femb_ids=self.fembs, sps=sps, adcs_paras=tmp_adcs_paras)
+            mon_adc.append([vset[i], mondata])
+                
+        fp = datadir + "LArASIC_ColdADC_mon.bin"
+        with open(fp, 'wb') as fn:
+            pickle.dump( [mon_adc_default, mon_adc, self.logs], fn)
 
 if __name__=='__main__':
                         

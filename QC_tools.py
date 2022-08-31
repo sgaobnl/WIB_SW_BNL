@@ -199,7 +199,7 @@ class QC_tools:
         fig.savefig(fp+".png")
 
     def PrintMON(self, fembs, fembs_no, mon_bgp, mon_t, mon_adcs, fp):
-
+        f=1/(2**14)*2048 # mV
        
         for femb in fembs: 
             mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[]}
@@ -208,17 +208,17 @@ class QC_tools:
                 mon_dic['ASIC#'].append(i)
                 mon_dic['FE T'].append(mon_t[f'chip{i}'][0][femb])
                 mon_dic['FE BGP'].append(mon_bgp[f'chip{i}'][0][femb])
-                mon_dic['ADC VCMI'].append(mon_adcs[1][f'chip{i}'][3][0][femb])
-                mon_dic['ADC VCMO'].append(mon_adcs[2][f'chip{i}'][3][0][femb])
-                mon_dic['ADC VREFP'].append(mon_adcs[3][f'chip{i}'][3][0][femb])
-                mon_dic['ADC VREFN'].append(mon_adcs[4][f'chip{i}'][3][0][femb])
+                mon_dic['ADC VCMI'].append(mon_adcs[f'chip{i}']["VCMI"][0][femb]*f)
+                mon_dic['ADC VCMO'].append(mon_adcs[f'chip{i}']["VCMO"][0][femb]*f)
+                mon_dic['ADC VREFP'].append(mon_adcs[f'chip{i}']["VREFP"][0][femb]*f)
+                mon_dic['ADC VREFN'].append(mon_adcs[f'chip{i}']["VREFN"][0][femb]*f)
 
             df=pd.DataFrame(data=mon_dic)
 
             fig, ax =plt.subplots(figsize=(10,4.5))
             ax.axis('off')
             table = ax.table(cellText=df.values,colLabels=df.columns,loc='center')
-            ax.set_title("Monitoring path for FE-ADC")
+            ax.set_title("Monitoring path for FE-ADC (#mV)")
             table.set_fontsize(14)
             table.scale(1,2.2)
             newfp=fp+"FEMB{}_mon_meas.png".format(fembs_no[f'femb{femb}'])

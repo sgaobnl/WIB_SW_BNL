@@ -164,20 +164,21 @@ if save:
 sps=1
 print ("monitor bandgap reference")
 mon_refs = {}
-for i in range(8):   # 8 chips per femb
+for i in [0,4]:   # 8 chips per femb
     adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=2, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
     mon_refs[f"chip{i}"] = adcrst
-time.sleep(1)
 
 print ("monitor temperature")
 mon_temps = {}
-for i in range(8):
+for i in [0,4]:
     adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=1, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
     mon_temps[f"chip{i}"] = adcrst
-time.sleep(1)
 
 print ("monitor ColdADCs")
-mon_adcs = chk.wib_adc_mon(femb_ids=fembs, sps=sps  )
+mon_adcs = {}
+for i in [0,4]:
+    mon_adc =  chk.wib_adc_mon_chip(femb_ids=fembs, mon_chip=i, sps=sps)
+    mon_adcs[f"chip{i}"] = mon_adc
 
 if save:
     fp = datadir + "Mon_{}_{}.bin".format("200mVBL","14_0mVfC")
