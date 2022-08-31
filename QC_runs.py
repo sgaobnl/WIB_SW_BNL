@@ -462,11 +462,12 @@ class QC_Runs:
     def femb_MON_2(self, sps=5):
 
         datadir = self.save_dir+"MON_FE/"
-        try:
-            os.makedirs(datadir)
-        except OSError:
-            print ("Error to create folder %s !!! Continue to next test........"%datadir)
-            return 
+        if not os.path.exists(datadir):
+           try:
+               os.makedirs(datadir)
+           except OSError:
+               print ("Error to create folder %s !!! Continue to next test........"%datadir)
+               return 
 
         self.chk.femb_cd_rst()
 
@@ -474,6 +475,7 @@ class QC_Runs:
         print ("monitor LArASIC DAC sgp=1")
         mon_fedacs_sgp1 = {}
         for vdac in range(64):
+            print("DAC ",vdac)
             for mon_chip in range(chips):
                 adcrst = self.chk.wib_fe_dac_mon(femb_ids=self.fembs, mon_chip=mon_chip, sgp=True, vdac=vdac, sps=sps )
                 mon_fedacs_sgp1["VDAC%02dCHIP%d_SGP1"%(vdac, mon_chip)] = adcrst
@@ -481,6 +483,7 @@ class QC_Runs:
         print ("monitor LArASIC DAC sgp=0")
         mon_fedacs_14mVfC = {}
         for vdac in range(0,64,4):
+            print("DAC ",vdac)
             for mon_chip in range(chips):
                 adcrst = self.chk.wib_fe_dac_mon(femb_ids=self.fembs, mon_chip=mon_chip, sgp=False, sg0=0, sg1=0, vdac=vdac, sps=sps)
                 mon_fedacs_14mVfC["VDAC%02dCHIP%d_SGP1"%(vdac, mon_chip)] = adcrst
@@ -500,10 +503,6 @@ class QC_Runs:
 
         self.chk.femb_cd_rst()
 
-        print ("monitor LArASIC-ColdADC reference (default)")
-        mon_adc_default = self.chk.wib_adc_mon(femb_ids=self.fembs, sps=sps)
-                
-
         adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
                        [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                        [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
@@ -514,6 +513,11 @@ class QC_Runs:
                        [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                        [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                      ]
+
+
+        print ("monitor LArASIC-ColdADC reference (default)")
+        mon_adc_default = self.chk.wib_adc_mon(femb_ids=self.fembs, adcs_paras=adcs_paras, sps=sps)
+                
 
         print ("monitor LArASIC-ColdADC reference")
         vset=[0x0,0x20,0x40,0x60,0x80,0xa0,0xc0,0xe0,0xff]
@@ -526,7 +530,7 @@ class QC_Runs:
                 tmp_adcs_paras[j][6]=vset[i]
                 tmp_adcs_paras[j][7]=vset[i]
 
-            mondata = self.chk.wib_adc_mon(femb_ids=self.fembs, sps=sps, adcs_paras=tmp_adcs_paras)
+            mondata = self.chk.wib_adc_mon(femb_ids=self.fembs, adcs_paras=tmp_adcs_paras, sps=sps)
             mon_adc.append([vset[i], mondata])
                 
         fp = datadir + "LArASIC_ColdADC_mon.bin"

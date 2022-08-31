@@ -276,21 +276,26 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                     self.femb_i2c_wrchk(femb_id, chip_addr=3, reg_page=(chip%4+1), reg_addr=(0x91-reg_id), wrdata=self.regs_int8[chip][reg_id])
                 else:
                     self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=(chip%4+1), reg_addr=(0x91-reg_id), wrdata=self.regs_int8[chip][reg_id])
-        self.femb_cd_fc_act(femb_id, act_cmd="clr_saves")
-        time.sleep(0.01)
-        self.femb_cd_fc_act(femb_id, act_cmd="prm_larasics")
-        time.sleep(0.05)
-        self.femb_cd_fc_act(femb_id, act_cmd="save_status")
+        i = 0
+        while i<10:
+            i = i+1
+            self.femb_cd_fc_act(femb_id, act_cmd="clr_saves")
+            time.sleep(0.01)
+            self.femb_cd_fc_act(femb_id, act_cmd="prm_larasics")
+            time.sleep(0.05)
+            self.femb_cd_fc_act(femb_id, act_cmd="save_status")
+            time.sleep(0.05)
 
-        sts_cd1 = self.femb_i2c_rd(femb_id, chip_addr=3, reg_page=0, reg_addr=0x24)
-        sts_cd2 = self.femb_i2c_rd(femb_id, chip_addr=2, reg_page=0, reg_addr=0x24)
+            sts_cd1 = self.femb_i2c_rd(femb_id, chip_addr=3, reg_page=0, reg_addr=0x24)
+            sts_cd2 = self.femb_i2c_rd(femb_id, chip_addr=2, reg_page=0, reg_addr=0x24)
 
-        if (sts_cd1&0xff == 0xff) and (sts_cd2&0xff == 0xff):
-            pass
-        else:
-            print ("LArASIC readback status is {}, {} diffrent from 0xFF".format(sts_cd1, sts_cd2))
-            print ("exit anyway")
-            exit()
+            if (sts_cd1&0xff == 0xff) and (sts_cd2&0xff == 0xff):
+                break
+            else:
+                print ("LArASIC readback status is {}, {} diffrent from 0xFF".format(sts_cd1, sts_cd2))
+                time.sleep(0.1)
+                #print ("exit anyway")
+                #exit()
 
     def femb_adac_cali(self, femb_id, phase0x07=[0,0,0,0,0,0,0,0]):
         for chip in range(8):
@@ -453,7 +458,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         self.femb_cd_rst()
         
         mon_dict = {}
-        mons = ["VBGR", "VCMI", "VCMO", "VREFP", "VREFN", "VBGR", "VSSA", "VSSA"]
+        mons = ["VBGR", "VCMI", "VCMO", "VREFP", "VREFN", "VSSA"]
         for mon_i in range(len(mons)):
             print (f"Monitor ADC {mons[mon_i]}")
             for femb_id in femb_ids:

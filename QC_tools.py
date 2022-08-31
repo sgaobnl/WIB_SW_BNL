@@ -202,23 +202,27 @@ class QC_tools:
         f=1/(2**14)*2048 # mV
        
         for femb in fembs: 
-            mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[]}
+            mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[], 'ADC VSSA':[]}
 
             for i in nchips: # 8 chips per board
                 
                 mon_dic['ASIC#'].append(i)
-                mon_dic['FE T'].append(mon_t[f'chip{i}'][0][femb])
-                mon_dic['FE BGP'].append(mon_bgp[f'chip{i}'][0][femb])
+                fe_t = round(mon_t[f'chip{i}'][0][femb]*f,1)
+                fe_bgp = round(mon_bgp[f'chip{i}'][0][femb]*f,1)
+                mon_dic['FE T'].append(fe_t)
+                mon_dic['FE BGP'].append(fe_bgp)
 
                 vcmi = round(mon_adcs[f'chip{i}']["VCMI"][1][0][femb]*f,1)
                 vcmo = round(mon_adcs[f'chip{i}']["VCMO"][1][0][femb]*f,1)
                 vrefp = round(mon_adcs[f'chip{i}']["VREFP"][1][0][femb]*f,1)
                 vrefn = round(mon_adcs[f'chip{i}']["VREFN"][1][0][femb]*f,1)
+                vssa = round(mon_adcs[f'chip{i}']["VSSA"][1][0][femb]*f,1)
 
                 mon_dic['ADC VCMI'].append(vcmi)
                 mon_dic['ADC VCMO'].append(vcmo)
                 mon_dic['ADC VREFP'].append(vrefp)
                 mon_dic['ADC VREFN'].append(vrefn)
+                mon_dic['ADC VSSA'].append(vrefn)
 
             df=pd.DataFrame(data=mon_dic)
 
