@@ -163,20 +163,21 @@ if save:
 
 sps=1
 print ("monitor bandgap reference")
+nchips=[0,4]
 mon_refs = {}
-for i in [0,4]:   # 8 chips per femb
+for i in nchips:   # 8 chips per femb
     adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=2, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
     mon_refs[f"chip{i}"] = adcrst
 
 print ("monitor temperature")
 mon_temps = {}
-for i in [0,4]:
+for i in nchips:
     adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=1, mon_chip=i, snc=snc, sg0=sg0, sg1=sg1, sps=sps)
     mon_temps[f"chip{i}"] = adcrst
 
 print ("monitor ColdADCs")
 mon_adcs = {}
-for i in [0,4]:
+for i in nchips:
     mon_adc =  chk.wib_adc_mon_chip(femb_ids=fembs, mon_chip=i, sps=sps)
     mon_adcs[f"chip{i}"] = mon_adc
 
@@ -198,7 +199,7 @@ qc_tools = QC_tools()
 pldata = qc_tools.data_decode(rawdata)
 pldata = np.array(pldata)
 
-qc_tools.PrintMON(fembs, fembNo, 2, mon_refs, mon_temps, mon_adcs, plotdir)
+qc_tools.PrintMON(fembs, fembNo, nchips, mon_refs, mon_temps, mon_adcs, plotdir)
 
 for i in fembs:
     i=int(i)
@@ -235,10 +236,10 @@ for i in fembs:
     pdf.image(pwr_image,0,40,200,40)
 
     mon_image = plotdir+"FEMB{}_mon_meas.png".format(femb_id)
-    pdf.image(mon_image,0,80,200,90)
+    pdf.image(mon_image,0,80,200,40)
 
     chk_image = fp_data+".png"
-    pdf.image(chk_image,3,160,200,120)
+    pdf.image(chk_image,3,120,200,120)
 
     outfile = save_dir+'CHK_femb{}.pdf'.format(femb_id)
     pdf.output(outfile, "F")

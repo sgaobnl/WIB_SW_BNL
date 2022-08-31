@@ -204,18 +204,25 @@ class QC_tools:
         for femb in fembs: 
             mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[]}
 
-            for i in range(nchips): # 8 chips per board
+            for i in nchips: # 8 chips per board
+                
                 mon_dic['ASIC#'].append(i)
                 mon_dic['FE T'].append(mon_t[f'chip{i}'][0][femb])
                 mon_dic['FE BGP'].append(mon_bgp[f'chip{i}'][0][femb])
-                mon_dic['ADC VCMI'].append(mon_adcs[f'chip{i}']["VCMI"][0][femb]*f)
-                mon_dic['ADC VCMO'].append(mon_adcs[f'chip{i}']["VCMO"][0][femb]*f)
-                mon_dic['ADC VREFP'].append(mon_adcs[f'chip{i}']["VREFP"][0][femb]*f)
-                mon_dic['ADC VREFN'].append(mon_adcs[f'chip{i}']["VREFN"][0][femb]*f)
+
+                vcmi = round(mon_adcs[f'chip{i}']["VCMI"][1][0][femb]*f,1)
+                vcmo = round(mon_adcs[f'chip{i}']["VCMO"][1][0][femb]*f,1)
+                vrefp = round(mon_adcs[f'chip{i}']["VREFP"][1][0][femb]*f,1)
+                vrefn = round(mon_adcs[f'chip{i}']["VREFN"][1][0][femb]*f,1)
+
+                mon_dic['ADC VCMI'].append(vcmi)
+                mon_dic['ADC VCMO'].append(vcmo)
+                mon_dic['ADC VREFP'].append(vrefp)
+                mon_dic['ADC VREFN'].append(vrefn)
 
             df=pd.DataFrame(data=mon_dic)
 
-            fig, ax =plt.subplots(figsize=(10,4.5))
+            fig, ax =plt.subplots(figsize=(10,2))
             ax.axis('off')
             table = ax.table(cellText=df.values,colLabels=df.columns,loc='center')
             ax.set_title("Monitoring path for FE-ADC (#mV)")
