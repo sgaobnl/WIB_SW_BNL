@@ -148,7 +148,6 @@ class QC_tools:
     def FEMB_CHK_PLOT(self, chn_rmss,chn_peds, chn_pkps, chn_pkns, chn_onewfs, chn_avgwfs, fp):
         fig = plt.figure(figsize=(10,5))
         fn = fp.split("/")[-1]
-        print (fn)
         ax1 = plt.subplot2grid((4, 4), (0, 0), colspan=2, rowspan=2)
         ax2 = plt.subplot2grid((4, 4), (0, 2), colspan=2, rowspan=2)
         ax3 = plt.subplot2grid((4, 4), (2, 0), colspan=2, rowspan=2)
@@ -170,7 +169,7 @@ class QC_tools:
         plt.tight_layout( rect=[0.05, 0.05, 0.95, 0.95])
         fn = fp + ".png"
         plt.savefig(fn)
-        plt.close()
+        plt.close(fig)
 
     def PrintPWR(self, pwr_data, fp):
 
@@ -197,6 +196,7 @@ class QC_tools:
         table.set_fontsize(14)
         table.scale(1,2)
         fig.savefig(fp+".png")
+        plt.close(fig)
 
     def PrintMON(self, fembs, fembs_no, nchips, mon_bgp, mon_t, mon_adcs, fp):
         f=1/(2**14)*2048 # mV

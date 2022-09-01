@@ -59,57 +59,6 @@ class data_organization():
         self.CC = CC
         self.e = e
 
-    def data_valid(self, raw):
-        sss  = []
-        for rawi in raw:
-            ts = rawi[0]
-            ss = rawi[1]
-            chns = []
-            for link in range(2):
-                tv = [0]
-                for i in range(len(ts[link])-1):
-                    t0 = int(ts[link][i])>>32>>21
-                    t1 = int(ts[link][i+1])>>32>>21
-                    if (abs(t1-t0) > 2) and (t1 != 0x000) and (t0 !=0x3ff):
-                        tv.append(i)
-                tv.append(len(ts[link])-1)
-                tg = []
-                for tvi in range(len(tv)-1):
-                    tg.append(tv[tvi+1]-tv[tvi])
-                pos = np.where(tg == np.max(tg))[0][0]
-    
-                for chi in range(len(ss[0+link*2])):
-                    chns.append(ss[0+link*2][chi][(tv[pos]+1):(tv[pos+1]-1)])
-                for chi in range(len(ss[1+link*2])):
-                    chns.append(ss[1+link*2][chi][(tv[pos]+1):(tv[pos+1]-1)])
-            sss.append(chns)
-        return sss
-
-    def PrintPWR(self, pwr_meas, outfile):
-
-        pwr_names=['BIAS','LArASIC','ColdDATA','ColdADC']
-        for key,values in pwr_meas.items():
-            pwr_dic={'name':[],'V_meas/V':[],'I_meas/A':[],'P_meas/W':[]}
-            i=0
-            for ilist in values:
-                #pwr_dic['name'].append(ilist[0])
-                pwr_dic['name'].append(pwr_names[i])
-                i=i+1
-                pwr_dic['V_meas/V'].append(round(ilist[1],3))
-                pwr_dic['I_meas/A'].append(round(ilist[2],3))
-                pwr_dic['P_meas/W'].append(round(ilist[3],3))
-
-            df=pd.DataFrame(data=pwr_dic)
-
-            fig, ax =plt.subplots(figsize=(8,2.5))
-            ax.axis('off')
-            table = ax.table(cellText=df.values,colLabels=df.columns,loc='center')
-            ax.set_title("{} {}".format(key,outfile))
-            table.set_fontsize(14)
-            table.scale(1,2)
-            fig.savefig(self.fdir_plots+"pwr_meas_{}_{}.png".format(key,outfile))
-           
-
     def GetRMS(self,datafile,outfile):
 
         fp = datafile
