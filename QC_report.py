@@ -49,6 +49,10 @@ class QC_reports:
 
               self.savedir[key]=one_savedir+"/"
 
+              fp = self.savedir[key] + "logs_env.bin"
+              with open(fp, 'wb') as fn:
+                   pickle.dump(self.logs, fn)
+
       def GEN_PWR_PDF(self,fdir,femb_id):
 
           pdf = FPDF(orientation = 'P', unit = 'mm', format='Letter')
@@ -132,9 +136,8 @@ class QC_reports:
               pldata = qc.data_decode(rawdata)
               pldata = np.array(pldata)
 
+              fname = afile.split("/")[-1][:-4]
               for key,value in self.fembs.items():
-               
-                  fname = afile.split("/")[-1][:-4]
                   fp = self.savedir[key] + "PWR_Meas/" + fname + "_pwr_meas"
                   qc.PrintPWR(pwr_meas[key], fp)
 
@@ -171,9 +174,8 @@ class QC_reports:
               pldata = qc.data_decode(rawdata)
               pldata = np.array(pldata)
 
+              fname = afile.split("/")[-1][:-4]
               for key,value in self.fembs.items():
-               
-                  fname = afile.split("/")[-1][:-4]
                   fp = self.savedir[key] + "PWR_Cycle/" + fname + "_pwr_meas"
                   qc.PrintPWR(pwr_meas[key], fp)
 
@@ -185,10 +187,43 @@ class QC_reports:
               fdir = self.savedir[key] + "PWR_Cycle/"
               self.GEN_PWR_PDF(fdir, int(value))
 
+      def CHKPULSE(self):
+
+          for key,value in self.fembs.items():
+              fp = self.savedir[key] + "CHK/"
+              if not os.path.exists(fp):
+                 try:
+                     os.makedirs(fp)
+                 except OSError:
+                     print ("Error to create folder %s"%fp)
+                     sys.exit()
+          
+          datadir = self.datadir+"CHK/"
+
+          qc=QC_tools()
+          files = sorted(glob.glob(datadir+"*.bin"), key=os.path.getmtime)  # list of data files in the dir
+          for afile in files:
+              with open(afile, 'rb') as fn:
+                   raw = pickle.load(fn)
+
+              rawdata = raw[0]
+              pwr_meas = raw[1]
+
+              pldata = qc.data_decode(rawdata)
+              pldata = np.array(pldata)
+
+              fname = afile.split("/")[-1][:-4]
+              for key,value in self.fembs.items():
+                  ana = qc.data_ana(pldata,int(key[-1]))
+                  fp_data = self.savedir[key] + "CHK/" + fname + "_pulse_response"
+                  qc.FEMB_CHK_PLOT(ana[0], ana[1], ana[2], ana[3], ana[4], ana[5], fp_data)
+         
+
 if __name__=='__main__':
    rp = QC_reports("femb1_femb2_femb3_femb4_LN_0pF_R003")
-   rp.PWR_consumption_report()
-   rp.PWR_cycle_report()
+   #rp.PWR_consumption_report()
+   #rp.PWR_cycle_report()
+   rp.CHKPULSE()
 
                    
                
