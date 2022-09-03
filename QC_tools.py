@@ -8,7 +8,8 @@ import time
 
 class QC_tools:
     def __init__(self):
-        x='hello'
+        self.fadc = 1/(2**14)*2048 # mV
+
 
     def data_valid(self,raw):
         sss  = []
@@ -199,7 +200,6 @@ class QC_tools:
         plt.close(fig)
 
     def PrintMON(self, fembs, fembs_no, nchips, mon_bgp, mon_t, mon_adcs, fp):
-        f=1/(2**14)*2048 # mV
        
         for femb in fembs: 
             mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[], 'ADC VSSA':[]}
@@ -212,11 +212,11 @@ class QC_tools:
                 mon_dic['FE T'].append(fe_t)
                 mon_dic['FE BGP'].append(fe_bgp)
 
-                vcmi = round(mon_adcs[f'chip{i}']["VCMI"][1][0][femb]*f,1)
-                vcmo = round(mon_adcs[f'chip{i}']["VCMO"][1][0][femb]*f,1)
-                vrefp = round(mon_adcs[f'chip{i}']["VREFP"][1][0][femb]*f,1)
-                vrefn = round(mon_adcs[f'chip{i}']["VREFN"][1][0][femb]*f,1)
-                vssa = round(mon_adcs[f'chip{i}']["VSSA"][1][0][femb]*f,1)
+                vcmi = round(mon_adcs[f'chip{i}']["VCMI"][1][0][femb]*self.fadc,1)
+                vcmo = round(mon_adcs[f'chip{i}']["VCMO"][1][0][femb]*self.fadc,1)
+                vrefp = round(mon_adcs[f'chip{i}']["VREFP"][1][0][femb]*self.fadc,1)
+                vrefn = round(mon_adcs[f'chip{i}']["VREFN"][1][0][femb]*self.fadc,1)
+                vssa = round(mon_adcs[f'chip{i}']["VSSA"][1][0][femb]*self.fadc,1)
 
                 mon_dic['ADC VCMI'].append(vcmi)
                 mon_dic['ADC VCMO'].append(vcmo)
@@ -234,4 +234,28 @@ class QC_tools:
             table.scale(1,2.2)
             newfp=fp+"FEMB{}_mon_meas.png".format(fembs_no[f'femb{femb}'])
             fig.savefig(newfp)
+            plt.close(fig)
+ 
+    def PlotMon(self, fembs, mon_data, savedir, fdir, fname):
+
+        for ifemb,femb_id in fembs.items():
+            mon_list=[] 
+            xlabels=[] 
+            nfemb=int(ifemb[-1])
+            for key,value in mon_data.items():
+                sps=len(value)
+                total=list(map(sum, zip(*value)))
+                avg=np.array(total)/sps*self.fadc
+                mon_list.append(avg[nfemb])
+                xlabels.append(key)
+              
+            fig,ax = plt.subplots(figsize=(6,4))
+            xx=range(len(xlabels))
+            ax.plot(xx, mon_list, marker='.')
+            plt.setp(ax, xticks=xx, xticklabels=xlabels)
+            ax.set_ylabel(fname)
+            fp = savedir[ifemb] + fdir + "/mon_{}.png".format(fname)
+            fig.savefig(fp)
+            plt.close(fig)
+             
 

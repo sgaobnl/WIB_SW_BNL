@@ -486,7 +486,7 @@ class QC_Runs:
             print("DAC ",vdac)
             for mon_chip in range(chips):
                 adcrst = self.chk.wib_fe_dac_mon(femb_ids=self.fembs, mon_chip=mon_chip, sgp=False, sg0=0, sg1=0, vdac=vdac, sps=sps)
-                mon_fedacs_14mVfC["VDAC%02dCHIP%d_SGP1"%(vdac, mon_chip)] = adcrst
+                mon_fedacs_14mVfC["VDAC%02dCHIP%d"%(vdac, mon_chip)] = adcrst
                 
         fp = datadir + "LArASIC_mon_DAC.bin"
         with open(fp, 'wb') as fn:

@@ -53,6 +53,17 @@ class QC_reports:
               with open(fp, 'wb') as fn:
                    pickle.dump(self.logs, fn)
 
+      def CreateDIR(self, fdir):
+
+          for key,value in self.fembs.items():
+              fp = self.savedir[key] + fdir + "/"
+              if not os.path.exists(fp):
+                 try:
+                     os.makedirs(fp)
+                 except OSError:
+                     print ("Error to create folder %s"%fp)
+                     sys.exit()
+
       def GEN_PWR_PDF(self,fdir,femb_id):
 
           pdf = FPDF(orientation = 'P', unit = 'mm', format='Letter')
@@ -112,16 +123,8 @@ class QC_reports:
           pdf.output(outfile, "F")
          
       def PWR_consumption_report(self):
-
-          for key,value in self.fembs.items():
-              fp = self.savedir[key] + "PWR_Meas/"
-              if not os.path.exists(fp):
-                 try:
-                     os.makedirs(fp)
-                 except OSError:
-                     print ("Error to create folder %s"%fp)
-                     sys.exit()
           
+          self.CreateDIR("PWR_Meas")
           datadir = self.datadir+"PWR_Meas/"
 
           qc=QC_tools()
@@ -151,15 +154,7 @@ class QC_reports:
 
       def PWR_cycle_report(self):
 
-          for key,value in self.fembs.items():
-              fp = self.savedir[key] + "PWR_Cycle/"
-              if not os.path.exists(fp):
-                 try:
-                     os.makedirs(fp)
-                 except OSError:
-                     print ("Error to create folder %s"%fp)
-                     sys.exit()
-          
+          self.CreateDIR("PWR_Cycle")
           datadir = self.datadir+"PWR_Cycle/"
 
           qc=QC_tools()
@@ -189,15 +184,7 @@ class QC_reports:
 
       def CHKPULSE(self):
 
-          for key,value in self.fembs.items():
-              fp = self.savedir[key] + "CHK/"
-              if not os.path.exists(fp):
-                 try:
-                     os.makedirs(fp)
-                 except OSError:
-                     print ("Error to create folder %s"%fp)
-                     sys.exit()
-          
+          self.CreateDIR("CHK")
           datadir = self.datadir+"CHK/"
 
           qc=QC_tools()
@@ -218,12 +205,34 @@ class QC_reports:
                   fp_data = self.savedir[key] + "CHK/" + fname + "_pulse_response"
                   qc.FEMB_CHK_PLOT(ana[0], ana[1], ana[2], ana[3], ana[4], ana[5], fp_data)
          
+      def FE_MON_report(self):
+
+          self.CreateDIR("MON_FE")
+          datadir = self.datadir+"MON_FE/"
+
+          qc=QC_tools()
+          fp = datadir+"LArASIC_mon.bin"
+          with open(fp, 'rb') as fn:
+               raw = pickle.load(fn)
+
+          mon_BDG=raw[0]
+          mon_TEMP=raw[1]
+          mon_200bls=raw[2]
+          mon_900bls=raw[3]
+
+          qc=QC_tools()
+          qc.PlotMon(self.fembs, mon_BDG, self.savedir, "MON_FE", "bandgap")
+          qc.PlotMon(self.fembs, mon_TEMP, self.savedir, "MON_FE", "temperature")
+
+         
+         
 
 if __name__=='__main__':
    rp = QC_reports("femb1_femb2_femb3_femb4_LN_0pF_R003")
    #rp.PWR_consumption_report()
    #rp.PWR_cycle_report()
-   rp.CHKPULSE()
+   #rp.CHKPULSE()
+   rp.FE_MON_report()
 
                    
                
