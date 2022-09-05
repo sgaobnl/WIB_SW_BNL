@@ -73,7 +73,7 @@ class QC_reports:
           pdf.set_font('Times', 'B', 20)
           pdf.cell(85)
           pdf.l_margin = pdf.l_margin*2
-          pdf.cell(30, 5, 'FEMB#{:04d} Checkout Test Report'.format(femb_id), 0, 1, 'C')
+          pdf.cell(30, 5, 'FEMB#{:04d} Power Test Report'.format(femb_id), 0, 1, 'C')
           pdf.ln(2)
           
           pdf.set_font('Times', '', 12)
@@ -223,8 +223,42 @@ class QC_reports:
           qc=QC_tools()
           qc.PlotMon(self.fembs, mon_BDG, self.savedir, "MON_FE", "bandgap")
           qc.PlotMon(self.fembs, mon_TEMP, self.savedir, "MON_FE", "temperature")
+          qc.PlotMonChan(self.fembs, mon_200bls, self.savedir, "MON_FE", "200mVBL")
+          qc.PlotMonChan(self.fembs, mon_900bls, self.savedir, "MON_FE", "900mVBL")
 
-         
+      def FE_DAC_MON_report(self):
+
+          self.CreateDIR("MON_FE")
+          datadir = self.datadir+"MON_FE/"
+
+          qc=QC_tools()
+          fp = datadir+"LArASIC_mon_DAC.bin"
+          with open(fp, 'rb') as fn:
+               raw = pickle.load(fn)
+
+          mon_sgp1=raw[0]
+          mon_sgp0=raw[1]
+
+          qc=QC_tools()
+          qc.PlotMonDAC(self.fembs, mon_sgp1, self.savedir, "MON_FE", "LArASIC_DAC_sgp1", range(64), "VDAC{:02d}CHIP{}_SGP1")
+          qc.PlotMonDAC(self.fembs, mon_sgp0, self.savedir, "MON_FE", "LArASIC_DAC_14mVfC", range(0,64,4), "VDAC{:02d}CHIP{}_SGP1")
+
+      def ColdADC_DAC_MON_report(self):
+
+          self.CreateDIR("MON_ADC")
+          datadir = self.datadir+"MON_ADC/"
+
+          qc=QC_tools()
+          fp = datadir+"LArASIC_ColdADC_mon.bin"
+          with open(fp, 'rb') as fn:
+               raw = pickle.load(fn)
+
+          mon_default=raw[0]
+          mon_dac=raw[1]
+
+          qc=QC_tools()
+          qc.PlotADCMon(self.fembs, mon_dac, self.savedir, "MON_ADC")
+
          
 
 if __name__=='__main__':
@@ -233,6 +267,8 @@ if __name__=='__main__':
    #rp.PWR_cycle_report()
    #rp.CHKPULSE()
    rp.FE_MON_report()
+   rp.FE_DAC_MON_report()
+   rp.ColdADC_DAC_MON_report()
 
                    
                

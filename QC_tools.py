@@ -258,4 +258,78 @@ class QC_tools:
             fig.savefig(fp)
             plt.close(fig)
              
+    def PlotMonChan(self, fembs, mon_data, savedir, fdir, fname):
+
+        for ifemb,femb_id in fembs.items():
+            mon_list=[] 
+            nfemb=int(ifemb[-1])
+            for key,value in mon_data.items():
+                sps=len(value)
+                total=list(map(sum, zip(*value)))
+                avg=np.array(total)/sps*self.fadc
+                mon_list.append(avg[nfemb])
+              
+            fig,ax = plt.subplots(figsize=(6,4))
+            xx=range(128)
+            ax.scatter(xx, mon_list, marker='.')
+            ax.set_ylabel(fname)
+            ax.set_xlabel("chan")
+            fp = savedir[ifemb] + fdir + "/mon_{}.png".format(fname)
+            fig.savefig(fp)
+            plt.close(fig)
+             
+    def PlotMonDAC(self, fembs, mon_data, savedir, fdir, fname, dac_list, key_patt):
+
+        for ifemb,femb_id in fembs.items():
+
+            nfemb=int(ifemb[-1])
+            fig,ax = plt.subplots(figsize=(6,4))
+            for ichip in range(8):
+                mon_list=[]
+                for vdac in dac_list:
+                    value=mon_data[key_patt.format(vdac,ichip)]
+                    sps=len(value)
+                    total=list(map(sum, zip(*value)))
+                    avg=np.array(total)/sps*self.fadc
+                    mon_list.append(avg[nfemb]) 
+
+                ax.plot(dac_list, mon_list, label='chip{}'.format(ichip))
+              
+            ax.set_title(fname)
+            ax.set_xlabel("DAC")
+            plt.legend()
+            fp = savedir[ifemb] + fdir + "/mon_{}.png".format(fname)
+            fig.savefig(fp)
+            plt.close(fig)
+             
+    def PlotADCMon(self, fembs, mon_data, savedir, fdir):
+
+        mons=["VCMI", "VCMO", "VREFP", "VREFN"]
+
+        for ifemb,femb_id in fembs.items():
+            nfemb=int(ifemb[-1])
+
+            for i in range(len(mons)):
+                fig,ax = plt.subplots(figsize=(6,4))
+                ndac=len(mon_data)
+
+                for j in range(8):  # chip #
+                    mon_list=[]
+                    dac_list=[]
+                    for k in range(ndac):
+                        value = mon_data[k][1][1+i][f'chip{j}'][3]
+                        sps=len(value)
+                        total=list(map(sum, zip(*value)))
+                        avg=np.array(total)/sps*self.fadc
+                        mon_list.append(avg[nfemb]) 
+                        dac_list.append(mon_data[k][0])
+
+                    ax.plot(dac_list, mon_list, label='chip{}'.format(j))
+              
+                ax.set_title(mons[i])
+                ax.set_xlabel("DAC")
+                plt.legend()
+                fp = savedir[ifemb] + fdir + "/mon_{}.png".format(mons[i])
+                fig.savefig(fp)
+                plt.close(fig)
 

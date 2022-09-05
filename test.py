@@ -9,7 +9,7 @@ from spymemory_decode import wib_spy_dec_syn
 
 #fp1 = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/CHK_femb1_femb2_femb3_femb4_RT_0pF_R001/data/Raw_SE_200mVBL_14_0mVfC_2_0us_0x20.bin"
 #fp1 = "D:/debug_data/CHK_femb1_femb2_femb3_femb4_RT_0pF_R007/data/Raw_SE_200mVBL_14_0mVfC_2_0us_0x20.bin"
-fp2 = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb1_femb2_femb3_femb4_LN_0pF_R003/MON_FE/LArASIC_mon.bin"
+fp2 = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb1_femb2_femb3_femb4_LN_0pF_R003/MON_ADC/LArASIC_ColdADC_mon.bin"
 #fp2 = "D:/debug_data/CHK_femb1_femb2_femb3_femb4_RT_0pF_R007/data/Mon_200mVBL_14_0mVfC.bin"
 #save_dir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/test/"
 #save_dir = "D:/debug_data/CHK_femb1_femb2_femb3_femb4_RT_0pF_R007/plot/"
@@ -23,12 +23,12 @@ fp2 = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/
 with open(fp2, 'rb') as fn:
     raw = pickle.load(fn)
 
-print(len(raw[0]["chip0"]))
-print(raw[0]["chip0"])
-for key,value in raw[0].items():
-    total=list(map(sum, zip(*value)))
-    avg=np.array(total)/5
-    print(key, avg)
+#print(len(raw[0]["chip0"]))
+print(raw[0])
+#for key,value in raw[0].items():
+#    total=list(map(sum, zip(*value)))
+#    avg=np.array(total)/5
+#    print(key, avg)
 
 #qc_tools = QC_tools()
 ##pldata = qc_tools.data_valid(rawdata)
