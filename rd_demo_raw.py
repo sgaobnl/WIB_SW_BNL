@@ -66,7 +66,7 @@ fp ="D:/debug_data/Raw_02_09_2022_17_27_30.bin"
 #fp ="D:/debug_data/Raw_02_09_2022_17_32_03.bin"
 #fp ="D:/debug_data/Raw_02_09_2022_17_32_10.bin"
 fp ="D:/debug_data/Raw_02_09_2022_17_35_45.bin"
-fp ="D:/debug_data/Raw_07_09_2022_12_11_42.bin"
+fp ="D:/debug_data/Raw_07_09_2022_16_02_08.bin"
 
 
 
