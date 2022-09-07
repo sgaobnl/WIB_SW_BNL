@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 import sys
 from spymemory_decode import wib_spy_dec_syn
 import time
+import pickle
+import os
+import glob
 
 class QC_tools:
     def __init__(self):
@@ -91,7 +94,7 @@ class QC_tools:
                 pmax = np.amax(evtdata)
                 pos = np.argmax(evtdata)
 
-                pos_peaks, _ = find_peaks(evtdata,height=pmax-100)
+                pos_peaks, _ = find_peaks(evtdata,height=pmax-100) 
 
                 for ipos in pos_peaks:
                     startpos=ipos-50
@@ -129,6 +132,217 @@ class QC_tools:
                 sys.exit()
 
         return rms,ped,pkp,pkn,onewf,avgwf 
+
+    def GetRMS(self, data, nfemb, fp, fname):
+        
+        nevent = len(data)
+
+        if nevent>100:
+           nevent=100
+
+        rms=[]
+        ped=[]
+
+        for ich in range(128):
+            global_ch = nfemb*128+ich
+            peddata=np.empty(0)
+
+            npulse=0
+            first = True
+            allpls=np.empty(0)
+            for itr in range(nevent):
+                evtdata = data[itr][global_ch] 
+                allpls=np.append(allpls,evtdata)
+
+            ch_ped = np.mean(allpls)
+            ch_rms = np.std(allpls)
+
+            ped.append(ch_ped)
+            rms.append(ch_rms)
+
+        fig,ax = plt.subplots(figsize=(6,4))
+        ax.plot(range(128), rms, marker='.')
+        ax.set_title(fname)
+        ax.set_xlabel("chan")
+        ax.set_ylabel("rms")
+        fp_fig = fp+"rms_{}.png".format(fname)
+        plt.savefig(fp_fig)
+        plt.close(fig)
+
+        fp_bin = fp+"RMS_{}.bin".format(fname)
+        with open(fp_bin, 'wb') as fn:
+             pickle.dump( [ped, rms], fn) 
+
+        return ped,rms
+
+    def GetGain(self, fembs, datadir, savedir, fdir, namepat, snc, sgs, sts, outpat, dac_list, updac=25, lodac=10): 
+
+        pk_dic={}
+        for ifemb,_ in fembs.items():
+            pk_dic[ifemb]=[]
+
+        fname = outpat.format(snc, sgs, sts)
+
+        for dac in dac_list:
+            afile = datadir + namepat.format(snc, sgs, sts, dac)
+            with open(afile, 'rb') as fn:
+                 raw = pickle.load(fn)
+
+            rawdata=raw[0]
+            pldata = self.data_decode(rawdata)
+            pldata = np.array(pldata, dtype=object)
+
+            for ifemb,femb_id in fembs.items():
+                nfemb=int(ifemb[-1])
+                if dac==0:
+                   tmpped,_ = self.GetRMS(pldata, nfemb, savedir[ifemb]+fdir, fname)
+                   pk_dic[ifemb].append(tmpped)
+                else:
+                   ana = self.data_ana(pldata, nfemb)
+                   pk_dic[ifemb].append(ana[2])
+
+        for ifemb,femb_id in fembs.items():
+            nfemb=int(ifemb[-1])
+            pk_list = pk_dic[ifemb]
+            new_pk_list = list(zip(*pk_list))
+
+            fig1,ax1 = plt.subplots(figsize=(6,4))
+            ch_inl=[]
+            ch_gain=[]
+            ch_linear_dac=[]
+
+            for ch in range(128):
+                ch_pk = list(new_pk_list[ch])
+                ana=self.CheckLinearty(dac_list, ch_pk, updac, lodac)
+                ch_gain.append(ana[0])                
+                ch_inl.append(ana[1])                
+                ch_linear_dac.append(ana[2])                
+
+                ax1.plot(dac_list, ch_pk)
+
+            ax1.set_xlabel("DAC")
+            ax1.set_ylabel("Peak Value")
+            ax1.set_title(fname)
+            fp = savedir[ifemb]+fdir+"peak_{}.png".format(fname)
+            plt.savefig(fp)
+            plt.close(fig1)
+
+            fig2,ax2 = plt.subplots(figsize=(6,4))
+            xx=range(128)
+            ax2.plot(xx, ch_gain, marker='.')
+            ax2.set_xlabel("chan")
+            ax2.set_ylabel("gain")
+            ax2.set_title(fname)
+            fp = savedir[ifemb]+fdir+"gain_{}.png".format(fname)
+            plt.savefig(fp)
+            plt.close(fig2)
+
+            fig3,ax3 = plt.subplots(figsize=(6,4))
+            xx=range(128)
+            ax3.plot(xx, ch_inl, marker='.')
+            ax3.set_xlabel("chan")
+            ax3.set_ylabel("INL")
+            ax3.set_title(fname)
+            fp = savedir[ifemb]+fdir+"inl_{}.png".format(fname)
+            plt.savefig(fp)
+            plt.close(fig3)
+
+            fig4,ax4 = plt.subplots(figsize=(6,4))
+            xx=range(128)
+            ax4.plot(xx, ch_linear_dac, marker='.')
+            ax4.set_xlabel("chan")
+            ax4.set_ylabel("max linear dac")
+            ax4.set_title(fname)
+            fp = savedir[ifemb]+fdir+"linear_max_dac_{}.png".format(fname)
+            plt.savefig(fp)
+            plt.close(fig4)
+
+            fp_bin = savedir[ifemb] + fdir + "Gain_{}.bin".format(fname)
+            with open(fp_bin, 'wb') as fn:
+                 pickle.dump( [ch_gain, ch_inl, ch_linear_dac], fn) 
+
+    def CheckLinearty(self, dac_list, pk_list, updac, lodac):
+
+        dac_init=[]
+        pk_init=[]
+        for i in range(len(dac_list)):
+            if dac_list[i]<updac and dac_list[i]>=lodac:
+               dac_init.append(dac_list[i])
+               pk_init.append(pk_list[i])
+
+        slope_i,intercept_i=np.polyfit(dac_init,pk_init,1)
+
+        y_min = pk_list[0]
+        y_max = pk_list[-1]
+        linear_dac_max=dac_list[-1]
+
+        index=-1
+        for i in range(len(dac_list)):
+            y_r = pk_list[i]
+            y_p = dac_list[i]*slope_i + intercept_i
+            inl = abs(y_r-y_p)/(y_max-y_min)
+            if inl>0.02:
+               linear_dac_max = dac_list[i-1]
+               index=i
+               break
+
+        slope_f,intercept_f=np.polyfit(dac_list[:index],pk_list[:index],1)
+
+        y_max = pk_list[index-1]
+        y_min = pk_list[0]
+        INL=0
+        for i in range(index):
+            y_r = pk_list[i]
+            y_p = dac_list[i]*slope_f + intercept_f
+            inl = abs(y_r-y_p)/(y_max-y_min)
+            if inl>INL:
+               INL=inl
+
+        return slope_f, INL, linear_dac_max
+
+    def GetENC(self, fembs, snc, sgs, sts, sgp, savedir, fdir):
+
+        dac_v = {}  # mV/bit
+        dac_v['4_7mVfC']=18.66
+        dac_v['7_8mVfC']=14.33
+        dac_v['14_0mVfC']=8.08
+        dac_v['25_0mVfC']=4.61
+
+        CC=1.85*pow(10,-13)
+        e=1.602*pow(10,-19)
+
+        for ifemb,femb_id in fembs.items():
+            if sgp==0:
+               fname ="{}_{}_{}".format(snc, sgs, sts)
+            if sgp==1:
+               fname ="{}_{}_{}_sgp1".format(snc, sgs, sts)
+
+            frms = savedir[ifemb] + fdir + "RMS_{}.bin".format(fname)
+            fgain = savedir[ifemb] + fdir + "Gain_{}.bin".format(fname)
+
+            with open(frms, 'rb') as fn:
+                 rms_list = pickle.load(fn)
+            rms_list=np.array(rms_list[1])
+             
+            with open(fgain, 'rb') as fn:
+                 gain_list = pickle.load(fn)
+            gain_list=np.array(gain_list[0])
+    
+            enc_list = rms_list/gain_list * dac_v[sgs]/1000 * CC/e
+        
+            fig,ax = plt.subplots(figsize=(6,4))
+            xx=range(128)
+            ax.plot(xx, enc_list, marker='.')
+            ax.set_xlabel("chan")
+            ax.set_ylabel("ENC")
+            ax.set_title(fname)
+            fp = savedir[ifemb]+fdir+"enc_{}.png".format(fname)
+            plt.savefig(fp)
+            plt.close(fig)
+
+            fp_bin = savedir[ifemb] + fdir + "ENC_{}.bin".format(fname)
+            with open(fp_bin, 'wb') as fn:
+                 pickle.dump( enc_list, fn) 
 
     def FEMB_SUB_PLOT(self, ax, x, y, title, xlabel, ylabel, color='b', marker='.', atwinx=False, ylabel_twx = "", e=None):
         ax.set_title(title)

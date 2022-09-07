@@ -210,7 +210,6 @@ class QC_reports:
           self.CreateDIR("MON_FE")
           datadir = self.datadir+"MON_FE/"
 
-          qc=QC_tools()
           fp = datadir+"LArASIC_mon.bin"
           with open(fp, 'rb') as fn:
                raw = pickle.load(fn)
@@ -231,7 +230,6 @@ class QC_reports:
           self.CreateDIR("MON_FE")
           datadir = self.datadir+"MON_FE/"
 
-          qc=QC_tools()
           fp = datadir+"LArASIC_mon_DAC.bin"
           with open(fp, 'rb') as fn:
                raw = pickle.load(fn)
@@ -248,7 +246,6 @@ class QC_reports:
           self.CreateDIR("MON_ADC")
           datadir = self.datadir+"MON_ADC/"
 
-          qc=QC_tools()
           fp = datadir+"LArASIC_ColdADC_mon.bin"
           with open(fp, 'rb') as fn:
                raw = pickle.load(fn)
@@ -259,17 +256,110 @@ class QC_reports:
           qc=QC_tools()
           qc.PlotADCMon(self.fembs, mon_dac, self.savedir, "MON_ADC")
 
+      def RMS_report(self):
+
+          self.CreateDIR("RMS")
+          datadir = self.datadir+"RMS/"
+
+          datafiles = sorted(glob.glob(datadir+"RMS*.bin"), key=os.path.getmtime)
+          for afile in datafiles:
+              with open(afile, 'rb') as fn:
+                   raw = pickle.load(fn)
+
+              rawdata=raw[0]
+              fname = afile.split("/")[-1][7:-9]
+
+              qc=QC_tools()
+              pldata = qc.data_decode(rawdata)
+              pldata = np.array(pldata)
+
+              for ifemb,femb_id in self.fembs.items():
+                  nfemb=int(ifemb[-1])
+                  fp = self.savedir[ifemb]+"RMS/"
+                  qc.GetRMS(pldata, nfemb, fp, fname)
+
+      def GenCALIPDF(self, snc, sgs, sts, sgp):
+
+          if sgp==0:
+             fname ="{}_{}_{}".format(snc, sgs, sts)
+          if sgp==1:
+             fname ="{}_{}_{}_sgp1".format(snc, sgs, sts)
+          
+          for ifemb,femb_id in self.fembs.items():
+              pdf = FPDF(orientation = 'P', unit = 'mm', format='Letter')
+              pdf.alias_nb_pages()
+              pdf.add_page()
+              pdf.set_auto_page_break(False,0)
+              pdf.set_font('Times', 'B', 20)
+              pdf.cell(85)
+              pdf.l_margin = pdf.l_margin*2
+              pdf.cell(30, 5, 'FEMB#{:04d} Calibration Test Report'.format(int(femb_id)), 0, 1, 'C')
+              pdf.ln(2)
+
+              rms_image = self.savedir[ifemb] + 'CALI/' + 'rms_{}.png'.format(fname)
+              gain_image = self.savedir[ifemb] + 'CALI/' + 'gain_{}.png'.format(fname)
+              ENC_image = self.savedir[ifemb] + 'CALI/' + 'enc_{}.png'.format(fname)
+              inl_image = self.savedir[ifemb] + 'CALI/' + 'inl_{}.png'.format(fname)
+              peak_image = self.savedir[ifemb] + 'CALI/' + 'peak_{}.png'.format(fname)
+              dac_max_image = self.savedir[ifemb] + 'CALI/' + 'linear_max_dac_{}.png'.format(fname)
+
+              pdf.image(rms_image,0,35,100,80)
+              pdf.image(gain_image,100,35,100,80)
+              pdf.image(ENC_image,0,115,100,80)
+              pdf.image(peak_image,100,115,100,80)
+              pdf.image(inl_image,0,195,100,80)
+              pdf.image(dac_max_image,100,195,100,80)
+              outfile = self.savedir[ifemb]+"CALI/"+'report_{}.pdf'.format(fname)
+              pdf.output(outfile, "F")
+
+      def CALI_report(self):
+
+          self.CreateDIR("CALI")
+
+          qc=QC_tools()
          
+          dac_list = range(0,64,4) 
+          datadir = self.datadir+"CALI1/"
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "4_7mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "4_7mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "4_7mVfC", "2_0us", 0)
+
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "7_8mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "7_8mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "7_8mVfC", "2_0us", 0)
+
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "14_0mVfC", "2_0us","{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "14_0mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "14_0mVfC", "2_0us", 0)
+
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "25_0mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "25_0mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "25_0mVfC", "2_0us", 0)
+
+          datadir = self.datadir+"CALI2/"
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI2_SE_{}_{}_{}_0x{:02x}.bin", "900mVBL", "14_0mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "900mVBL", "14_0mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("900mVBL", "14_0mVfC", "2_0us", 0)
+
+          dac_list = range(0,64) 
+          datadir = self.datadir+"CALI3/"
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI3_SE_{}_{}_{}_0x{:02x}_sgp1.bin", "200mVBL", "14_0mVfC", "2_0us", "{}_{}_{}_sgp1", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "14_0mVfC", "2_0us", 1, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "14_0mVfC", "2_0us", 1)
+         
+          dac_list = range(0,64) 
+          datadir = self.datadir+"CALI4/"
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin", "900mVBL", "14_0mVfC", "2_0us", "{}_{}_{}_sgp1", dac_list, 10, 4)
+          qc.GetENC(self.fembs, "900mVBL", "14_0mVfC", "2_0us", 1, self.savedir, "CALI/")
+          self.GenCALIPDF("900mVBL", "14_0mVfC", "2_0us", 1)
 
 if __name__=='__main__':
    rp = QC_reports("femb1_femb2_femb3_femb4_LN_0pF_R003")
-   #rp.PWR_consumption_report()
-   #rp.PWR_cycle_report()
-   #rp.CHKPULSE()
+   rp.PWR_consumption_report()
+   rp.PWR_cycle_report()
+   rp.CHKPULSE()
    rp.FE_MON_report()
    rp.FE_DAC_MON_report()
    rp.ColdADC_DAC_MON_report()
-
-                   
-               
-              
+   rp.RMS_report()
+   rp.CALI_report()
