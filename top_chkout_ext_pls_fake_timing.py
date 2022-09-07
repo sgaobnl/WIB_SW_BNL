@@ -10,7 +10,8 @@ import time, datetime, random, statistics
 
 ext_cali_flg = True
 print ("External Calibration pulse from Signal generator")
-gen_on = input ("did you set the generator, Y/N?")
+#gen_on = input ("did you set the generator, Y/N?")
+gen_on = "y"
 if ("Y" in gen_on) or ("y" in gen_on):
     pass
 else:
@@ -48,7 +49,9 @@ chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 #reset all FEMBs on WIB
 chk.femb_cd_rst()
 
+#chk.femb_cd_edge_act(fembs)
 cfg_paras_rec = []
+
 for femb_id in fembs:
 #step 2
 #Configur Coldata, ColdADC, and LArASIC parameters. 
@@ -72,7 +75,7 @@ for femb_id in fembs:
     else:
         swdac = 0
         dac = 0
-    chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
+    chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac )
     adac_pls_en = 0 #disable LArASIC interal calibraiton pulser
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
 #step 3
@@ -80,11 +83,7 @@ for femb_id in fembs:
     if ext_cali_flg == True:
         chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
 
-chk.femb_cd_edge()
-chk.femb_cd_edge()
 
-chk.femb_cd_sync()
-chk.femb_cd_sync()
 
 if ext_cali_flg == True:
     #enable 10MHz output 
@@ -92,25 +91,45 @@ if ext_cali_flg == True:
     #external calibration from generator through P5 
     chk.wib_mon_switches(dac0_sel=0,dac1_sel=0,dac2_sel=0,dac3_sel=0, mon_vs_pulse_sel=1, inj_cal_pulse=0) 
 
-time.sleep(0.5)
+#print ("BBBB")
+#chk.data_cable_latency(femb_id=0)
+#chk.data_cable_latency(femb_id=1)
+#chk.data_cable_latency(femb_id=2)
+#chk.data_cable_latency(femb_id=3)
+#exit()
+
+#exit()
+chk.data_align()
+
 ####################FEMBs Data taking################################
 pwr_meas = chk.get_sensors()
 
-for i in range(20):
+#for i in range(20):
+for i in [0]:
+    time.sleep(1)
     rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
     
 #    chk.femb_cd_edge()
+#    chk.femb_cd_sync()
 #    chk.femb_cd_edge()
 
-    time.sleep(1)
-    rdreg = llc.wib_peek(chk.wib, 0xA00C000C)
-    print ( 0xA00C000C, hex(rdreg) )
-    print (hex( llc.wib_peek(chk.wib, 0xA00C00A8) ))
-    print (hex( llc.wib_peek(chk.wib, 0xA00C00AC) ))
-    print (hex( llc.wib_peek(chk.wib, 0xA00C00B0) ))
-    print (hex( llc.wib_peek(chk.wib, 0xA00C00B4) ))
-    print (hex( llc.wib_peek(chk.wib, 0xA00C00BC) ))
-    input ("continue")
+#    rdreg = llc.wib_peek(chk.wib, 0xA00C000C)
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0004)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0008)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0020)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0028)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0030)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0038)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0090)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C00BC)))
+#    print ( hex(llc.wib_peek(chk.wib, 0xA00C00C0)))
+    #print ( 0xA00C000C, hex(rdreg) )
+    #print (hex( llc.wib_peek(chk.wib, 0xA00C00A8) ))
+    #print (hex( llc.wib_peek(chk.wib, 0xA00C00AC) ))
+    #print (hex( llc.wib_peek(chk.wib, 0xA00C00B0) ))
+    #print (hex( llc.wib_peek(chk.wib, 0xA00C00B4) ))
+    #print (hex( llc.wib_peek(chk.wib, 0xA00C00BC) ))
+    #input ("continue")
    
     if save:
         fdir = "D:/debug_data/"

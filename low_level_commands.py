@@ -46,6 +46,15 @@ def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff)
         #enable fake time stamp
         wib_poke(wib, 0xA00c000C, (rdreg|0x0e))
     else:
+        #timing point reset
+        addr = 0xA00c0000
+        wib_poke(wib, addr, 0x10000000)
+        time.sleep(0.01)
+        wib_poke(wib, addr, 0x00000000)
+        rdreg = wib_peek(wib, 0xA00c0090)
+        print ("timing point status(addr 0x%08x) = 0x%08x"%(addr, rdreg))
+        
+
         rdreg = wib_peek(wib, 0xA00c0004)
         if fp1_ptc0_sel == 0:
             print ("timing master is available through backplane (PTC)")
@@ -66,6 +75,33 @@ def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff)
         rdreg = wib_peek(wib, 0xA00c000C)
         #send SYNC_FAST command when cmd_stamp_syn match the DTS time stamp
         wib_poke(wib, 0xA00c000C, (cmd_stamp_sync<<16) + ((rdreg&0x8000FFFF)|0x0C) )
+
+    #set edge_to_act_delay
+    rdreg = wib_peek(wib, 0xA0030004)
+    #print ("edge_to_act_delay = 0x%08x"%rdreg)
+    wib_poke(wib, 0xA0030004, 19)
+    rdreg = wib_peek(wib, 0xA0030004)
+    #print ("edge_to_act_delay = 0x%08x"%rdreg)
+
+    #reset COLDATA RX to clear buffers
+    rdreg = wib_peek(wib, 0xA00C0004)
+    #print ("coldata_rx_reset = 0x%08x"%rdreg)
+    wib_poke(wib, 0xA00C0004, rdreg&0xffffdfff)
+    wib_poke(wib, 0xA00C0004, rdreg|0x00002000)
+    wib_poke(wib, 0xA00C0004, rdreg&0xffffdfff)
+    rdreg = wib_peek(wib, 0xA00C0004)
+    #print ("coldata_rx_reset = 0x%08x"%rdreg)
+
+
+    #reset FELIX TX and loopback RX
+    rdreg = wib_peek(wib, 0xA00C0038)
+    #print ("felix_rx_reset = 0x%08x"%rdreg)
+    wib_poke(wib, 0xA00C0038, rdreg&0xffffffdf)
+    wib_poke(wib, 0xA00C0038, rdreg|0x00000020)
+    wib_poke(wib, 0xA00C0038, rdreg&0xffffffdf)
+    rdreg = wib_peek(wib, 0xA00C0038)
+    #print ("felix_rx_reset = 0x%08x"%rdreg)
+
     return wib_peek(wib, 0xA00C0004)
 
 #def config_wib(wib ): 

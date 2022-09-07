@@ -146,6 +146,18 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         print ("Sending Fast command edge")
         llc.fast_command(self.wib, 'edge')
 
+    def femb_cd_edge_act(self, fembs):
+        wrdata = 0x05
+        for femb_id in fembs:
+            self.femb_i2c_wrchk(femb_id, chip_addr=3, reg_page=0, reg_addr=0x20, wrdata=wrdata)
+            self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=0, reg_addr=0x20, wrdata=wrdata)
+        llc.fast_command(self.wib, 'edge_act')
+        wrdata = 0x00
+        for femb_id in fembs:
+            self.femb_i2c_wrchk(femb_id, chip_addr=3, reg_page=0, reg_addr=0x20, wrdata=wrdata)
+            self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=0, reg_addr=0x20, wrdata=wrdata)
+
+
     def femb_i2c_wr(self, femb_id, chip_addr, reg_page, reg_addr, wrdata):
         llc.cdpoke(self.wib, femb_id, chip_addr=chip_addr, reg_page=reg_page, reg_addr=reg_addr, data=wrdata)
 
@@ -166,6 +178,32 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                     exit()
             else:
                 break
+
+    def data_cable_latency(self, femb_id):
+        # set WIB_FEEDBACK_CODE registers to B2
+        self.femb_i2c_wr(femb_id, chip_addr=3, reg_page=0, reg_addr=0x2B, wrdata=0xB2)
+        self.femb_i2c_wr(femb_id, chip_addr=3, reg_page=0, reg_addr=0x2C, wrdata=0xB2)
+        self.femb_i2c_wr(femb_id, chip_addr=3, reg_page=0, reg_addr=0x2D, wrdata=0xB2)
+        # set ACTCOMMANDREG register to 9
+        self.femb_i2c_wr(femb_id, chip_addr=3, reg_page=0, reg_addr=0x20, wrdata=0x09)
+        #issue FAST ACT command to enable loopback
+        llc.fast_command(self.wib,'act')
+        for i in range(6):
+            if femb_id == 0:
+                btr = 0xA0010000
+            elif femb_id == 1:
+                btr = 0xA0050000
+            elif femb_id == 2:
+                btr = 0xA0070000
+            elif femb_id == 3:
+                btr = 0xA0090000
+            llc.wib_poke(self.wib, btr + 0x8, 0) #dummy writes
+        llc.wib_poke(self.wib, btr + 0x8, 1) #issue stimulus
+        time.sleep(0.01)
+        rdreg = llc.wib_peek(self.wib, btr + 0x8) #read measured latency
+        print (hex(rdreg))
+        llc.wib_poke(self.wib, btr + 0x8, 0) #dummy writes
+        self.femb_i2c_wr(femb_id, chip_addr=3, reg_page=0, reg_addr=0x20, wrdata=0x00)
 
     def femb_cd_cfg(self, femb_id):
 #set coldata 8b10 
@@ -226,6 +264,66 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         self.femb_i2c_wrchk(femb_id, chip_addr=3, reg_page=0, reg_addr=0x20, wrdata=0)
         self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=0, reg_addr=0x20, wrdata=0)
         
+    def data_align(self, fembs=[0, 1, 2,3]):
+        self.femb_cd_sync() #sync should be sent before edge
+        time.sleep(0.01)
+        self.femb_cd_edge()
+        time.sleep(0.5)
+        
+        rdaddr = 0xA00C0010
+        rdreg = llc.wib_peek(self.wib, rdaddr)
+        wrvalue = 0x10 #cmd_code_edge = 0x10
+        wrreg = (rdreg & 0xffff00ff) + ((wrvalue&0xff)<<8)
+        llc.wib_poke(self.wib, rdaddr, wrreg) 
+        
+        rdaddr = 0xA00C000C
+        rdreg = llc.wib_peek(self.wib, rdaddr)
+        wrvalue = 0x7fec #cmd_stamp_sync = 0x7fec
+        wrreg = (rdreg & 0x0000ffff) + ((wrvalue&0xffff)<<16)
+        llc.wib_poke(self.wib, rdaddr, wrreg) 
+        
+        rdaddr = 0xA00C000C
+        rdreg = llc.wib_peek(self.wib, rdaddr)
+        wrvalue = 0x1 #cmd_stamp_sync_en = 1
+        wrreg = (rdreg & 0xfffffffb) + ((wrvalue&0x1)<<2)
+        llc.wib_poke(self.wib, rdaddr, wrreg) 
+            
+        for dts_time_delay in  range(0x50, 0x70,1):
+            rdaddr = 0xA00C000C
+            rdreg = llc.wib_peek(self.wib, rdaddr)
+            wrvalue = dts_time_delay #0x58 #dts_time_delay = 1
+            wrreg = (rdreg & 0xffff00ff) + ((wrvalue&0xff)<<8)
+            llc.wib_poke(self.wib, rdaddr, wrreg) 
+            rdaddr = 0xA00C000C
+            rdreg = llc.wib_peek(self.wib, rdaddr)
+            wrvalue = 0x1 #align_en = 1
+            wrreg = (rdreg & 0xfffffff7) + ((wrvalue&0x1)<<3)
+            llc.wib_poke(self.wib, rdaddr, wrreg) 
+            time.sleep(0.2)
+            if 0 in fembs:
+                link0to3 = llc.wib_peek(self.wib, 0xA00C00A8)
+            else:
+                link0to3 = 0x0
+            if 1 in fembs:
+                link4to7 = llc.wib_peek(self.wib, 0xA00C00AC)
+            else:
+                link0to3 = 0x0
+            if 2 in fembs:
+                link8tob = llc.wib_peek(self.wib, 0xA00C00B0)
+            else:
+                link0to3 = 0x0
+            if 3 in fembs:
+                linkctof = llc.wib_peek(self.wib, 0xA00C00B4)
+            else:
+                link0to3 = 0x0
+
+            if ((link0to3 & 0xe0e0e0e0) == 0) and ((link4to7 & 0xe0e0e0e0) == 0)and ((link8tob & 0xe0e0e0e0) == 0) and ((linkctof & 0xe0e0e0e0) == 0):
+                print ("Data is aligned when dts_time_delay = 0x%x"%dts_time_delay )
+                break
+            if dts_time_delay >= 0x68:
+                print ("Error: data can't be aligned, exit anyway")
+                exit()
+
     def femb_adc_cfg(self, femb_id):
         self.femb_cd_fc_act(femb_id, act_cmd="rst_adcs")
 

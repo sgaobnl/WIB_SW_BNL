@@ -52,6 +52,8 @@ def deframe(words): #based on WIB-DAQ_Format_2021-12-01_daq_hdr.xlsx
     frame_dict["FEMB_CDTS"]  =((words[4]>>16)>>5)&0x7ff
     frame_dict["FEMB_CDTS_low5"]  =(words[4]>>16)&0x1f
 
+    #print (hex(frame_dict["FEMB_SF"]), hex(frame_dict["TMTS"]), hex(frame_dict["TMTS_low5"] ),  hex(frame_dict["FEMB_CDTS"]),  hex(frame_dict["FEMB_CDTS_low5"]), hex(frame_dict["CDTS_ID"])  )
+
     # how U,V,X numbers map to channels on a single FEMB
     u_to_ch = [20, 59, 19, 60, 18, 61, 17, 62, 16, 63, 4, 43, 3, 44, 2, 
         45, 1, 46, 0, 47, 68, 107, 67, 108, 66, 109, 65, 110, 64, 
@@ -183,7 +185,9 @@ def spymemory_decode(buf):
     return ordered_frames
 
 def wib_spy_dec_syn(buf0, buf1): #synchronize samples in two spy buffers
+    print ("Decoding BUF0")
     frames0 = spymemory_decode(buf=buf0)
+    print ("Decoding BUF1")
     frames1 = spymemory_decode(buf=buf1)
     flen = len(frames0)
     len1 = len(frames1)
@@ -201,6 +205,7 @@ def wib_spy_dec_syn(buf0, buf1): #synchronize samples in two spy buffers
             frames1 =frames1[oft:] 
     elif frames0[0]["TMTS"] < frames1[0]["TMTS"]:
         oft = abs(frames0[0]["TMTS"] - frames1[0]["TMTS"])
+        print (oft, hex(frames0[0]["TMTS"]), hex(frames1[0]["TMTS"]))
         if frames0[oft]["TMTS"] == frames1[0]["TMTS"]:
             frames0 =frames0[oft:] 
             frames1 =frames1[0: 0-oft] 

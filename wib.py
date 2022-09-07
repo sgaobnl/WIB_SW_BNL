@@ -41,12 +41,12 @@ class WIB:
         try:
             self.socket.send(cmd.SerializeToString())
         except:
-            print_gui("Socket timed out while sending. Please check to make sure the network cable is connected and restart the GUI!")
+            print("Socket timed out while sending. Please check to make sure the network cable is connected and restart the GUI!")
             return 1
         try:
             rep.ParseFromString(self.socket.recv())
         except:
-            print_gui("Socket timed out while receiving. Please check to make sure the network cable is connected and restart the GUI!")
+            print("Socket timed out while receiving. Please check to make sure the network cable is connected and restart the GUI!")
             return 1
         
     def defaults(self):

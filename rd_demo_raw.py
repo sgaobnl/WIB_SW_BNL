@@ -60,6 +60,15 @@ fp ="D:/debug_data/Raw_29_08_2022_15_53_14.bin"
 fp ="D:/debug_data/Raw_30_08_2022_15_26_37.bin"
 fp ="D:/debug_data/Raw_30_08_2022_15_26_40.bin"
 fp ="D:/debug_data/Raw_30_08_2022_16_40_19.bin"
+fp ="D:/debug_data/Raw_02_09_2022_14_49_41.bin"
+fp ="D:/debug_data/Raw_02_09_2022_17_27_30.bin"
+#fp ="D:/debug_data/Raw_02_09_2022_17_31_49.bin"
+#fp ="D:/debug_data/Raw_02_09_2022_17_32_03.bin"
+#fp ="D:/debug_data/Raw_02_09_2022_17_32_10.bin"
+fp ="D:/debug_data/Raw_02_09_2022_17_35_45.bin"
+fp ="D:/debug_data/Raw_06_09_2022_18_16_27.bin"
+
+
 
 
 
@@ -99,8 +108,8 @@ for i in range(flen):
     femb2.append(wib_data[1][i]["FEMB0_2"])
     femb3.append(wib_data[1][i]["FEMB1_3"])
 
-print (sfs0)
-print (sfs1)
+#print (sfs0)
+#print (sfs1)
 
 femb0 = list(zip(*femb0))
 femb1 = list(zip(*femb1))
@@ -110,7 +119,7 @@ femb3 = list(zip(*femb3))
 wibs = [femb0, femb1, femb2, femb3]
 
 x = np.arange(len(tmts))
-maxpos = np.where(wibs[0][0][0:1500] == np.max(wibs[0][0][0:1500]))[0][0]
+#maxpos = np.where(wibs[0][0][0:1500] == np.max(wibs[0][0][0:1500]))[0][0]
 
 x = np.arange(20)
 
@@ -127,6 +136,7 @@ if False:
     plt.close()
     
     for fembi in range(4):
+        maxpos = np.where(wibs[fembi][0][0:1500] == np.max(wibs[fembi][0][0:1500]))[0][0]
         fig = plt.figure(figsize=(10,6))
         for chip in range(8):
             for chn in range(16):
@@ -141,6 +151,7 @@ if False:
         plt.close()
 
 for fembi in range(4):
+    maxpos = np.where(wibs[fembi][0][0:1500] == np.max(wibs[fembi][0][0:1500]))[0][0]
     fig = plt.figure(figsize=(10,6))
     plt.plot(x, wibs[fembi][0][maxpos-10: maxpos+10], marker='s', label = f"FEMB{fembi} Ch0")
     plt.plot(x, wibs[fembi][16][maxpos-10: maxpos+10], marker='o', label = f"FEMB{fembi} Ch16")
@@ -150,7 +161,25 @@ for fembi in range(4):
     plt.plot(x, wibs[fembi][80][maxpos-10: maxpos+10], marker='<', label = f"FEMB{fembi} Ch80")
     plt.plot(x, wibs[fembi][96][maxpos-10: maxpos+10], marker='+', label = f"FEMB{fembi} Ch96")
     plt.plot(x, wibs[fembi][112][maxpos-10: maxpos+10], marker='.', label = f"FEMB{fembi} Ch112")
+
     plt.legend()
     plt.show()
     plt.close()
+
+fig = plt.figure(figsize=(10,6))
+fembi = 0
+maxpos = np.where(wibs[fembi][0][0:1500] == np.max(wibs[fembi][0][0:1500]))[0][0]
+markers = ['o', '.', '+', '*']
+for fembi in range(4):
+    plt.plot(x, wibs[fembi][0][maxpos-10: maxpos+10],  marker=markers[fembi], label = f"FEMB{fembi} Ch0")
+    plt.plot(x, wibs[fembi][16][maxpos-10: maxpos+10], marker=markers[fembi], label = f"FEMB{fembi} Ch16")
+    plt.plot(x, wibs[fembi][32][maxpos-10: maxpos+10], marker=markers[fembi], label = f"FEMB{fembi} Ch32")
+    plt.plot(x, wibs[fembi][48][maxpos-10: maxpos+10], marker=markers[fembi], label = f"FEMB{fembi} Ch48")
+    plt.plot(x, wibs[fembi][64][maxpos-10: maxpos+10], marker=markers[fembi], label = f"FEMB{fembi} Ch64")
+    plt.plot(x, wibs[fembi][80][maxpos-10: maxpos+10], marker=markers[fembi], label = f"FEMB{fembi} Ch80")
+    plt.plot(x, wibs[fembi][96][maxpos-10: maxpos+10], marker=markers[fembi], label = f"FEMB{fembi} Ch96")
+    plt.plot(x, wibs[fembi][112][maxpos-10: maxpos+10], marker=markers[fembi], label = f"FEMB{fembi} Ch112")
+plt.legend()
+plt.show()
+plt.close()
 
