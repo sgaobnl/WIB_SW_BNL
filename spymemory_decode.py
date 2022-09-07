@@ -52,7 +52,7 @@ def deframe(words): #based on WIB-DAQ_Format_2021-12-01_daq_hdr.xlsx
     frame_dict["FEMB_CDTS"]  =((words[4]>>16)>>5)&0x7ff
     frame_dict["FEMB_CDTS_low5"]  =(words[4]>>16)&0x1f
 
-    #print (hex(frame_dict["FEMB_SF"]), hex(frame_dict["TMTS"]), hex(frame_dict["TMTS_low5"] ),  hex(frame_dict["FEMB_CDTS"]),  hex(frame_dict["FEMB_CDTS_low5"]), hex(frame_dict["CDTS_ID"])  )
+    print (hex(frame_dict["FEMB_SF"]), hex(frame_dict["TMTS"]), hex(frame_dict["TMTS_low5"] ),  hex(frame_dict["FEMB_CDTS"]),  hex(frame_dict["FEMB_CDTS_low5"]), hex(frame_dict["CDTS_ID"])  )
 
     # how U,V,X numbers map to channels on a single FEMB
     u_to_ch = [20, 59, 19, 60, 18, 61, 17, 62, 16, 63, 4, 43, 3, 44, 2, 

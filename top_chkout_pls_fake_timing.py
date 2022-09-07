@@ -38,8 +38,6 @@ chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 #reset all FEMBs on WIB
 chk.femb_cd_rst()
 
-chk.femb_cd_edge()
-chk.femb_cd_edge()
 
 cfg_paras_rec = []
 for femb_id in fembs:
@@ -64,8 +62,8 @@ for femb_id in fembs:
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
 #step 3
     chk.femb_cfg(femb_id, adac_pls_en )
-chk.femb_cd_sync()
-chk.femb_cd_sync()
+
+chk.data_align()
 
 time.sleep(0.5)
 

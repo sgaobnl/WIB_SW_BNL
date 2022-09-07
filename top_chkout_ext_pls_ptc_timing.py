@@ -79,10 +79,7 @@ for femb_id in fembs:
     chk.femb_cfg(femb_id, adac_pls_en )
     if ext_cali_flg == True:
         chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
-chk.femb_cd_edge()
-chk.femb_cd_edge()
-chk.femb_cd_sync()
-chk.femb_cd_sync()
+chk.data_align()
 
 if ext_cali_flg == True:
     #enable 10MHz output 

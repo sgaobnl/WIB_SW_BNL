@@ -84,59 +84,27 @@ for femb_id in fembs:
         chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
 
 
-
 if ext_cali_flg == True:
     #enable 10MHz output 
     chk.en_ref10MHz(ref_en = True)
     #external calibration from generator through P5 
     chk.wib_mon_switches(dac0_sel=0,dac1_sel=0,dac2_sel=0,dac3_sel=0, mon_vs_pulse_sel=1, inj_cal_pulse=0) 
 
-#print ("BBBB")
-#chk.data_cable_latency(femb_id=0)
-#chk.data_cable_latency(femb_id=1)
-#chk.data_cable_latency(femb_id=2)
-#chk.data_cable_latency(femb_id=3)
-#exit()
 
-#exit()
 chk.data_align()
 
 ####################FEMBs Data taking################################
 pwr_meas = chk.get_sensors()
 
-#for i in range(20):
-for i in [0]:
-    time.sleep(1)
-    rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
-    
-#    chk.femb_cd_edge()
-#    chk.femb_cd_sync()
-#    chk.femb_cd_edge()
+time.sleep(1)
+rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
 
-#    rdreg = llc.wib_peek(chk.wib, 0xA00C000C)
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0004)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0008)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0020)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0028)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0030)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0038)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C0090)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C00BC)))
-#    print ( hex(llc.wib_peek(chk.wib, 0xA00C00C0)))
-    #print ( 0xA00C000C, hex(rdreg) )
-    #print (hex( llc.wib_peek(chk.wib, 0xA00C00A8) ))
-    #print (hex( llc.wib_peek(chk.wib, 0xA00C00AC) ))
-    #print (hex( llc.wib_peek(chk.wib, 0xA00C00B0) ))
-    #print (hex( llc.wib_peek(chk.wib, 0xA00C00B4) ))
-    #print (hex( llc.wib_peek(chk.wib, 0xA00C00BC) ))
-    #input ("continue")
-   
-    if save:
-        fdir = "D:/debug_data/"
-        ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-        fp = fdir + "Raw_" + ts  + ".bin"
-        with open(fp, 'wb') as fn:
-            pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
+if save:
+    fdir = "D:/debug_data/"
+    ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    fp = fdir + "Raw_" + ts  + ".bin"
+    with open(fp, 'wb') as fn:
+        pickle.dump( [rawdata, pwr_meas, cfg_paras_rec], fn)
     
 
 
