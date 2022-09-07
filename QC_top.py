@@ -16,7 +16,10 @@ tasks = args.task
 qc=QC_Runs(fembs, sampleN)
 qc.pwr_fembs('on')
 
+tt={}
+
 for tm in tasks:
+    t1=time.time()
     print("start tm=",tm)
     if tm==1:
        qc.pwr_consumption()
@@ -54,6 +57,9 @@ for tm in tasks:
     if tm==12:
        qc.femb_MON_3()
 
+    t2=time.time()
+    tt[tm]=t2-t1
     time.sleep(1)
 
 qc.pwr_fembs('off')
+print(tt)

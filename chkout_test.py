@@ -59,53 +59,63 @@ for i in fembs:
     fembNo['femb{}'.format(i)]=input("FEMB{} ID: ".format(i))
 
 logs['femb id']=fembNo
+logs['date']=datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
 
 ####### Create data save directory #######
-t1 = time.time()
 
-save_dir = "D:/debug_data/CHK_"
+datadir = "D:/IO-1865-1C/CHKOUT/data/"
 for key,femb_no in fembNo.items():
-    save_dir = save_dir + "femb{}_".format(femb_no)
+    datadir = datadir + "femb{}_".format(femb_no)
 
-save_dir = save_dir+"{}_{}".format(env,toytpc)
+datadir = datadir+"{}_{}".format(env,toytpc)
 
 n=1
-while (os.path.exists(save_dir)):
+while (os.path.exists(datadir)):
     if n==1:
-        save_dir = save_dir + "_R{:03d}".format(n)
+        datadir = datadir + "_R{:03d}".format(n)
     else:
-        save_dir = save_dir[:-3] + "{:03d}".format(n)
+        datadir = datadir[:-3] + "{:03d}".format(n)
     n=n+1
     if n>20:
         raise Exception("There are more than 20 folders...")
 
-try:
-    os.makedirs(save_dir)
-except OSError:
-    print ("Error to create folder %s"%save_dir)
-    sys.exit()
-
-save_dir = save_dir+"/"
-
-fp = save_dir + "logs_env.bin"
-with open(fp, 'wb') as fn:
-     pickle.dump(logs, fn)
-
-datadir = save_dir+"data/"
 try:
     os.makedirs(datadir)
 except OSError:
     print ("Error to create folder %s"%datadir)
     sys.exit()
 
-plotdir = save_dir+"plot/"
-try:
-    os.makedirs(plotdir)
-except OSError:
-    print ("Error to create folder %s"%plotdir)
-    sys.exit()
+datadir = datadir+"/"
 
+fp = datadir + "logs_env.bin"
+with open(fp, 'wb') as fn:
+     pickle.dump(logs, fn)
 
+reportdir = "D:/IO-1865-1C/CHKOUT/reports/"
+PLOTDIR = {}
+
+for ifemb,femb_no in fembNo.items():
+    plotdir = reportdir + "FEMB{}_{}_{}".format(femb_no, env, toytpc)
+
+    n=1
+    while (os.path.exists(plotdir)):
+        if n==1:
+            plotdir = plotdir + "_R{:03d}".format(n)
+        else:
+            plotdir = plotdir[:-3] + "{:03d}".format(n)
+        n=n+1
+        if n>20:
+            raise Exception("There are more than 20 FEMB{} folders...".format(femb_no))
+    
+    try:
+        os.makedirs(plotdir)
+    except OSError:
+        print ("Error to create folder %s"%plotdir)
+        sys.exit()
+
+    PLOTDIR[ifemb] = plotdir+'/'
+
+t1 = time.time()
 ####### Power and configue FEMBs #######
 
 chk = WIB_CFGS()
@@ -142,10 +152,7 @@ for femb_id in fembs:
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
     chk.femb_cfg(femb_id, adac_pls_en )
 
-chk.femb_cd_edge()
-chk.femb_cd_edge()
-chk.femb_cd_sync()
-chk.femb_cd_sync()
+chk.data_align()
 time.sleep(0.5)
 
 ####### Take data #######
@@ -199,17 +206,17 @@ qc_tools = QC_tools()
 pldata = qc_tools.data_decode(rawdata)
 pldata = np.array(pldata)
 
-qc_tools.PrintMON(fembs, fembNo, nchips, mon_refs, mon_temps, mon_adcs, plotdir)
+qc_tools.PrintMON(fembNo, nchips, mon_refs, mon_temps, mon_adcs, PLOTDIR)
 
-for i in fembs:
-    i=int(i)
+for ifemb,femb_no in fembNo.items():
+    i=int(ifemb[-1])
 
-    femb_id = fembNo['femb{}'.format(i)]
+    plotdir = PLOTDIR[ifemb]
     ana = qc_tools.data_ana(pldata,i)
-    fp_data = plotdir+"FEMB{}_SE_response".format(femb_id)
+    fp_data = plotdir+"SE_response"
     qc_tools.FEMB_CHK_PLOT(ana[0], ana[1], ana[2], ana[3], ana[4], ana[5], fp_data)
 
-    fp_pwr = plotdir+"FEMB{}_pwr_meas".format(femb_id)
+    fp_pwr = plotdir+"pwr_meas"
     qc_tools.PrintPWR( pwr_meas['femb{}'.format(i)], fp_pwr)
 
     pdf = FPDF(orientation = 'P', unit = 'mm', format='Letter')
@@ -219,11 +226,13 @@ for i in fembs:
     pdf.set_font('Times', 'B', 20)
     pdf.cell(85)
     pdf.l_margin = pdf.l_margin*2
-    pdf.cell(30, 5, 'FEMB#{:04d} Checkout Test Report'.format(int(femb_id)), 0, 1, 'C')
+    pdf.cell(30, 5, 'FEMB#{:04d} Checkout Test Report'.format(int(femb_no)), 0, 1, 'C')
     pdf.ln(2)
 
     pdf.set_font('Times', '', 12)
-    pdf.cell(30, 5, 'Tester: {}'.format(logs["tester"]), 0, 1)
+    pdf.cell(30, 5, 'Tester: {}'.format(logs["tester"]), 0, 0)
+    pdf.cell(80)
+    pdf.cell(30, 5, 'Date: {}'.format(logs["date"]), 0, 1)
 
 
     pdf.cell(30, 5, 'Temperature: {}'.format(logs["env"]), 0, 0)
@@ -235,13 +244,13 @@ for i in fembs:
     pwr_image = fp_pwr+".png"
     pdf.image(pwr_image,0,40,200,40)
 
-    mon_image = plotdir+"FEMB{}_mon_meas.png".format(femb_id)
+    mon_image = plotdir+"mon_meas.png"
     pdf.image(mon_image,0,80,200,40)
 
     chk_image = fp_data+".png"
     pdf.image(chk_image,3,120,200,120)
 
-    outfile = save_dir+'CHK_femb{}.pdf'.format(femb_id)
+    outfile = plotdir+'report.pdf'
     pdf.output(outfile, "F")
 
 t2=time.time()

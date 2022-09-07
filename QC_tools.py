@@ -378,7 +378,7 @@ class QC_tools:
             y3 = chn_onewfs[chni][25:ts+25]
             y4 = chn_avgwfs[chni][25:ts+25]
             self.FEMB_SUB_PLOT(ax3, x, y3, title="Waveform Overlap", xlabel="Time / $\mu$s", ylabel="ADC /bin", color='C%d'%(chni%9))
-            self.FEMB_SUB_PLOT(ax4, x, y4, title="Averaging(100 Cycles) Waveform Overlap", xlabel="Time / $\mu$s", ylabel="ADC /bin", color='C%d'%(chni%9))
+            self.FEMB_SUB_PLOT(ax4, x, y4, title="Averaging Waveform Overlap", xlabel="Time / $\mu$s", ylabel="ADC /bin", color='C%d'%(chni%9))
 
         #fig.suptitle(fn)
         plt.tight_layout( rect=[0.05, 0.05, 0.95, 0.95])
@@ -413,30 +413,32 @@ class QC_tools:
         fig.savefig(fp+".png")
         plt.close(fig)
 
-    def PrintMON(self, fembs, fembs_no, nchips, mon_bgp, mon_t, mon_adcs, fp):
+    def PrintMON(self, fembs, nchips, mon_bgp, mon_t, mon_adcs, fp):
        
-        for femb in fembs: 
+        for ifemb,femb_no in fembs.items():
+            nfemb=int(ifemb[-1])
+            
             mon_dic={'ASIC#':[],'FE T':[],'FE BGP':[],'ADC VCMI':[],'ADC VCMO':[], 'ADC VREFP':[], 'ADC VREFN':[], 'ADC VSSA':[]}
 
             for i in nchips: # 8 chips per board
                 
                 mon_dic['ASIC#'].append(i)
-                fe_t = round(mon_t[f'chip{i}'][0][femb]*f,1)
-                fe_bgp = round(mon_bgp[f'chip{i}'][0][femb]*f,1)
+                fe_t = round(mon_t[f'chip{i}'][0][nfemb]*self.fadc,1)
+                fe_bgp = round(mon_bgp[f'chip{i}'][0][nfemb]*self.fadc,1)
                 mon_dic['FE T'].append(fe_t)
                 mon_dic['FE BGP'].append(fe_bgp)
 
-                vcmi = round(mon_adcs[f'chip{i}']["VCMI"][1][0][femb]*self.fadc,1)
-                vcmo = round(mon_adcs[f'chip{i}']["VCMO"][1][0][femb]*self.fadc,1)
-                vrefp = round(mon_adcs[f'chip{i}']["VREFP"][1][0][femb]*self.fadc,1)
-                vrefn = round(mon_adcs[f'chip{i}']["VREFN"][1][0][femb]*self.fadc,1)
-                vssa = round(mon_adcs[f'chip{i}']["VSSA"][1][0][femb]*self.fadc,1)
+                vcmi = round(mon_adcs[f'chip{i}']["VCMI"][1][0][nfemb]*self.fadc,1)
+                vcmo = round(mon_adcs[f'chip{i}']["VCMO"][1][0][nfemb]*self.fadc,1)
+                vrefp = round(mon_adcs[f'chip{i}']["VREFP"][1][0][nfemb]*self.fadc,1)
+                vrefn = round(mon_adcs[f'chip{i}']["VREFN"][1][0][nfemb]*self.fadc,1)
+                vssa = round(mon_adcs[f'chip{i}']["VSSA"][1][0][nfemb]*self.fadc,1)
 
                 mon_dic['ADC VCMI'].append(vcmi)
                 mon_dic['ADC VCMO'].append(vcmo)
                 mon_dic['ADC VREFP'].append(vrefp)
                 mon_dic['ADC VREFN'].append(vrefn)
-                mon_dic['ADC VSSA'].append(vrefn)
+                mon_dic['ADC VSSA'].append(vssa)
 
             df=pd.DataFrame(data=mon_dic)
 
@@ -446,7 +448,7 @@ class QC_tools:
             ax.set_title("Monitoring path for FE-ADC (#mV)")
             table.set_fontsize(14)
             table.scale(1,2.2)
-            newfp=fp+"FEMB{}_mon_meas.png".format(fembs_no[f'femb{femb}'])
+            newfp=fp[ifemb]+"mon_meas.png"
             fig.savefig(newfp)
             plt.close(fig)
  

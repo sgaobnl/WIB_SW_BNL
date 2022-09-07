@@ -45,10 +45,11 @@ class QC_Runs:
             self.fembNo['femb{}'.format(i)]=input("FEMB{} ID: ".format(i))
 
         self.logs['femb id']=self.fembNo
+        self.logs['date']=datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
 
         ####### Create data saving directory #######
 
-        save_dir = "D:/debug_data/"
+        save_dir = "D:/IO-1865-1C/QC/data/"
         for key,femb_no in self.fembNo.items():
             save_dir = save_dir + "femb{}_".format(femb_no)
 
