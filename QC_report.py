@@ -263,7 +263,7 @@ class QC_reports:
 
           qc=QC_tools()
           qc.PlotMonDAC(self.fembs, mon_sgp1, self.savedir, "MON_FE", "LArASIC_DAC_sgp1", range(64), "VDAC{:02d}CHIP{}_SGP1")
-          qc.PlotMonDAC(self.fembs, mon_sgp0, self.savedir, "MON_FE", "LArASIC_DAC_14mVfC", range(0,64,4), "VDAC{:02d}CHIP{}_SGP1")
+          qc.PlotMonDAC(self.fembs, mon_sgp0, self.savedir, "MON_FE", "LArASIC_DAC_14mVfC", range(0,64,4), "VDAC{:02d}CHIP{}")
 
       def ColdADC_DAC_MON_report(self):
 
@@ -388,7 +388,7 @@ if __name__=='__main__':
    
    tasks = args.task
    
-   rp = QC_reports("femb101_femb107_femb105_femb111_RT_150pF")
+   rp = QC_reports("femb101_femb107_femb105_femb111_LN_150pF")
    
    tt={}
    
@@ -426,5 +426,4 @@ if __name__=='__main__':
        tt[tm]=t2-t1
        time.sleep(1)
    
-   qc.pwr_fembs('off')
    print(tt)
