@@ -8,14 +8,19 @@ import time
 import glob
 from QC_tools import QC_tools
 from fpdf import FPDF
+import argparse
+
 
 
 class QC_reports:
 
       def __init__(self, fdir):
 
-          savedir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/"
-          self.datadir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"+fdir+"/"
+#          savedir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/"
+#          self.datadir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"+fdir+"/"
+
+          savedir = "D:/IO-1865-1C/QC/reports/"
+          self.datadir = "D:/IO-1865-1C/QC/data/"+fdir+"/"
 
           fp = self.datadir+"logs_env.bin"
           with open(fp, 'rb') as fn:
@@ -77,7 +82,9 @@ class QC_reports:
           pdf.ln(2)
           
           pdf.set_font('Times', '', 12)
-          pdf.cell(30, 5, 'Tester: {}'.format(self.logs["tester"]), 0, 1)
+          pdf.cell(30, 5, 'Tester: {}'.format(self.logs["tester"]), 0, 0)
+          pdf.cell(80)
+          pdf.cell(30, 5, 'Date: {}'.format(self.logs["date"]), 0, 1)
           
           pdf.cell(30, 5, 'Temperature: {}'.format(self.logs["env"]), 0, 0)
           pdf.cell(80)
@@ -88,7 +95,10 @@ class QC_reports:
           pwr_images = sorted(glob.glob(fdir+"*_pwr_meas.png"), key=os.path.getmtime)
           nn=0
           for im in pwr_images:
-              im_name = im.split("/")[-1][4:-13]
+              if '\\' in im:
+                  im_name = im.split("\\")[-1][4:-13]
+              else:
+                  im_name = im.split("/")[-1][4:-13]
               pdf.set_font('Times', 'B', 14)
               if nn<3:
                  pdf.text(55, 45+45*nn, im_name)  
@@ -106,7 +116,11 @@ class QC_reports:
           chk_images = sorted(glob.glob(fdir+"*_pulse_response.png"), key=os.path.getmtime)
           nn=0
           for im in chk_images:
-              im_name = im.split("/")[-1][4:-19]
+              if '\\' in im:
+                  im_name = im.split("\\")[-1][4:-19]
+              else:
+                  im_name = im.split("/")[-1][4:-19]
+
               pdf.set_font('Times', 'B', 14)
               if nn<3:
                  pdf.text(55, 10+nn*80, im_name)  
@@ -139,7 +153,10 @@ class QC_reports:
               pldata = qc.data_decode(rawdata)
               pldata = np.array(pldata)
 
-              fname = afile.split("/")[-1][:-4]
+              if '\\' in afile:
+                  fname = afile.split("\\")[-1][:-4]
+              else:
+                  fname = afile.split("/")[-1][:-4]
               for key,value in self.fembs.items():
                   fp = self.savedir[key] + "PWR_Meas/" + fname + "_pwr_meas"
                   qc.PrintPWR(pwr_meas[key], fp)
@@ -169,7 +186,11 @@ class QC_reports:
               pldata = qc.data_decode(rawdata)
               pldata = np.array(pldata)
 
-              fname = afile.split("/")[-1][:-4]
+              if '\\' in afile:
+                  fname = afile.split("\\")[-1][:-4]
+              else:
+                  fname = afile.split("/")[-1][:-4]
+
               for key,value in self.fembs.items():
                   fp = self.savedir[key] + "PWR_Cycle/" + fname + "_pwr_meas"
                   qc.PrintPWR(pwr_meas[key], fp)
@@ -199,7 +220,10 @@ class QC_reports:
               pldata = qc.data_decode(rawdata)
               pldata = np.array(pldata)
 
-              fname = afile.split("/")[-1][:-4]
+              if '\\' in afile:
+                  fname = afile.split("\\")[-1][:-4]
+              else:
+                  fname = afile.split("/")[-1][:-4]
               for key,value in self.fembs.items():
                   ana = qc.data_ana(pldata,int(key[-1]))
                   fp_data = self.savedir[key] + "CHK/" + fname + "_pulse_response"
@@ -267,7 +291,10 @@ class QC_reports:
                    raw = pickle.load(fn)
 
               rawdata=raw[0]
-              fname = afile.split("/")[-1][7:-9]
+              if '\\' in afile:
+                  fname = afile.split("\\")[-1][7:-9]
+              else:
+                  fname = afile.split("/")[-1][7:-9]
 
               qc=QC_tools()
               pldata = qc.data_decode(rawdata)
@@ -347,19 +374,57 @@ class QC_reports:
           qc.GetENC(self.fembs, "200mVBL", "14_0mVfC", "2_0us", 1, self.savedir, "CALI/")
           self.GenCALIPDF("200mVBL", "14_0mVfC", "2_0us", 1)
          
-          dac_list = range(0,64) 
+          dac_list = range(0,56) 
           datadir = self.datadir+"CALI4/"
           qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin", "900mVBL", "14_0mVfC", "2_0us", "{}_{}_{}_sgp1", dac_list, 10, 4)
           qc.GetENC(self.fembs, "900mVBL", "14_0mVfC", "2_0us", 1, self.savedir, "CALI/")
           self.GenCALIPDF("900mVBL", "14_0mVfC", "2_0us", 1)
 
 if __name__=='__main__':
-   rp = QC_reports("femb1_femb2_femb3_femb4_LN_0pF_R003")
-   rp.PWR_consumption_report()
-   rp.PWR_cycle_report()
-   rp.CHKPULSE()
-   rp.FE_MON_report()
-   rp.FE_DAC_MON_report()
-   rp.ColdADC_DAC_MON_report()
-   rp.RMS_report()
-   rp.CALI_report()
+
+   ag = argparse.ArgumentParser()
+   ag.add_argument("task", help="a list of tasks to be analyzed", type=int, choices=range(1,13), nargs='+')
+   args = ag.parse_args()
+   
+   tasks = args.task
+   
+   rp = QC_reports("femb101_femb107_femb105_femb111_RT_150pF")
+   
+   tt={}
+   
+   for tm in tasks:
+       t1=time.time()
+       print("start tm=",tm)
+       if tm==1:
+          rp.PWR_consumption_report()
+   
+       if tm==2:
+          rp.PWR_cycle_report()
+          
+  #     if tm==3:
+  #        qc.femb_leakage_cur()
+          
+       if tm==4:
+          rp.CHKPULSE()
+   
+       if tm==5:
+          rp.RMS_report()
+   
+       if tm==6:
+          rp.CALI_report()
+   
+       if tm==10:
+          rp.FE_MON_report()
+   
+       if tm==11:
+          rp.FE_DAC_MON_report()
+   
+       if tm==12:
+          rp.ColdADC_DAC_MON_report()
+   
+       t2=time.time()
+       tt[tm]=t2-t1
+       time.sleep(1)
+   
+   qc.pwr_fembs('off')
+   print(tt)

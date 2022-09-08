@@ -363,33 +363,40 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9f, wrdata=0x00)
 
     def femb_fe_cfg(self, femb_id):
-#reset LARASIC chips
+        #reset LARASIC chips
         self.femb_cd_fc_act(femb_id, act_cmd="rst_larasics")
-#        time.sleep(0.01)
+        time.sleep(0.01)
         self.femb_cd_fc_act(femb_id, act_cmd="rst_larasic_spi")
-#program LARASIC chips
-#        time.sleep(0.01)
+        #program LARASIC chips
+        time.sleep(0.01)
         for chip in range(8):
             for reg_id in range(16+2):
                 if (chip < 4):
                     self.femb_i2c_wrchk(femb_id, chip_addr=3, reg_page=(chip%4+1), reg_addr=(0x91-reg_id), wrdata=self.regs_int8[chip][reg_id])
                 else:
                     self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=(chip%4+1), reg_addr=(0x91-reg_id), wrdata=self.regs_int8[chip][reg_id])
-        self.femb_cd_fc_act(femb_id, act_cmd="clr_saves")
-        time.sleep(0.01)
-        self.femb_cd_fc_act(femb_id, act_cmd="prm_larasics")
-        time.sleep(0.05)
-        self.femb_cd_fc_act(femb_id, act_cmd="save_status")
+        i = 0
+        while True:
+            self.femb_cd_fc_act(femb_id, act_cmd="clr_saves")
+            time.sleep(0.01)
+            self.femb_cd_fc_act(femb_id, act_cmd="prm_larasics")
+            time.sleep(0.05)
+            self.femb_cd_fc_act(femb_id, act_cmd="save_status")
+            time.sleep(0.005)
 
-        sts_cd1 = self.femb_i2c_rd(femb_id, chip_addr=3, reg_page=0, reg_addr=0x24)
-        sts_cd2 = self.femb_i2c_rd(femb_id, chip_addr=2, reg_page=0, reg_addr=0x24)
+            sts_cd1 = self.femb_i2c_rd(femb_id, chip_addr=3, reg_page=0, reg_addr=0x24)
+            sts_cd2 = self.femb_i2c_rd(femb_id, chip_addr=2, reg_page=0, reg_addr=0x24)
 
-        if (sts_cd1&0xff == 0xff) and (sts_cd2&0xff == 0xff):
-            pass
-        else:
-            print ("LArASIC readback status is {}, {} diffrent from 0xFF".format(sts_cd1, sts_cd2))
-            print ("exit anyway")
-            exit()
+            if (sts_cd1&0xff == 0xff) and (sts_cd2&0xff == 0xff):
+                break
+            else:
+                print ("LArASIC readback status is {}, {} diffrent from 0xFF".format(sts_cd1, sts_cd2))
+                if i > 10:
+                    print ("exit anyway")
+                    exit()
+                else:
+                    time.sleep(0.1)
+            i = i + 1
 
     def femb_adac_cali(self, femb_id, phase0x07=[0,0,0,0,0,0,0,0]):
         for chip in range(8):
@@ -515,11 +522,12 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         self.femb_i2c_wrchk(femb_id=femb_id, chip_addr=adcs_addr[mon_chip], reg_page=1, reg_addr=0x9b, wrdata=vcmi) #vcmi
         self.femb_i2c_wr(femb_id=femb_id,    chip_addr=adcs_addr[mon_chip], reg_page=1, reg_addr=0xaf, wrdata=(mon_i<<2)|0x01)
 
-    def wib_adc_mon(self, femb_ids, sps=10  ): 
+    def wib_adc_mon(self, femb_ids, adcs_paras, sps=10): 
         self.wib_mon_switches(dac0_sel=1,dac1_sel=1,dac2_sel=1,dac3_sel=1, mon_vs_pulse_sel=0, inj_cal_pulse=0) 
         #step 1
         #reset all FEMBs on WIB
         self.femb_cd_rst()
+        self.adcs_paras = adcs_paras
         
         #step 2
         mon_items = []
