@@ -29,11 +29,12 @@ class QC_reports:
           logs["datadir"]=self.datadir
           self.logs=logs
 
-          if not fembs:
-              self.fembs = logs['femb id']
-          else:
-              self.fembs = fembs
+          self.fembs={}
+          if fembs:
+              for ifemb in fembs:
+                  self.fembs[f'femb{ifemb}'] = logs['femb id'][f'femb{ifemb}']
           self.savedir={}
+          print("Will analyze the following fembs: ", self.fembs)
 
           ##### create results dir for each FEMB #####
           for key,value in self.fembs.items():
@@ -391,8 +392,9 @@ if __name__=='__main__':
    args = ag.parse_args()
    
    tasks = args.task
+   fembs = args.fembs
    
-   rp = QC_reports("femb101_femb107_femb105_femb111_LN_150pF")
+   rp = QC_reports("femb101_femb107_femb105_femb111_LN_150pF", fembs)
    
    tt={}
    
