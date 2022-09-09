@@ -177,6 +177,20 @@ class QC_tools:
 
     def GetGain(self, fembs, datadir, savedir, fdir, namepat, snc, sgs, sts, outpat, dac_list, updac=25, lodac=10): 
 
+        dac_v = {}  # mV/bit
+        dac_v['4_7mVfC']=18.66
+        dac_v['7_8mVfC']=14.33
+        dac_v['14_0mVfC']=8.08
+        dac_v['25_0mVfC']=4.61
+
+        CC=1.85*pow(10,-13)
+        e=1.602*pow(10,-19)
+
+        if "sgp1" in outpat:
+            dac_du = dac_v['4_7mVfC']
+        else:
+            dac_du = dac_v[sgs]
+
         pk_dic={}
         for ifemb,_ in fembs.items():
             pk_dic[ifemb]=[]
@@ -214,7 +228,13 @@ class QC_tools:
             for ch in range(128):
                 ch_pk = list(new_pk_list[ch])
                 ana=self.CheckLinearty(dac_list, ch_pk, updac, lodac)
-                ch_gain.append(ana[0])                
+
+                if ana[0]>0:
+                    tmpgain = 1/ana[0]*dac_du/1000 *CC/e
+                else:
+                    tmpgain=0
+
+                ch_gain.append(tmpgain)                
                 ch_inl.append(ana[1])                
                 ch_linear_dac.append(ana[2])                
 
@@ -285,6 +305,9 @@ class QC_tools:
                linear_dac_max = dac_list[i-1]
                index=i
                break
+        
+        if index==0:
+            return 0,0,0
 
         slope_f,intercept_f=np.polyfit(dac_list[:index],pk_list[:index],1)
 
@@ -302,14 +325,6 @@ class QC_tools:
 
     def GetENC(self, fembs, snc, sgs, sts, sgp, savedir, fdir):
 
-        dac_v = {}  # mV/bit
-        dac_v['4_7mVfC']=18.66
-        dac_v['7_8mVfC']=14.33
-        dac_v['14_0mVfC']=8.08
-        dac_v['25_0mVfC']=4.61
-
-        CC=1.85*pow(10,-13)
-        e=1.602*pow(10,-19)
 
         for ifemb,femb_id in fembs.items():
             if sgp==0:
@@ -328,7 +343,7 @@ class QC_tools:
                  gain_list = pickle.load(fn)
             gain_list=np.array(gain_list[0])
     
-            enc_list = rms_list/gain_list * dac_v[sgs]/1000 * CC/e
+            enc_list = rms_list*gain_list
         
             fig,ax = plt.subplots(figsize=(6,4))
             xx=range(128)

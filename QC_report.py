@@ -14,7 +14,7 @@ import argparse
 
 class QC_reports:
 
-      def __init__(self, fdir):
+      def __init__(self, fdir, fembs=[]):
 
 #          savedir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/results/"
 #          self.datadir = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"+fdir+"/"
@@ -29,7 +29,10 @@ class QC_reports:
           logs["datadir"]=self.datadir
           self.logs=logs
 
-          self.fembs = logs['femb id']
+          if not fembs:
+              self.fembs = logs['femb id']
+          else:
+              self.fembs = fembs
           self.savedir={}
 
           ##### create results dir for each FEMB #####
@@ -384,6 +387,7 @@ if __name__=='__main__':
 
    ag = argparse.ArgumentParser()
    ag.add_argument("task", help="a list of tasks to be analyzed", type=int, choices=range(1,13), nargs='+')
+   ag.add_argument("-n", "--fembs", help="a list of fembs to be analyzed", type=int, choices=range(0,4), nargs='+')
    args = ag.parse_args()
    
    tasks = args.task
