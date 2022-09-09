@@ -33,6 +33,8 @@ class QC_reports:
           if fembs:
               for ifemb in fembs:
                   self.fembs[f'femb{ifemb}'] = logs['femb id'][f'femb{ifemb}']
+          else:
+              self.fembs=logs['femb id']
           self.savedir={}
           print("Will analyze the following fembs: ", self.fembs)
 
