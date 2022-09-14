@@ -359,19 +359,14 @@ class QC_tools:
             with open(fp_bin, 'wb') as fn:
                  pickle.dump( enc_list, fn) 
 
-    def FEMB_SUB_PLOT(self, ax, x, y, title, xlabel, ylabel, color='b', marker='.', atwinx=False, ylabel_twx = "", e=None):
+    def FEMB_SUB_PLOT(self, ax, x, y, title, xlabel, ylabel, color='b', marker='.', ylabel_twx = "", limit=False, ymin=0, ymax=1000):
         ax.set_title(title)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.grid(True)
-        if (atwinx):
-            ax.errorbar(x,y,e, marker=marker, color=color)
-            y_min = int(np.min(y))-1000
-            y_max = int(np.max(y))+1000
-            ax.set_ylim([y_min, y_max])
-            ax2 = ax.twinx()
-            ax2.set_ylabel(ylabel_twx)
-            ax2.set_ylim([int((y_min/16384.0)*2048), int((y_max/16384.0)*2048)])
+        if limit:
+            ax.plot(x,y, marker=marker, color=color)
+            ax.set_ylim([ymin, ymax])
         else:
             ax.plot(x,y, marker=marker, color=color)
 
@@ -383,9 +378,14 @@ class QC_tools:
         ax3 = plt.subplot2grid((4, 4), (2, 0), colspan=2, rowspan=2)
         ax4 = plt.subplot2grid((4, 4), (2, 2), colspan=2, rowspan=2)
         chns = range(128)
+#        self.FEMB_SUB_PLOT(ax1, chns, chn_rmss, title="RMS Noise", xlabel="CH number", ylabel ="ADC / bin", color='r', marker='.', limit=True, ymin=0, ymax=25)
+#        self.FEMB_SUB_PLOT(ax2, chns, chn_peds, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='b', marker='.', limit=True, ymin=0, ymax=10000)
+#        self.FEMB_SUB_PLOT(ax2, chns, chn_pkps, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='r', marker='.', limit=True, ymin=0, ymax=10000)
+#        self.FEMB_SUB_PLOT(ax2, chns, chn_pkns, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='g', marker='.', limit=True, ymin=0, ymax=10000)
+
         self.FEMB_SUB_PLOT(ax1, chns, chn_rmss, title="RMS Noise", xlabel="CH number", ylabel ="ADC / bin", color='r', marker='.')
-        self.FEMB_SUB_PLOT(ax2, chns, chn_peds, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='r', marker='.')
-        self.FEMB_SUB_PLOT(ax2, chns, chn_pkps, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='b', marker='.')
+        self.FEMB_SUB_PLOT(ax2, chns, chn_peds, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='b', marker='.')
+        self.FEMB_SUB_PLOT(ax2, chns, chn_pkps, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='r', marker='.')
         self.FEMB_SUB_PLOT(ax2, chns, chn_pkns, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='g', marker='.')
         for chni in chns:
             ts = 100
@@ -555,7 +555,7 @@ class QC_tools:
                         mon_list.append(avg[nfemb]) 
                         dac_list.append(mon_data[k][0])
 
-                    ax.plot(dac_list, mon_list, label='chip{}'.format(j))
+                    ax.plot(dac_list, mon_list, marker='.', label='chip{}'.format(j))
               
                 ax.set_title(mons[i])
                 ax.set_xlabel("DAC")
