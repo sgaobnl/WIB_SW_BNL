@@ -1,4 +1,5 @@
-import sys import numpy as np
+import sys 
+import numpy as np
 import pickle
 import time, datetime, random, statistics
 import matplotlib.pyplot as plt
@@ -38,6 +39,7 @@ fp ="D:/debug_data/Raw_26_08_2022_15_58_27.bin" #internal pls, 1 offset between 
 fp ="D:/debug_data/Raw_26_08_2022_16_06_42.bin"  #internal pls, 1 offset between CD1 & CD2 on each FEMB
 fp ="D:/debug_data/Raw_26_08_2022_16_30_04.bin"  #ext pls, 1 offset between CD1 & CD2 on each FEMB
 fp ="D:/debug_data/Raw_26_08_2022_16_33_47.bin" 
+fp ="D:/debug_data/Raw_14_09_2022_11_02_07.bin" 
 
 
 
