@@ -111,7 +111,7 @@ class QC_tools:
  
                     npulse=npulse+1
                     wfdata = wfdata + tmp_wf
-                    peddata = np.hstack([peddata,tmp_wf[200:450]])
+                    peddata = np.hstack([peddata,tmp_wf[250:450]])
                     pkpdata = np.hstack([pkpdata,np.max(tmp_wf)])
                     pkndata = np.hstack([pkndata,np.min(tmp_wf)])
 
