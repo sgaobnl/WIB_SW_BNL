@@ -42,16 +42,17 @@ chk = WIB_CFGS()
 #check if WIB is in position
 chk.wib_init()
 chk.wib_timing(pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
-while True:
-    llc.wib_poke(chk.wib, 0xA00C0014, 0xb0000)
-    time.sleep(0.1)
-    print (hex(llc.wib_peek(chk.wib, 0xA00C0010)))
-    print (hex(llc.wib_peek(chk.wib, 0xA00C0014)))
-    b = input ("anything")
-    if len(b) > 3:
-        break
-chk.en_ref10MHz(ref_en = True)
-exit()
+time.sleep(1)
+#while True:
+#    llc.wib_poke(chk.wib, 0xA00C0014, 0xb0000)
+#    time.sleep(0.1)
+#    print (hex(llc.wib_peek(chk.wib, 0xA00C0010)))
+#    print (hex(llc.wib_peek(chk.wib, 0xA00C0014)))
+#    b = input ("anything")
+#    if len(b) > 3:
+#        break
+#chk.en_ref10MHz(ref_en = True)
+#exit()
 
 ####################FEMBs Configuration################################
 #step 1
