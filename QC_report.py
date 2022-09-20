@@ -351,34 +351,34 @@ class QC_reports:
 
           qc=QC_tools()
          
-         # dac_list = range(0,64,4) 
-         # datadir = self.datadir+"CALI1/"
-         # qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "4_7mVfC", "2_0us", "{}_{}_{}", dac_list)
-         # qc.GetENC(self.fembs, "200mVBL", "4_7mVfC", "2_0us", 0, self.savedir, "CALI/")
-         # self.GenCALIPDF("200mVBL", "4_7mVfC", "2_0us", 0)
+          dac_list = range(0,64,4) 
+          datadir = self.datadir+"CALI1/"
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "4_7mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "4_7mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "4_7mVfC", "2_0us", 0)
 
-         # qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "7_8mVfC", "2_0us", "{}_{}_{}", dac_list)
-         # qc.GetENC(self.fembs, "200mVBL", "7_8mVfC", "2_0us", 0, self.savedir, "CALI/")
-         # self.GenCALIPDF("200mVBL", "7_8mVfC", "2_0us", 0)
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "7_8mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "7_8mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "7_8mVfC", "2_0us", 0)
 
-         # qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "14_0mVfC", "2_0us","{}_{}_{}", dac_list)
-         # qc.GetENC(self.fembs, "200mVBL", "14_0mVfC", "2_0us", 0, self.savedir, "CALI/")
-         # self.GenCALIPDF("200mVBL", "14_0mVfC", "2_0us", 0)
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "14_0mVfC", "2_0us","{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "14_0mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "14_0mVfC", "2_0us", 0)
 
-         # qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "25_0mVfC", "2_0us", "{}_{}_{}", dac_list)
-         # qc.GetENC(self.fembs, "200mVBL", "25_0mVfC", "2_0us", 0, self.savedir, "CALI/")
-         # self.GenCALIPDF("200mVBL", "25_0mVfC", "2_0us", 0)
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI1_SE_{}_{}_{}_0x{:02x}.bin", "200mVBL", "25_0mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "25_0mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "25_0mVfC", "2_0us", 0)
 
-         # datadir = self.datadir+"CALI2/"
-         # qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI2_SE_{}_{}_{}_0x{:02x}.bin", "900mVBL", "14_0mVfC", "2_0us", "{}_{}_{}", dac_list)
-         # qc.GetENC(self.fembs, "900mVBL", "14_0mVfC", "2_0us", 0, self.savedir, "CALI/")
-         # self.GenCALIPDF("900mVBL", "14_0mVfC", "2_0us", 0)
+          datadir = self.datadir+"CALI2/"
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI2_SE_{}_{}_{}_0x{:02x}.bin", "900mVBL", "14_0mVfC", "2_0us", "{}_{}_{}", dac_list)
+          qc.GetENC(self.fembs, "900mVBL", "14_0mVfC", "2_0us", 0, self.savedir, "CALI/")
+          self.GenCALIPDF("900mVBL", "14_0mVfC", "2_0us", 0)
 
-         # dac_list = range(0,64) 
-         # datadir = self.datadir+"CALI3/"
-         # qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI3_SE_{}_{}_{}_0x{:02x}_sgp1.bin", "200mVBL", "14_0mVfC", "2_0us", "{}_{}_{}_sgp1", dac_list)
-         # qc.GetENC(self.fembs, "200mVBL", "14_0mVfC", "2_0us", 1, self.savedir, "CALI/")
-         # self.GenCALIPDF("200mVBL", "14_0mVfC", "2_0us", 1)
+          dac_list = range(0,64) 
+          datadir = self.datadir+"CALI3/"
+          qc.GetGain(self.fembs, datadir, self.savedir, "CALI/", "CALI3_SE_{}_{}_{}_0x{:02x}_sgp1.bin", "200mVBL", "14_0mVfC", "2_0us", "{}_{}_{}_sgp1", dac_list)
+          qc.GetENC(self.fembs, "200mVBL", "14_0mVfC", "2_0us", 1, self.savedir, "CALI/")
+          self.GenCALIPDF("200mVBL", "14_0mVfC", "2_0us", 1)
          
           dac_list = range(0,56) 
           datadir = self.datadir+"CALI4/"
