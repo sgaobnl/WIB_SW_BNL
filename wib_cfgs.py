@@ -307,15 +307,15 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             if 1 in fembs:
                 link4to7 = llc.wib_peek(self.wib, 0xA00C00AC)
             else:
-                link0to3 = 0x0
+                link4to7 = 0x0
             if 2 in fembs:
                 link8tob = llc.wib_peek(self.wib, 0xA00C00B0)
             else:
-                link0to3 = 0x0
+                link8tob = 0x0
             if 3 in fembs:
                 linkctof = llc.wib_peek(self.wib, 0xA00C00B4)
             else:
-                link0to3 = 0x0
+                linkctof = 0x0
 
             if ((link0to3 & 0xe0e0e0e0) == 0) and ((link4to7 & 0xe0e0e0e0) == 0)and ((link8tob & 0xe0e0e0e0) == 0) and ((linkctof & 0xe0e0e0e0) == 0):
                 print ("Data is aligned when dts_time_delay = 0x%x"%dts_time_delay )
@@ -353,14 +353,24 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9a, wrdata=vcmo)
             self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9b, wrdata=vcmi)
 
-            if autocali:
+            if autocali&0x01:
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9f, wrdata=0)
                 time.sleep(0.01)
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9f, wrdata=0x03)
-        if autocali:
+        if autocali&0x01:
             time.sleep(0.5) #wait for ADC automatic calbiraiton process to complete
             for adc_no in range(8):
+                c_id    = self.adcs_paras[adc_no][0]
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9f, wrdata=0x00)
+        if autocali&0x02: #output ADC back-end data pattern
+            for adc_no in range(8):
+                c_id    = self.adcs_paras[adc_no][0]
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB2, wrdata=0x20)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB3, wrdata=0xCD)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB4, wrdata=0xAB)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB5, wrdata=0x34)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB6, wrdata=0x12)
+
 
     def femb_fe_cfg(self, femb_id):
         #reset LARASIC chips
@@ -429,7 +439,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         print (f"FEMB{femb_id} is configurated")
 
 
-    def femb_fe_mon(self, femb_id, adac_pls_en = 0, rst_fe=0, mon_type=2, mon_chip=0, mon_chipchn=0, snc=0,sg0=0, sg1=0 ):
+    def femb_fe_mon(self, femb_id, adac_pls_en = 0, rst_fe=0, mon_type=2, mon_chip=0, mon_chipchn=0, snc=0, sts=0, sg0=0, sgp=0, sdf=1, sg1=0, swdac=0, dac=0x00  ):
         if (rst_fe != 0):
             self.set_fe_reset()
 
@@ -447,25 +457,28 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             chn=mon_chipchn
 
         self.set_fe_reset()
-        #ONlY one channel of a FEMB can set smn to 1 at a time
-        self.set_fechn_reg(chip=mon_chip&0x07, chn=chn, snc=snc, sg0=sg0, sg1=sg1, smn=1, sdf=1) 
-        self.set_fechip_global(chip=mon_chip&0x07, stb1=stb1, stb=stb0)
+        #ONlY one channel of a femb can set smn to 1 at a time
+        self.set_fe_board(stb1=stb1, stb=stb0, swdac=swdac, dac=dac, sgp=sgp, snc=snc, sts=sts, sg0=sg0, sg1=sg1, st1=1, st0=1, sdf=sdf)#, sdd=1 )
+        self.set_fechn_reg(chip=mon_chip&0x07, chn=chn, snc=snc, sts=sts, sg0=sg0, sg1=sg1, st1=1, st0=1, smn=1, sdf=sdf ) 
+        self.set_fechip_global(chip=mon_chip&0x07, stb1=stb1, stb=stb0, swdac=swdac, dac=dac, sgp=sgp )#, sdd=1 )
         self.set_fe_sync()
 
-        #self.femb_cfg(femb_id )
-        self.femb_fe_cfg(femb_id)
+        if adac_pls_en:
+            self.femb_cfg(femb_id, adac_pls_en )
+        else:
+            self.femb_fe_cfg(femb_id)
 
         self.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
 
 
-    def wib_fe_mon(self, femb_ids, adac_pls_en = 0, rst_fe=0, mon_type=2, mon_chip=0, mon_chipchn=0, snc=0,sg0=0, sg1=0, sps=10 ):
+    def wib_fe_mon(self, femb_ids, adac_pls_en = 0, rst_fe=0, mon_type=2, mon_chip=0, mon_chipchn=0, snc=0, sts=0, sg0=0, sg1=0,sgp=0, sdf=1, swdac=0, dac=0x00, sps=10 ):
         #step 1
         #reset all FEMBs on WIB
         self.femb_cd_rst()
         
         #step 2
         for femb_id in femb_ids:
-            self.femb_fe_mon(femb_id, adac_pls_en, rst_fe, mon_type, mon_chip, mon_chipchn, snc,sg0, sg1 )
+            self.femb_fe_mon(femb_id=femb_id, adac_pls_en=adac_pls_en, rst_fe=rst_fe, mon_type=mon_type, mon_chip=mon_chip, mon_chipchn=mon_chipchn, snc=snc, sts=sts,sg0=sg0, sg1=sg1, sgp=sgp, sdf=sdf, swdac=swdac, dac=dac )
             print (f"FEMB{femb_id} is configurated")
 
         #step4

@@ -61,10 +61,11 @@ for femb_id in fembs:
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
 #step 3
     chk.femb_cfg(femb_id, adac_pls_en )
-chk.femb_cd_edge()
-chk.femb_cd_edge()
-chk.femb_cd_sync()
-chk.femb_cd_sync()
+#chk.femb_cd_edge()
+#chk.femb_cd_edge()
+#chk.femb_cd_sync()
+#chk.femb_cd_sync()
+chk.data_align(fembs)
 
 time.sleep(0.5)
 
