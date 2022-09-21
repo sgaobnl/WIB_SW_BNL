@@ -48,7 +48,13 @@ class QC_analysis:
         if dataType=='power_measurement':
             self.indexData = 1
             particularDataFolderName = 'PWR_Meas'
-        self.input_data_dir = ['/'.join([datadir, onefolder, particularDataFolderName]) for onefolder in os.listdir(datadir) if temperature in onefolder]
+        # check if a folder named PWR_Meas exists
+        new_data_dir = []
+        for onefolder in os.listdir(datadir):
+            if (temperature in onefolder) & (particularDataFolderName in os.listdir('/'.join([datadir, onefolder]))):
+                new_data_dir.append('/'.join([datadir, onefolder, particularDataFolderName]))
+        self.input_data_dir = new_data_dir
+        #self.input_data_dir = ['/'.join([datadir, onefolder, particularDataFolderName]) for onefolder in os.listdir(datadir) if temperature in onefolder]
         self.bin_filenames = os.listdir(self.input_data_dir[0]) ## the *.bin filenames are the same for all the folders
 
     def read_bin(self, filename, input_data_dir):
@@ -100,7 +106,8 @@ class QC_analysis:
         # get the femb IDs: 115, 103, etc.
         femb_ids = []
         for femb in femb_numbers:
-            femb_ids.append('_'.join(['fembID_', logs_env['femb id'][femb]]))
+            #femb_ids.append('_'.join(['fembID_', logs_env['femb id'][femb]]))
+            femb_ids.append(logs_env['femb id'][femb])
 
         return (title, dirname, femb_ids, V_meas, I_meas, P_meas)
 
@@ -131,6 +138,7 @@ class QC_analysis:
         all_femb_ids = [femb for femb in all_femb_ids]
         final_df = pd.DataFrame({'FEMB_ID': all_femb_ids})
         final_df = pd.concat([final_df, out_df], axis=1)
+        final_df['FEMB_ID'] = final_df.FEMB_ID.astype(str)
         csv_name = dataname + '.csv'
         final_df.to_csv('/'.join([self.output_analysis_dir, csv_name]), index=False)
 
@@ -160,7 +168,7 @@ def one_plot(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_me
         plt.figure(figsize=(30, 20))
         plt.rcParams.update({'font.size': 12})
         for i, col in enumerate(columns):
-            plt.plot(selected_df['FEMB_ID'], selected_df[col], label=figLegends[i])
+            plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label=figLegends[i])
         plt.title(figTitle)
         plt.xlabel('FEMB_ID')
         plt.ylabel(data_meas)
