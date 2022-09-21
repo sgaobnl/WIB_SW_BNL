@@ -209,10 +209,10 @@ class QC_reports:
               fdir = self.savedir[key] + "PWR_Cycle/"
               self.GEN_PWR_PDF(fdir, int(value))
 
-      def CHKPULSE(self):
+      def CHKPULSE(self, fdir):
 
-          self.CreateDIR("CHK")
-          datadir = self.datadir+"CHK/"
+          self.CreateDIR(fdir)
+          datadir = self.datadir+fdir+"/"
 
           qc=QC_tools()
           files = sorted(glob.glob(datadir+"*.bin"), key=os.path.getmtime)  # list of data files in the dir
@@ -232,7 +232,7 @@ class QC_reports:
                   fname = afile.split("/")[-1][:-4]
               for key,value in self.fembs.items():
                   ana = qc.data_ana(pldata,int(key[-1]))
-                  fp_data = self.savedir[key] + "CHK/" + fname + "_pulse_response"
+                  fp_data = self.savedir[key] + fdir+"/" + fname + "_pulse_response"
                   qc.FEMB_CHK_PLOT(ana[0], ana[1], ana[2], ana[3], ana[4], ana[5], fp_data)
          
       def FE_MON_report(self):
@@ -409,11 +409,11 @@ if __name__=='__main__':
        if tm==2:
           rp.PWR_cycle_report()
           
-  #     if tm==3:
-  #        qc.femb_leakage_cur()
+       if tm==3:
+          rp.CHKPULSE("Leakage_Current")
           
        if tm==4:
-          rp.CHKPULSE()
+          rp.CHKPULSE("CHK")
    
        if tm==5:
           rp.RMS_report()

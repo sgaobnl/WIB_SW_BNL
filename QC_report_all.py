@@ -26,11 +26,11 @@ for tm in tasks:
     if tm==2:
        rp.PWR_cycle_report()
        
-#     if tm==3:
-#        qc.femb_leakage_cur()
+    if tm==3:
+       rp.CHKPULSE("Leakage_Current")
        
     if tm==4:
-       rp.CHKPULSE()
+       rp.CHKPULSE("CHK")
 
     if tm==5:
        rp.RMS_report()

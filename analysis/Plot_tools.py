@@ -118,10 +118,11 @@ def CheckLinearty(dac_list, pk_list, updac, lodac):
 
     return slope,inl_list 
 
-#datafolder = "D:/debug_data/femb1_femb3_RT_0pF_R003/data/"
-datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb106/"
 
-filename = "PWR_Meas/PWR_SE_SDF_200mVBL_14_0mVfC_2_0us_0x20.bin"
+datafolder = "D:/IO-1865-1C/QC/data/femb102_femb113_femb114_femb106_LN_150pF/"
+#datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb101_femb107_femb105_femb111_LN_150pF/"
+
+filename = "PWR_Meas/PWR_DIFF_200mVBL_14_0mVfC_2_0us_0x20.bin"
 #filename = "CALI1/CALI1_SE_200mVBL_14_0mVfC_2_0us_0x2c.bin"
 datafile = datafolder+filename
 
@@ -131,6 +132,8 @@ with open(fp, 'rb') as fn:
 
 rawdata = raw[0]
 
+#GetPeak(rawdata,1)
+
 nfemb=3
 dac_list=range(0,20)
 snc = "900mVBL"
@@ -138,6 +141,6 @@ sgs = "14_0mVfC"
 sgp = 1
 namepat = datafolder + "CALI4/CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin"
 
-for i in range(65,70):
+for i in range(67,68):
     PlotWaveforms(rawdata, nfemb, i)
 #    GetGain(nfemb, i, dac_list, snc, sgs, sgp, namepat)
