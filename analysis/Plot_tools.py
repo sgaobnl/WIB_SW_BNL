@@ -118,24 +118,10 @@ def CheckLinearty(dac_list, pk_list, updac, lodac):
 
     return slope,inl_list 
 
-
-#
-#    if ana[0]>0:
-#        tmpgain = 1/ana[0]*dac_du/1000 *CC/e
-#    else:
-#        tmpgain=0
-#
-#    ch_gain.append(tmpgain)
-#    ch_inl.append(ana[1])
-#    ch_linear_dac.append(ana[2])
-#
-
-
-
 #datafolder = "D:/debug_data/femb1_femb3_RT_0pF_R003/data/"
-datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb101_femb107_femb105_femb111_LN_150pF/"
+datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb106/"
 
-filename = "CALI4/CALI4_SE_900mVBL_14_0mVfC_2_0us_0x0d_sgp1.bin"
+filename = "PWR_Meas/PWR_SE_SDF_200mVBL_14_0mVfC_2_0us_0x20.bin"
 #filename = "CALI1/CALI1_SE_200mVBL_14_0mVfC_2_0us_0x2c.bin"
 datafile = datafolder+filename
 
@@ -145,15 +131,13 @@ with open(fp, 'rb') as fn:
 
 rawdata = raw[0]
 
-#GetPeak(rawdata,1)
-
-nfemb=1
+nfemb=3
 dac_list=range(0,20)
 snc = "900mVBL"
 sgs = "14_0mVfC" 
 sgp = 1
 namepat = datafolder + "CALI4/CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin"
 
-for i in range(20,21):
-#    PlotWaveforms(rawdata, nfemb, i)
-    GetGain(nfemb, i, dac_list, snc, sgs, sgp, namepat)
+for i in range(65,70):
+    PlotWaveforms(rawdata, nfemb, i)
+#    GetGain(nfemb, i, dac_list, snc, sgs, sgp, namepat)
