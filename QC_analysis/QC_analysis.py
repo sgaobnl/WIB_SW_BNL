@@ -113,7 +113,7 @@ class QC_analysis:
         for pwr in pwr_test_types:
             femb_ids, V_meas, I_meas, P_meas = [], [], [], []
             print('Getting the data......')
-            for inputdir_name in self.input_data_dir:
+            for inputdir_name in tqdm(self.input_data_dir):
                 tmp_title, tmp_dirname, tmp_femb_ids, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData(sourceDataDir=inputdir_name, powerTestType_with_BL=pwr, dataname=dataname)
                 V_meas += tmp_V_meas
                 I_meas += tmp_I_meas
@@ -136,14 +136,10 @@ class QC_analysis:
 
 # save all informations from the *.bin files to csv
 def save_allInfo_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[]):
-    '''
-    Using the QC_analysis class, save all PWR_Meas informations from the *.bin files in *.csv files
-    located at output_dir/temperature/dataname.csv
-    '''
     for T in temperature_list:
         qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T)
         print('Saving data for {}.....'.format(T))
-        for dataname in dataname_list:
+        for dataname in tqdm(dataname_list):
             qc.saveData_from_allFolders(dataname=dataname)
 
 # produce plots of PWR_Meas vs femb_id
@@ -177,17 +173,13 @@ def one_plot(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_me
         plt.clf() # clear figure
 
 def all_plots(csv_source_dir='', measured_info_list=[], temperature_list=[], dataname_list=[]):
-    '''
-    Produce all of the requested plots and save them at csv_source_dir/temperature/plots/name_of_figure.png
-    '''
     mpl.rcParams.update({'figure.max_open_warning': 0})
     for T in temperature_list:
         for type_data in dataname_list:
             print('Producing the plots for {}.....'.format(T))
-            for meas in measured_info_list:
+            for meas in tqdm(measured_info_list):
                 one_plot(csv_source_dir=csv_source_dir, temperature=T, data_csvname=type_data, data_meas=meas)
 
-# plot total power
 if __name__ == '__main__':
     #qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data/', output_dir='D:/IO-1865-1C/QC/analysis', temperature='LN')
     #qc.saveData_from_allFolders(dataname='Bias5V')

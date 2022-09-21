@@ -132,10 +132,10 @@ def CheckLinearty(dac_list, pk_list, updac, lodac):
 
 
 
-#datafolder = "D:/debug_data/femb1_femb3_RT_0pF_R003/data/"
-datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb101_femb107_femb105_femb111_LN_150pF/"
+datafolder = "D:/IO-1865-1C/QC/data/femb102_femb113_femb114_femb106_LN_150pF/"
+#datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb101_femb107_femb105_femb111_LN_150pF/"
 
-filename = "CALI4/CALI4_SE_900mVBL_14_0mVfC_2_0us_0x0d_sgp1.bin"
+filename = "PWR_Meas/PWR_DIFF_200mVBL_14_0mVfC_2_0us_0x20.bin"
 #filename = "CALI1/CALI1_SE_200mVBL_14_0mVfC_2_0us_0x2c.bin"
 datafile = datafolder+filename
 
@@ -147,13 +147,13 @@ rawdata = raw[0]
 
 #GetPeak(rawdata,1)
 
-nfemb=1
+nfemb=3
 dac_list=range(0,20)
 snc = "900mVBL"
 sgs = "14_0mVfC" 
 sgp = 1
 namepat = datafolder + "CALI4/CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin"
 
-for i in range(20,21):
-#    PlotWaveforms(rawdata, nfemb, i)
-    GetGain(nfemb, i, dac_list, snc, sgs, sgp, namepat)
+for i in range(67,68):
+    PlotWaveforms(rawdata, nfemb, i)
+#    GetGain(nfemb, i, dac_list, snc, sgs, sgp, namepat)
