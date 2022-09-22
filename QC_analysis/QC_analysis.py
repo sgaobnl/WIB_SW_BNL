@@ -71,8 +71,9 @@ class QC_analysis:
             elif self.particularDataFolderName=='RMS':
                 # read the logs_env.bin file to get the informations about the femb#, temperature, note
                 logs_dir = input_data_dir.split('/')[:-1]
-                with open('/'.join(['/'.join(logs_dir), 'logs_env.bin']), 'rb') as fp:
-                    logs_env = pickle.load(fp)
+                with open('/'.join(['/'.join(logs_dir), 'logs_env.bin']), 'rb') as fp_log:
+                    logs_env = pickle.load(fp_log)
+                #
                 # decode data here
                 raw = pickle.load(fp)
                 rawdata = raw[0]
@@ -92,8 +93,8 @@ class QC_analysis:
                 femb_id_list = []
                 rms_list = []
                 ped_list = []
-                for nfemb in tqdm(nfembs):
-                    print('Getting data for femb id: {}....\n'.format(logs_env['femb id'][nfemb]))
+                for nfemb in nfembs:
+                    #print('Getting data for femb id: {}....\n'.format(logs_env['femb id']['femb'+str(nfemb)]))
                     # rms = []
                     # ped = []
                     for ich in range(128):
@@ -109,7 +110,7 @@ class QC_analysis:
                         # ped.append(ch_ped)
                         # rms.append(ch_mean)
                         ch_list.append(ich)
-                        femb_id_list.append(logs_env['femb id'][nfemb])
+                        femb_id_list.append(logs_env['femb id']['femb'+str(nfemb)])
                         rms_list.append(ch_mean)
                         ped_list.append(ch_ped)
                     # rms_list.append((str(nfemb), rms))
@@ -206,8 +207,7 @@ class QC_analysis:
         out_df = pd.DataFrame()
         for pwr in pwr_test_types:
             femb_ids, V_meas, I_meas, P_meas = [], [], [], []
-            print('Getting the data......')
-            for inputdir_name in tqdm(self.input_data_dir):
+            for inputdir_name in self.input_data_dir:
                 tmp_title, tmp_dirname, tmp_femb_ids, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData_PWR(sourceDataDir=inputdir_name, powerTestType_with_BL=pwr, dataname=dataname)
                 V_meas += tmp_V_meas
                 I_meas += tmp_I_meas
@@ -256,7 +256,7 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         plt.figure(figsize=(30, 20))
         plt.rcParams.update({'font.size': 12})
         for i, col in enumerate(columns):
-            plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label=figLegends[i], marker=marker)
+            plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label=figLegends[i], marker=marker, markersize=12)
         plt.title(figTitle)
         plt.xlabel('FEMB_ID')
         plt.ylabel(data_meas)
@@ -283,17 +283,17 @@ if __name__ == '__main__':
     #qc.save_PWRdata_from_allFolders(dataname='Bias5V')
     #qc.save_PWRdata_from_allFolders(dataname='LArASIC')
     #qc.save_PWRdata_from_allFolders(dataname='ColdDATA')
-    #qc.save_PWRdata_from_allFolders(dataname='ColdADC')
+    #qc.save_PWRdata_from_allFolders(datafemb106_femb114_femb111_LN_0pF_R002name='ColdADC')
     #------------------------------------------------------
     measured_info = ['P_meas', 'V_meas', 'I_meas']
     temperatures = ['LN', 'RT']
     types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     #-----------This is a group ---------------------------
     # save data in csv file
-    # save_allInfo_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperature, dataname_list=types_of_data)
+    save_allInfo_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
     #
     # produce all the plots
-    # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperature, dataname_list=types_of_data)
+    all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     #-----------------------------------------------------
     #------Save RMS in csv files-------------------------
     for T in temperatures:
