@@ -1,12 +1,15 @@
 # outputdir : D:/IO-1865-1C/QC/analysis
 # datadir : D:/IO-1865-1C/QC/data/..../PWR_Meas
-
+import sys
+sys.path.append('..')
 import os
 import pickle
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
 from tqdm import tqdm
+from QC_tools import QC_tools
 
 def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_dir=''):
     '''
@@ -32,7 +35,7 @@ def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_d
         return dict() # return an empty dictionary if the csv file doesn't exist
 
 class QC_analysis:
-    def __init__(self, datadir='', output_dir='', temperature='RT'):
+    def __init__(self, datadir='', output_dir='', temperature='RT', dataType='power_measurement'):
         try:
             os.mkdir('/'.join([output_dir, temperature]))
         except:
@@ -42,26 +45,110 @@ class QC_analysis:
         self.temperature = temperature
         # save the path to the output
         self.output_analysis_dir = '/'.join([output_dir, temperature])
-        particularDataFolderName = ''
+        self.particularDataFolderName = ''
         # choose which data to use
-        dataType = 'power_measurement'
-        if dataType=='power_measurement':
+        # dataType = 'power_measurement'
+        # ----------------------------------------------
+        # --> Modification here: what if dataType is RMS
+        if (dataType=='power_measurement') | (dataType=='PWR_Meas'):
             self.indexData = 1
-            particularDataFolderName = 'PWR_Meas'
-        # check if a folder named PWR_Meas exists
+            self.particularDataFolderName = 'PWR_Meas'
+        elif dataType=='RMS':
+            self.particularDataFolderName = 'RMS'
+        # check if a folder named PWR_Meas exists --> if self.particularDataFolderName exists
         new_data_dir = []
         for onefolder in os.listdir(datadir):
-            if (temperature in onefolder) & (particularDataFolderName in os.listdir('/'.join([datadir, onefolder]))):
-                new_data_dir.append('/'.join([datadir, onefolder, particularDataFolderName]))
+            if (temperature in onefolder) & (self.particularDataFolderName in os.listdir('/'.join([datadir, onefolder]))):
+                new_data_dir.append('/'.join([datadir, onefolder, self.particularDataFolderName]))
         self.input_data_dir = new_data_dir
-        #self.input_data_dir = ['/'.join([datadir, onefolder, particularDataFolderName]) for onefolder in os.listdir(datadir) if temperature in onefolder]
+        #self.input_data_dir = ['/'.join([datadir, onefolder, self.particularDataFolderName]) for onefolder in os.listdir(datadir) if temperature in onefolder]
         self.bin_filenames = os.listdir(self.input_data_dir[0]) ## the *.bin filenames are the same for all the folders
 
     def read_bin(self, filename, input_data_dir):
         with open(os.path.join(input_data_dir, filename), 'rb') as fp:
-            return pickle.load(fp)[self.indexData]
+            if self.particularDataFolderName=='PWR_Meas':
+                return pickle.load(fp)[self.indexData]
+            elif self.particularDataFolderName=='RMS':
+                # read the logs_env.bin file to get the informations about the femb#, temperature, note
+                logs_dir = input_data_dir.split('/')[:-1]
+                with open('/'.join(['/'.join(logs_dir), 'logs_env.bin']), 'rb') as fp:
+                    logs_env = pickle.load(fp)
+                # decode data here
+                raw = pickle.load(fp)
+                rawdata = raw[0]
+                # pwr_meas = raw[1]
+                # data decoding <-- same as in QC_tools
+                qc = QC_tools()
+                pldata = qc.data_decode(rawdata)
+                pldata = np.array(pldata)
+                # print(len(pldata[0]))
+                nevent = len(pldata)
+                if nevent>100:
+                    nevent=100
+                #
+                # femb ids
+                nfembs = [0, 1, 2, 3]
+                ch_list = []
+                femb_id_list = []
+                rms_list = []
+                ped_list = []
+                for nfemb in tqdm(nfembs):
+                    print('Getting data for femb id: {}....\n'.format(logs_env['femb id'][nfemb]))
+                    # rms = []
+                    # ped = []
+                    for ich in range(128):
+                        global_ch = nfemb*128 + ich
+                        peddata = np.empty(0)
+                        
+                        allpls = np.empty(0)
+                        for itr in range(nevent):
+                            evtdata = pldata[itr][global_ch]
+                            allpls = np.append(allpls, evtdata)
+                        ch_ped = np.mean(allpls)
+                        ch_mean = np.std(allpls)
+                        # ped.append(ch_ped)
+                        # rms.append(ch_mean)
+                        ch_list.append(ich)
+                        femb_id_list.append(logs_env['femb id'][nfemb])
+                        rms_list.append(ch_mean)
+                        ped_list.append(ch_ped)
+                    # rms_list.append((str(nfemb), rms))
+                    # ped_list.append((str(nfemb), ped))
+                # rms_dict = dict(rms_list)
+                # ped_dict = dict(ped_list)
+                rms_dict = {'channelNumber': ch_list, 'femb_ids': femb_id_list, 'RMS': rms_list}
+                ped_dict = {'channelNumber': ch_list, 'femb_ids': femb_id_list, 'Pedestal': ped_list}
+                # return dictionaries of RMS and Pedestal
+                return rms_dict, ped_dict
 
-    def get_oneData(self, sourceDataDir='', powerTestType_with_BL='SE_200mVBL', dataname='bias'):
+    def save_rms_pedestal_to_csv(self):
+        if self.particularDataFolderName != 'RMS':
+            print('Unable to save rms and pedestal....')
+            return False
+        for inputdatadir in self.input_data_dir:
+            for binfile in tqdm(self.bin_filenames):
+                csv_name = '_'.join([ binfile, '.csv'])
+                # try to create a folder having the same name as the data_folder
+                try:
+                    os.mkdir('/'.join([self.output_analysis_dir, inputdatadir.split('/')[-2]]))
+                except:
+                    # print('----Error when creating the folder....')
+                    pass
+                outputdir = '/'.join([self.output_analysis_dir, inputdatadir.split('/')[-2]])
+                # try to create folders for RMS and Pedestal
+                for d in ['RMS', 'Pedestal']:
+                    try:
+                        os.mkdir('/'.join([outputdir, d]))
+                    except:
+                        pass
+                rms_dict, ped_dict = self.read_bin(filename=binfile, input_data_dir=inputdatadir)
+                rms_df = pd.DataFrame(rms_dict)
+                ped_df = pd.DataFrame(ped_dict)
+                # save in csv at self.output_analysis_dir
+                rms_df.to_csv('/'.join([outputdir, 'RMS', csv_name]), index=False)
+                ped_df.to_csv('/'.join([outputdir, 'Pedestal', csv_name]), index=False)
+
+    def get_oneData_PWR(self, sourceDataDir='', powerTestType_with_BL='SE_200mVBL', dataname='bias'):
         '''----Help section-----'''
         # read the logs_env.bin file to get the informations about the femb#, temperature, note
         logs_dir = sourceDataDir.split('/')[:-1]
@@ -111,7 +198,7 @@ class QC_analysis:
 
         return (title, dirname, femb_ids, V_meas, I_meas, P_meas)
 
-    def saveData_from_allFolders(self, dataname='bias'):
+    def save_PWRdata_from_allFolders(self, dataname='bias'):
         pwr_test_types = ['SE_200mVBL', 'SE_SDF_200mVBL', 'DIFF_200mVBL']
 
         title = ''
@@ -121,7 +208,7 @@ class QC_analysis:
             femb_ids, V_meas, I_meas, P_meas = [], [], [], []
             print('Getting the data......')
             for inputdir_name in tqdm(self.input_data_dir):
-                tmp_title, tmp_dirname, tmp_femb_ids, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData(sourceDataDir=inputdir_name, powerTestType_with_BL=pwr, dataname=dataname)
+                tmp_title, tmp_dirname, tmp_femb_ids, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData_PWR(sourceDataDir=inputdir_name, powerTestType_with_BL=pwr, dataname=dataname)
                 V_meas += tmp_V_meas
                 I_meas += tmp_I_meas
                 P_meas += tmp_P_meas
@@ -148,10 +235,11 @@ def save_allInfo_tocsv(data_input_dir='', output_dir='', temperature_list=[], da
         qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T)
         print('Saving data for {}.....'.format(T))
         for dataname in tqdm(dataname_list):
-            qc.saveData_from_allFolders(dataname=dataname)
-
+            qc.save_PWRdata_from_allFolders(dataname=dataname)
+#
+#
 # produce plots of PWR_Meas vs femb_id
-def one_plot(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_meas='P_meas'):
+def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_meas='P_meas', marker='.'):
         csv_dir = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
         data_df = pd.read_csv(csv_dir)
         # get the right columns
@@ -168,7 +256,7 @@ def one_plot(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_me
         plt.figure(figsize=(30, 20))
         plt.rcParams.update({'font.size': 12})
         for i, col in enumerate(columns):
-            plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label=figLegends[i])
+            plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label=figLegends[i], marker=marker)
         plt.title(figTitle)
         plt.xlabel('FEMB_ID')
         plt.ylabel(data_meas)
@@ -182,24 +270,32 @@ def one_plot(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_me
 
 def all_plots(csv_source_dir='', measured_info_list=[], temperature_list=[], dataname_list=[]):
     mpl.rcParams.update({'figure.max_open_warning': 0})
+    marker = '.' # add this marker to the plots
     for T in temperature_list:
         for type_data in dataname_list:
             print('Producing the plots for {}.....'.format(T))
             for meas in tqdm(measured_info_list):
-                one_plot(csv_source_dir=csv_source_dir, temperature=T, data_csvname=type_data, data_meas=meas)
+                one_plot_PWR(csv_source_dir=csv_source_dir, temperature=T, data_csvname=type_data, data_meas=meas, marker=marker)
 
 if __name__ == '__main__':
+	#------maybe we will not use this part ----------------
     #qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data/', output_dir='D:/IO-1865-1C/QC/analysis', temperature='LN')
-    #qc.saveData_from_allFolders(dataname='Bias5V')
-    #qc.saveData_from_allFolders(dataname='LArASIC')
-    #qc.saveData_from_allFolders(dataname='ColdDATA')
-    #qc.saveData_from_allFolders(dataname='ColdADC')
+    #qc.save_PWRdata_from_allFolders(dataname='Bias5V')
+    #qc.save_PWRdata_from_allFolders(dataname='LArASIC')
+    #qc.save_PWRdata_from_allFolders(dataname='ColdDATA')
+    #qc.save_PWRdata_from_allFolders(dataname='ColdADC')
+    #------------------------------------------------------
     measured_info = ['P_meas', 'V_meas', 'I_meas']
-    temperature = ['LN', 'RT']
+    temperatures = ['LN', 'RT']
     types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
-    #
+    #-----------This is a group ---------------------------
     # save data in csv file
-    save_allInfo_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperature, dataname_list=types_of_data)
+    # save_allInfo_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperature, dataname_list=types_of_data)
     #
     # produce all the plots
-    all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperature, dataname_list=types_of_data)
+    # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperature, dataname_list=types_of_data)
+    #-----------------------------------------------------
+    #------Save RMS in csv files-------------------------
+    for T in temperatures:
+        qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature=T, dataType='RMS')
+        qc.save_rms_pedestal_to_csv()
