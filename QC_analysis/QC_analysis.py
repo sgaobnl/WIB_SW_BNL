@@ -334,7 +334,7 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         print('Plot of the power consumption {} saved.\n'.format(T))
         pwr_df.to_csv(tmp_output_dir + '.csv', index=False)
         print('csv file of the power consumption for {} saved.\n'.format(T))
-##
+##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
 	#------maybe we will not use this part ----------------
@@ -349,16 +349,11 @@ if __name__ == '__main__':
     types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     #-----------This is a group ---------------------------
     # save data in csv file
-    save_allInfo_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
+    # save_allInfo_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
     #
     # produce all the plots
-<<<<<<< HEAD
     # all_PWR_Meas_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperature, dataname_list=types_of_data)
-||||||| merged common ancestors
-    # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperature, dataname_list=types_of_data)
-=======
-    all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
->>>>>>> f3007cf9a142e041a7a600530882f85f43c60512
+    # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     #-----------------------------------------------------
     #------Save RMS in csv files-------------------------
     # for T in temperatures:
