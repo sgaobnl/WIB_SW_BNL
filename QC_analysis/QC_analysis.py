@@ -126,28 +126,55 @@ class QC_analysis:
         if self.particularDataFolderName != 'RMS':
             print('Unable to save rms and pedestal....')
             return False
-        for inputdatadir in self.input_data_dir:
-            for binfile in tqdm(self.bin_filenames):
-                csv_name = '_'.join([ binfile, '.csv'])
+
+        # create folders for RMS and pedestal
+        for d in ['RMS', 'Pedestal']:
+            try:
+                os.mkdir('/'.join([self.output_analysis_dir, d]))
+            except:
+                print('Folder already exists...')
+                pass
+        ## ***************************************************************************************
+        ## CHANGE BEING MADE: now, the output of the code is one csv file for each configuration.
+        ## ***************************************************************************************
+        #for inputdatadir in self.input_data_dir:
+        for binfile in tqdm(self.bin_filenames):
+            rms_df = pd.DataFrame({'channelNumber': [], 'femb_ids': [], 'RMS': [], 'folderName': []})
+            ped_df = pd.DataFrame({'channelNumber': [], 'femb_ids': [], 'Pedestal': [], 'folderName': []})
+
+            # name of the csv file
+            csv_name = '_'.join([ binfile, '.csv'])
+            for inputdatadir in self.input_data_dir:
+                #csv_name = '_'.join([ binfile, '.csv'])
                 # try to create a folder having the same name as the data_folder
-                try:
-                    os.mkdir('/'.join([self.output_analysis_dir, inputdatadir.split('/')[-2]]))
-                except:
+                #try:
+                #    os.mkdir('/'.join([self.output_analysis_dir, inputdatadir.split('/')[-2]]))
+                #except:
                     # print('----Error when creating the folder....')
-                    pass
-                outputdir = '/'.join([self.output_analysis_dir, inputdatadir.split('/')[-2]])
+                #    pass
+                #outputdir = '/'.join([self.output_analysis_dir, inputdatadir.split('/')[-2]])
                 # try to create folders for RMS and Pedestal
-                for d in ['RMS', 'Pedestal']:
-                    try:
-                        os.mkdir('/'.join([outputdir, d]))
-                    except:
-                        pass
+                #for d in ['RMS', 'Pedestal']:
+                #    try:
+                #        os.mkdir('/'.join([outputdir, d]))
+                #    except:
+                #        pass
                 rms_dict, ped_dict = self.read_bin(filename=binfile, input_data_dir=inputdatadir)
-                rms_df = pd.DataFrame(rms_dict)
-                ped_df = pd.DataFrame(ped_dict)
+                #
+                # add the folderName = fembID_Temperature_inputCapacitance
+                folderName = (inputdatadir.split('/')[-2]).split('_')
+                folderName_col = ['_'.join([str(femb_id), folderName[-2], folderName[-1]]) for femb_id in rms_dict['femb_ids']]
+                rms_dict['folderName'] = folderName_col
+                ped_dict['folderName'] = folderName_col
+                #rms_df = pd.DataFrame(rms_dict)
+                #ped_df = pd.DataFrame(ped_dict)
                 # save in csv at self.output_analysis_dir
-                rms_df.to_csv('/'.join([outputdir, 'RMS', csv_name]), index=False)
-                ped_df.to_csv('/'.join([outputdir, 'Pedestal', csv_name]), index=False)
+                #rms_df.to_csv('/'.join([outputdir, 'RMS', csv_name]), index=False)
+                #ped_df.to_csv('/'.join([outputdir, 'Pedestal', csv_name]), index=False)
+                rms_df = pd.concat([rms_df, pd.DataFrame(rms_dict)])
+                ped_df = pd.concat([ped_df, pd.DataFrame(ped_dict)])
+            rms_df.to_csv('/'.join([self.output_analysis_dir, 'RMS', csv_name]), index=False)
+            ped_df.to_csv('/'.join([self.output_analysis_dir, 'Pedestal', csv_name]), index=False)
 
     def get_oneData_PWR(self, sourceDataDir='', powerTestType_with_BL='SE_200mVBL', dataname='bias'):
         '''----Help section-----'''
@@ -356,10 +383,10 @@ if __name__ == '__main__':
     # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     #-----------------------------------------------------
     #------Save RMS in csv files-------------------------
-    # for T in temperatures:
-    #     qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature=T, dataType='RMS')
-    #     qc.save_rms_pedestal_to_csv()
+    for T in temperatures:
+         qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature=T, dataType='RMS')
+         qc.save_rms_pedestal_to_csv()
     #
     # Get power consumption 
-    plot_PWR_Consumption(csv_source_dir='D:/IO-1865-1C/QC/analysis', temperatures=temperatures,
-                        all_data_types=types_of_data, output_dir='D:/IO-1865-1C/QC/analysis')
+    #plot_PWR_Consumption(csv_source_dir='D:/IO-1865-1C/QC/analysis', temperatures=temperatures,
+    #                    all_data_types=types_of_data, output_dir='D:/IO-1865-1C/QC/analysis')
