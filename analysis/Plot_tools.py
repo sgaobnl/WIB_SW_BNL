@@ -25,7 +25,7 @@ def PlotWaveforms(data, femb_no, chan):
     
         ax.set_xlabel('tick')
         ax.set_ylabel('ADC')
-        ax.set_title('FEMB{} ch# {} event# {}'.format(i, chan, itr))
+        ax.set_title('FEMB{} ch# {} event# {}'.format(femb_no, chan, itr))
         plt.show()
 
 def GetRMS(data, nfemb, chan):
@@ -118,12 +118,48 @@ def CheckLinearty(dac_list, pk_list, updac, lodac):
 
     return slope,inl_list 
 
+def FEMB_SUB_PLOT(ax, x, y, title, xlabel, ylabel, color='b', marker='.', ylabel_twx = "", limit=False, ymin=0, ymax=1000):
+     ax.set_title(title)
+     ax.set_xlabel(xlabel)
+     ax.set_ylabel(ylabel)
+     ax.grid(True)
+     if limit:
+         ax.plot(x,y, marker=marker, color=color)
+         ax.set_ylim([ymin, ymax])
+     else:
+         ax.plot(x,y, marker=marker, color=color)
+
+
+def FEMB_CHK_PLOT(chn_rmss,chn_peds, chn_pkps, chn_pkns, chn_onewfs, chn_avgwfs):
+    fig = plt.figure(figsize=(10,5))
+    fn = fp.split("/")[-1]
+    ax1 = plt.subplot2grid((4, 4), (0, 0), colspan=2, rowspan=2)
+    ax2 = plt.subplot2grid((4, 4), (0, 2), colspan=2, rowspan=2)
+    ax3 = plt.subplot2grid((4, 4), (2, 0), colspan=2, rowspan=2)
+    ax4 = plt.subplot2grid((4, 4), (2, 2), colspan=2, rowspan=2)
+    chns = range(128)
+
+    FEMB_SUB_PLOT(ax1, chns, chn_rmss, title="RMS Noise", xlabel="CH number", ylabel ="ADC / bin", color='r', marker='.')
+    FEMB_SUB_PLOT(ax2, chns, chn_peds, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='b', marker='.')
+    FEMB_SUB_PLOT(ax2, chns, chn_pkps, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='r', marker='.')
+    FEMB_SUB_PLOT(ax2, chns, chn_pkns, title="Red: Pos Peak. Blue: Pedestal. Green: Neg Peak", xlabel="CH number", ylabel ="ADC / bin", color='g', marker='.')
+    for chni in chns:
+        ts = 100
+        x = (np.arange(ts)) * 0.5
+        y3 = chn_onewfs[chni][25:ts+25]
+        y4 = chn_avgwfs[chni][25:ts+25]
+        FEMB_SUB_PLOT(ax3, x, y3, title="Waveform Overlap", xlabel="Time / $\mu$s", ylabel="ADC /bin", color='C%d'%(chni%9))
+        FEMB_SUB_PLOT(ax4, x, y4, title="Averaging Waveform Overlap", xlabel="Time / $\mu$s", ylabel="ADC /bin", color='C%d'%(chni%9))
+
+    #fig.suptitle(fn)
+    plt.tight_layout( rect=[0.05, 0.05, 0.95, 0.95])
+    plt.show()
 
 datafolder = "D:/IO-1865-1C/QC/data/femb102_femb113_femb114_femb106_LN_150pF/"
 #datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/femb101_femb107_femb105_femb111_LN_150pF/"
 
-filename = "PWR_Meas/PWR_DIFF_200mVBL_14_0mVfC_2_0us_0x20.bin"
-#filename = "CALI1/CALI1_SE_200mVBL_14_0mVfC_2_0us_0x2c.bin"
+filename = "Raw_SE_200mVBL_14_0mVfC_2_0us_0x20.bin"
+#filename = "CALI3/CALI3_SE_200mVBL_14_0mVfC_2_0us_0x22_sgp1.bin"
 datafile = datafolder+filename
 
 fp = datafile
@@ -139,6 +175,14 @@ sgs = "14_0mVfC"
 sgp = 1
 namepat = datafolder + "CALI4/CALI4_SE_{}_{}_{}_0x{:02x}_sgp1.bin"
 
-for i in range(67,68):
+for i in range(120,127):
     PlotWaveforms(rawdata, nfemb, i)
 #    GetGain(nfemb, i, dac_list, snc, sgs, sgp, namepat)
+
+# make the rms, pulse, waveform plots
+
+#pldata = qc.data_decode(rawdata)
+#pldata = np.array(pldata,dtype=object)
+#ana = qc.data_ana(pldata,nfemb)
+#FEMB_CHK_PLOT(ana[0], ana[1], ana[2], ana[3], ana[4], ana[5])
+
