@@ -132,8 +132,6 @@ with open(fp, 'rb') as fn:
 
 rawdata = raw[0]
 
-#GetPeak(rawdata,1)
-
 nfemb=3
 dac_list=range(0,20)
 snc = "900mVBL"
