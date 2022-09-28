@@ -13,7 +13,6 @@ class QC_tools:
     def __init__(self):
         self.fadc = 1/(2**14)*2048 # mV
 
-
     def data_valid(self,raw):
         sss  = []
         for rawi in raw:
