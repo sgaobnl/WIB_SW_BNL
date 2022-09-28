@@ -220,11 +220,14 @@ class QC_analysis:
         #
         # get the femb IDs: 115, 103, etc.
         femb_ids = []
+        # get the toytpc: e.g: 150pF
+        toytpc = []
         for femb in femb_numbers:
             #femb_ids.append('_'.join(['fembID_', logs_env['femb id'][femb]]))
             femb_ids.append(logs_env['femb id'][femb])
+            toytpc.append(logs_env['toytpc'])
 
-        return (title, dirname, femb_ids, V_meas, I_meas, P_meas)
+        return (title, dirname, femb_ids, toytpc, V_meas, I_meas, P_meas)
 
     def save_PWRdata_from_allFolders(self, dataname='bias'):
         pwr_test_types = ['SE_200mVBL', 'SE_SDF_200mVBL', 'DIFF_200mVBL']
@@ -232,14 +235,16 @@ class QC_analysis:
         title = ''
         all_femb_ids = []
         out_df = pd.DataFrame()
+        all_toytpc= [] # new line
         for pwr in pwr_test_types:
-            femb_ids, V_meas, I_meas, P_meas = [], [], [], []
+            femb_ids, toytpc, V_meas, I_meas, P_meas = [], [], [], [], []
             for inputdir_name in self.input_data_dir:
-                tmp_title, tmp_dirname, tmp_femb_ids, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData_PWR(sourceDataDir=inputdir_name, powerTestType_with_BL=pwr, dataname=dataname)
+                tmp_title, tmp_dirname, tmp_femb_ids, tmp_toytpc, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData_PWR(sourceDataDir=inputdir_name, powerTestType_with_BL=pwr, dataname=dataname)
                 V_meas += tmp_V_meas
                 I_meas += tmp_I_meas
                 P_meas += tmp_P_meas
                 femb_ids += tmp_femb_ids
+                toytpc += tmp_toytpc
                 title = tmp_title
             #csv_name = '_'.join([title, '.csv'])
             tmp_out_df = pd.DataFrame({
@@ -249,15 +254,17 @@ class QC_analysis:
                 'P_meas_'+'_'.join(pwr.split('_')[:-1]): P_meas})
             out_df = pd.concat([out_df, tmp_out_df], axis=1)
             all_femb_ids = femb_ids
+            all_toytpc = toytpc ## -- new line
         all_femb_ids = [femb for femb in all_femb_ids]
         final_df = pd.DataFrame({'FEMB_ID': all_femb_ids})
         final_df = pd.concat([final_df, out_df], axis=1)
         final_df['FEMB_ID'] = final_df.FEMB_ID.astype(str)
+        final_df['toytpc'] = pd.Series(all_toytpc) # add the list of toytpc
         csv_name = dataname + '.csv'
         final_df.to_csv('/'.join([self.output_analysis_dir, csv_name]), index=False)
 
 # save all informations from the *.bin files to csv
-def save_allInfo_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[]):
+def save_allInfo_PWR_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[]):
     for T in temperature_list:
         qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T)
         print('Saving data for {}.....'.format(T))
@@ -392,10 +399,10 @@ if __name__ == '__main__':
     types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     #-----------This is a group ---------------------------
     # save data in csv file
-    # save_allInfo_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
+    save_allInfo_PWR_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
     #
     # produce all the plots
-    all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
+    ### all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     #-----------------------------------------------------
     #------Save RMS in csv files-------------------------
@@ -403,6 +410,6 @@ if __name__ == '__main__':
     #      qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature=T, dataType='RMS')
     #      qc.save_rms_pedestal_to_csv()
     #
-    # Get power consumption 
-    plot_PWR_Consumption(csv_source_dir='../data/analysis', temperatures=temperatures,
-                       all_data_types=types_of_data, output_dir='../data/analysis')
+    ### Get power consumption 
+    # plot_PWR_Consumption(csv_source_dir='../data/analysis', temperatures=temperatures,
+    #                    all_data_types=types_of_data, output_dir='../data/analysis')
