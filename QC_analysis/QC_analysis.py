@@ -385,7 +385,7 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
             plt.plot(pwr_df['FEMB_ID'].astype(str), pwr_df[col], marker='.', markersize=12, label=label)
         plt.xlabel('FEMB_ID')
         plt.ylabel('PWR_Consumption(W)')
-        plt.ylim(ylim)
+        # plt.ylim(ylim)
         plt.title('PWR_Consumption')
         plt.legend()
         plt.savefig(tmp_output_dir + '.png')
@@ -410,7 +410,7 @@ if __name__ == '__main__':
     # save_allInfo_PWR_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
     #
     # produce all the plots
-    all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
+    # all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     #-----------------------------------------------------
     #------Save RMS in csv files-------------------------
