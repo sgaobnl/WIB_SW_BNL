@@ -275,16 +275,16 @@ def save_allInfo_PWR_tocsv(data_input_dir='', output_dir='', temperature_list=[]
 # produce plots of PWR_Meas vs femb_id
 def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_meas='P_meas', marker='.'):
         unit_data = ''
-        ylim = []
+        # ylim = []
         if data_meas=='P_meas':
             unit_data = 'W'
-            ylim = [-0.5, 6]
+            # ylim = [-0.5, 6]
         elif data_meas=='I_meas':
             unit_data = 'A'
-            ylim = [-0.5, 2]
+            # ylim = [-0.5, 2]
         elif data_meas=='V_meas':
             unit_data = 'V'
-            ylim = [0, 5.5]
+            # ylim = [0, 5.5]
         csv_dir = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
         data_df = pd.read_csv(csv_dir)
         # get the right columns
@@ -301,13 +301,17 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         plt.figure(figsize=(12, 7))
         plt.rcParams.update({'font.size': 15})
         for i, col in enumerate(columns):
-            plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label=figLegends[i], marker=marker, markersize=12)
+            # calculate the mean and standard deviation
+            mean = np.mean(selected_df[col])
+            std = np.std(selected_df[col])
+            plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label='__'.join([figLegends[i], 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)]), 
+                    marker=marker, markersize=12)
         plt.title('_'.join([figTitle, data_csvname]))
         # plt.xticks(fontsize=15)
         # plt.yticks(fontsize=15)
         plt.xlabel('FEMB_ID')
         plt.ylabel(''.join([data_meas, '(', unit_data, ')']))
-        plt.ylim(ylim)
+        # # plt.ylim(ylim)
         plt.legend()
         try:
             os.mkdir('/'.join([csv_source_dir, temperature, 'plots']))
@@ -373,7 +377,11 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         cols = [col for col in pwr_df.columns if col!='FEMB_ID']
         plt.figure(figsize=(12, 7))
         for col in cols:
+            # calculate mean and std
+            mean = np.mean(pwr_df[col])
+            std = np.std(pwr_df[col])
             label = '_'.join(col.split('_')[2:])
+            label = '__'.join([label, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)])
             plt.plot(pwr_df['FEMB_ID'].astype(str), pwr_df[col], marker='.', markersize=12, label=label)
         plt.xlabel('FEMB_ID')
         plt.ylabel('PWR_Consumption(W)')
@@ -399,10 +407,10 @@ if __name__ == '__main__':
     types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     #-----------This is a group ---------------------------
     # save data in csv file
-    save_allInfo_PWR_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
+    # save_allInfo_PWR_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
     #
     # produce all the plots
-    ### all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
+    all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
     #-----------------------------------------------------
     #------Save RMS in csv files-------------------------
@@ -411,5 +419,5 @@ if __name__ == '__main__':
     #      qc.save_rms_pedestal_to_csv()
     #
     ### Get power consumption 
-    # plot_PWR_Consumption(csv_source_dir='../data/analysis', temperatures=temperatures,
-    #                    all_data_types=types_of_data, output_dir='../data/analysis')
+    plot_PWR_Consumption(csv_source_dir='../data/analysis', temperatures=temperatures,
+                        all_data_types=types_of_data, output_dir='../data/analysis')
