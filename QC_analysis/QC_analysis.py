@@ -1,5 +1,6 @@
 # outputdir : D:/IO-1865-1C/QC/analysis
 # datadir : D:/IO-1865-1C/QC/data/..../PWR_Meas
+import csv
 import sys
 sys.path.append('..')
 import os
@@ -43,8 +44,7 @@ class QC_analysis:
             pass
         # save the temperature
         self.temperature = temperature
-        # save the path to the output
-        self.output_analysis_dir = '/'.join([output_dir, temperature])
+        
         self.particularDataFolderName = ''
         # choose which data to use
         # dataType = 'power_measurement'
@@ -55,6 +55,18 @@ class QC_analysis:
             self.particularDataFolderName = 'PWR_Meas'
         elif dataType=='RMS':
             self.particularDataFolderName = 'RMS'
+        elif dataType=='PWR_Cycle':
+            self.indexData = 1
+            self.particularDataFolderName = 'PWR_Cycle'
+        #
+        # save the path to the output
+        try:
+            os.mkdir('/'.join([output_dir, temperature, self.particularDataFolderName]))
+        except:
+            print('{} folder already exists !!!'.format(self.particularDataFolderName))
+        self.output_analysis_dir = '/'.join([output_dir, temperature, self.particularDataFolderName])
+
+        #
         # check if a folder named PWR_Meas exists --> if self.particularDataFolderName exists
         new_data_dir = []
         for onefolder in os.listdir(datadir):
@@ -65,8 +77,8 @@ class QC_analysis:
         self.bin_filenames = os.listdir(self.input_data_dir[0]) ## the *.bin filenames are the same for all the folders
 
     def read_bin(self, filename, input_data_dir):
-        with open(os.path.join(input_data_dir, filename), 'rb') as fp:
-            if self.particularDataFolderName=='PWR_Meas':
+        with open('/'.join([input_data_dir, filename]), 'rb') as fp:
+            if (self.particularDataFolderName=='PWR_Meas') | (self.particularDataFolderName=='PWR_Cycle'):
                 return pickle.load(fp)[self.indexData]
             elif self.particularDataFolderName=='RMS':
                 # read the logs_env.bin file to get the informations about the femb#, temperature, note
@@ -176,7 +188,7 @@ class QC_analysis:
             rms_df.to_csv('/'.join([self.output_analysis_dir, 'RMS', csv_name]), index=False)
             ped_df.to_csv('/'.join([self.output_analysis_dir, 'Pedestal', csv_name]), index=False)
 
-    def get_oneData_PWR(self, sourceDataDir='', powerTestType_with_BL='SE_200mVBL', dataname='bias'):
+    def get_oneData_PWR(self, sourceDataDir='', powerTestType_with_BL='SE_200mVBL', dataname='bias', bin_filenames=[]):
         '''----Help section-----'''
         # read the logs_env.bin file to get the informations about the femb#, temperature, note
         logs_dir = sourceDataDir.split('/')[:-1]
@@ -186,7 +198,7 @@ class QC_analysis:
         #
         # get the filename to be used
         file_to_be_used = ''
-        for f in self.bin_filenames:
+        for f in bin_filenames:
             if powerTestType_with_BL in f:
                 file_to_be_used = f
                 break
@@ -229,8 +241,8 @@ class QC_analysis:
 
         return (title, dirname, femb_ids, toytpc, V_meas, I_meas, P_meas)
 
-    def save_PWRdata_from_allFolders(self, dataname='bias'):
-        pwr_test_types = ['SE_200mVBL', 'SE_SDF_200mVBL', 'DIFF_200mVBL']
+    def save_PWRdata_from_allFolders(self, dataname='bias', pwr_test_types=['SE_200mVBL', 'SE_SDF_200mVBL', 'DIFF_200mVBL']):
+        # pwr_test_types = ['SE_200mVBL', 'SE_SDF_200mVBL', 'DIFF_200mVBL']
 
         title = ''
         all_femb_ids = []
@@ -239,7 +251,10 @@ class QC_analysis:
         for pwr in pwr_test_types:
             femb_ids, toytpc, V_meas, I_meas, P_meas = [], [], [], [], []
             for inputdir_name in self.input_data_dir:
-                tmp_title, tmp_dirname, tmp_femb_ids, tmp_toytpc, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData_PWR(sourceDataDir=inputdir_name, powerTestType_with_BL=pwr, dataname=dataname)
+                tmp_title, tmp_dirname, tmp_femb_ids, tmp_toytpc, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData_PWR(sourceDataDir=inputdir_name,
+                                                                                                                            powerTestType_with_BL=pwr,
+                                                                                                                            dataname=dataname,
+                                                                                                                            bin_filenames=self.bin_filenames)
                 V_meas += tmp_V_meas
                 I_meas += tmp_I_meas
                 P_meas += tmp_P_meas
@@ -260,16 +275,69 @@ class QC_analysis:
         final_df = pd.concat([final_df, out_df], axis=1)
         final_df['FEMB_ID'] = final_df.FEMB_ID.astype(str)
         final_df['toytpc'] = pd.Series(all_toytpc) # add the list of toytpc
-        csv_name = dataname + '.csv'
+        #
+        pwrs = ['_'.join(p.split('_')[:-1]) for p in pwr_test_types]
+        csv_name = dataname+ '_' + '_'.join(pwrs) + '.csv'
+        #
         final_df.to_csv('/'.join([self.output_analysis_dir, csv_name]), index=False)
+    
+    def get_PWRCycle_SE_from_allFolders(self, dataname='bias'):
+        pwr_test_types = 'SE_200mVBL'
+        ## select the right list of bin files
+        bin_files = []
+        for f in self.bin_filenames:
+            if pwr_test_types in f:
+                bin_files.append(f)
+        femb_ids, toytpc, V_meas, I_meas, P_meas = [], [], [], [], []
+        for inputdir in self.input_data_dir:
+            for binfile in bin_files:
+                # get the data for one bin file
+                tmp_title, tmp_dirname, tmp_femb_ids, tmp_toytpc, tmp_V_meas, tmp_I_meas, tmp_P_meas = self.get_oneData_PWR(sourceDataDir=inputdir,
+                                                                                                                                powerTestType_with_BL=pwr_test_types,
+                                                                                                                                dataname=dataname,
+                                                                                                                                bin_filenames=[binfile])
+                info_in_bin = binfile.split('_')
+                theCycle = ''
+                if 'cycle' in info_in_bin[1]:
+                    theCycle = info_in_bin[1][-1]
+                tmp_femb_ids = ['_'.join([femb, theCycle]) for femb in tmp_femb_ids]
+                femb_ids += tmp_femb_ids
+                toytpc += tmp_toytpc
+                V_meas += tmp_V_meas
+                I_meas += tmp_I_meas
+                P_meas += tmp_P_meas
+        out_df = pd.DataFrame({
+                'FEMB_ID': femb_ids,
+                'toy_tpc': toytpc,
+                'V_meas_'+'_'.join(pwr_test_types.split('_')[:-1]): V_meas,
+                'I_meas_'+'_'.join(pwr_test_types.split('_')[:-1]): I_meas,
+                'P_meas_'+'_'.join(pwr_test_types.split('_')[:-1]): P_meas })
+        return out_df
+    
+    def save_PWRCycle_from_allFolders(self, dataname='bias'):
+        SE_df = self.get_PWRCycle_SE_from_allFolders(dataname=dataname)
+        csvname = dataname + '_SE_.csv'
+        SE_df.to_csv('/'.join([self.output_analysis_dir, csvname]), index=False)
+        # get SE_SDF and DIFF
+        pwr_test_types = ['SE_SDF_200mVBL', 'DIFF_200mVBL']
+        self.save_PWRdata_from_allFolders(dataname=dataname, pwr_test_types=pwr_test_types)
 
+                
 # save all informations from the *.bin files to csv
+# PWR_Meas
 def save_allInfo_PWR_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[]):
     for T in temperature_list:
-        qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T)
+        qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T, dataType='power_measurement')
         print('Saving data for {}.....'.format(T))
         for dataname in tqdm(dataname_list):
             qc.save_PWRdata_from_allFolders(dataname=dataname)
+# PWR_Cycle
+def save_allInfo_PWRCycle_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[]):
+    for T in temperature_list:
+            qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T, dataType='PWR_Cycle')
+            print('Saving data from {}......'.format(T))
+            for dataname in tqdm(dataname_list):
+                qc.save_PWRCycle_from_allFolders(dataname=dataname)
 #
 #
 # produce plots of PWR_Meas vs femb_id
@@ -404,6 +472,7 @@ if __name__ == '__main__':
     #------------------------------------------------------
     measured_info = ['P_meas', 'V_meas', 'I_meas']
     temperatures = ['LN', 'RT']
+    # temperatures = ['LN']
     types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     #-----------This is a group ---------------------------
     # save data in csv file
@@ -419,5 +488,9 @@ if __name__ == '__main__':
     #      qc.save_rms_pedestal_to_csv()
     #
     ### Get power consumption 
-    plot_PWR_Consumption(csv_source_dir='../data/analysis', temperatures=temperatures,
-                        all_data_types=types_of_data, output_dir='../data/analysis')
+    # plot_PWR_Consumption(csv_source_dir='../data/analysis', temperatures=temperatures,
+    #                     all_data_types=types_of_data, output_dir='../data/analysis')
+    #
+    ## save PWR_Cycle to csv files
+    # save_allInfo_PWRCycle_tocsv(data_input_dir='../data', output_dir='../data/analysis', temperature_list=temperatures, dataname_list=types_of_data)
+    save_allInfo_PWRCycle_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
