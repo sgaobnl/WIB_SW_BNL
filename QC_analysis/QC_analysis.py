@@ -471,8 +471,8 @@ if __name__ == '__main__':
     #qc.save_PWRdata_from_allFolders(datafemb106_femb114_femb111_LN_0pF_R002name='ColdADC')
     #------------------------------------------------------
     measured_info = ['P_meas', 'V_meas', 'I_meas']
-    temperatures = ['LN', 'RT']
-    # temperatures = ['LN']
+    #temperatures = ['LN', 'RT']
+    temperatures = ['LN']
     types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     #-----------This is a group ---------------------------
     # save data in csv file
