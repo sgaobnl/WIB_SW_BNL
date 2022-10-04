@@ -8,8 +8,8 @@ from fe_asic_reg_mapping import FE_ASIC_REG_MAPPING
 class WIB_CFGS( FE_ASIC_REG_MAPPING):
     def __init__(self):
         super().__init__()
-        self.wib = WIB("192.168.121.1")
-        #self.wib = WIB("10.73.137.24")
+        #self.wib = WIB("192.168.121.1")
+        self.wib = WIB("10.73.137.28")
         #self.wib = WIB("10.73.137.22")
         self.adcs_paras_init = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
                             [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
@@ -288,7 +288,8 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         wrreg = (rdreg & 0xfffffffb) + ((wrvalue&0x1)<<2)
         llc.wib_poke(self.wib, rdaddr, wrreg) 
             
-        for dts_time_delay in  range(0x50, 0x70,1):
+        for dts_time_delay in  range(0x58, 0x70,1):
+            #print (dts_time_delay)
             rdaddr = 0xA00C000C
             rdreg = llc.wib_peek(self.wib, rdaddr)
             wrvalue = dts_time_delay #0x58 #dts_time_delay = 1
@@ -320,7 +321,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             if ((link0to3 & 0xe0e0e0e0) == 0) and ((link4to7 & 0xe0e0e0e0) == 0)and ((link8tob & 0xe0e0e0e0) == 0) and ((linkctof & 0xe0e0e0e0) == 0):
                 print ("Data is aligned when dts_time_delay = 0x%x"%dts_time_delay )
                 break
-            if dts_time_delay >= 0x68:
+            if dts_time_delay >= 0x6f:
                 print ("Error: data can't be aligned, exit anyway")
                 exit()
 
