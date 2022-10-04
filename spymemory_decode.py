@@ -52,7 +52,7 @@ def deframe(words): #based on WIB-DAQ_Format_2021-12-01_daq_hdr.xlsx
     frame_dict["FEMB_CDTS"]  =((words[4]>>16)>>5)&0x7ff
     frame_dict["FEMB_CDTS_low5"]  =(words[4]>>16)&0x1f
 
-    print (hex(frame_dict["FEMB_SF"]), hex(frame_dict["TMTS"]), hex(frame_dict["TMTS_low5"] ),  hex(frame_dict["FEMB_CDTS"]),  hex(frame_dict["FEMB_CDTS_low5"]), hex(frame_dict["CDTS_ID"])  )
+    #print (hex(frame_dict["FEMB_SF"]), hex(frame_dict["TMTS"]), hex(frame_dict["TMTS_low5"] ),  hex(frame_dict["FEMB_CDTS"]),  hex(frame_dict["FEMB_CDTS_low5"]), hex(frame_dict["CDTS_ID"])  )
 
     # how U,V,X numbers map to channels on a single FEMB
     u_to_ch = [20, 59, 19, 60, 18, 61, 17, 62, 16, 63, 4, 43, 3, 44, 2, 
@@ -132,10 +132,30 @@ def deframe(words): #based on WIB-DAQ_Format_2021-12-01_daq_hdr.xlsx
     return frame_dict
 
 
-def spymemory_decode(buf):
-    #implement extract_frames
+def spymemory_decode(buf, trigmode="SW", buf_end_addr = 0x0, trigger_rec_ticks=0x3f000):
     num_words = int(len(buf) // 4)
     words = list(struct.unpack_from("<%dI"%(num_words),buf))       
+    print (hex(num_words))
+
+    if trigmode == "SW" :
+        pass
+        deoding_start_addr = 0x0
+    else:
+        spy_addr_word = buf_end_addr>>2
+        if spy_addr_word <= trigger_rec_ticks:
+            deoding_start_addr = spy_addr_word + 0x40000 - trigger_rec_ticks
+        else:
+            deoding_start_addr = spy_addr_word  - trigger_rec_ticks
+
+    buf2 = buf + buf
+    print (hex(len(buf)), hex(len(buf2)))
+    newbuf = buf[deoding_start_addr*4: deoding_start_addr*4 + trigger_rec_ticks*4]
+    print (hex(len(newbuf)), hex(len(newbuf)//4))
+#    exit()
+
+    #implement extract_frames
+#    num_words = int(len(buf) // 4)
+#    words = list(struct.unpack_from("<%dI"%(num_words),buf))       
     f_heads = []
     i = 0
     for i in range(num_words-121):
@@ -184,11 +204,11 @@ def spymemory_decode(buf):
             i = i + 1
     return ordered_frames
 
-def wib_spy_dec_syn(buf0, buf1): #synchronize samples in two spy buffers
+def wib_spy_dec_syn(buf0, buf1, trigmode="SW", buf_end_addr=0x0,  trigger_rec_ticks=0x3f000): #synchronize samples in two spy buffers
     print ("Decoding BUF0")
-    frames0 = spymemory_decode(buf=buf0)
+    frames0 = spymemory_decode(buf=buf0, buf_end_addr=buf_end_addr, trigger_rec_ticks=trigger_rec_ticks)
     print ("Decoding BUF1")
-    frames1 = spymemory_decode(buf=buf1)
+    frames1 = spymemory_decode(buf=buf1, buf_end_addr=buf_end_addr, trigger_rec_ticks=trigger_rec_ticks)
     flen = len(frames0)
     len1 = len(frames1)
     if flen>len1:

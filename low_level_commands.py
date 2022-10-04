@@ -3,7 +3,7 @@ import json
 import numpy as np
 import platform
 import wib_pb2 as wibpb
-
+from wib import WIB
 import sys
 import time, datetime, random, statistics
 import numpy as np
@@ -49,8 +49,9 @@ def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff)
         #timing point reset
         addr = 0xA00c0000
         wib_poke(wib, addr, 0x10000000)
-        time.sleep(0.01)
+        time.sleep(1)
         wib_poke(wib, addr, 0x00000000)
+        time.sleep(1)
         rdreg = wib_peek(wib, 0xA00c0090)
         print ("timing point status(addr 0x%08x) = 0x%08x"%(addr, rdreg))
         
@@ -64,17 +65,23 @@ def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff)
             wib_poke(wib, 0xA00c0004, (rdreg&0xFFFFFFFF)|0x20) #front_panel
         time.sleep(1)
         rdreg = wib_peek(wib, 0xA00c0090)
-        print ("External timing is selected")
+        print ("External timing is selected, wib reg addr 0xA00c0090=%x"%rdreg)
 
         rdreg = wib_peek(wib, 0xA00c000C)
         #disable fake time stamp
+        #print (hex(rdreg), hex(rdreg&0xFFFFFFF1))
         wib_poke(wib, 0xA00c000C, (rdreg&0xFFFFFFF1))
+        #time.sleep(0.1)
+        rdreg = wib_peek(wib, 0xA00c000C)
         #set the init time stamp
         #align_en = 1, cmd_stamp_sync_en = 1
-        wib_poke(wib, 0xA00c000C, (rdreg|0x0C))
-        rdreg = wib_peek(wib, 0xA00c000C)
+        #wib_poke(wib, 0xA00c000C, (rdreg|0x0C))
+        #time.sleep(0.1)
         #send SYNC_FAST command when cmd_stamp_syn match the DTS time stamp
         wib_poke(wib, 0xA00c000C, (cmd_stamp_sync<<16) + ((rdreg&0x8000FFFF)|0x0C) )
+        time.sleep(0.1)
+        rdreg = wib_peek(wib, 0xA00c000C)
+        print ("WIB Reg addr 0xA00c000C, value = 0x%x"%rdreg)
 
     #set edge_to_act_delay
     rdreg = wib_peek(wib, 0xA0030004)
@@ -199,9 +206,9 @@ def get_sensors(wib): #request and print sensor data
         #print (pwr_meas)
         return pwr_meas
     
-def llc_acquire_data(wib, buf0=True,buf1=True,deframe=True,channels=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0, print_gui=None ): 
-    timestamps,samples = wib.acquire_data(buf0,buf1,deframe,channels,ignore_failure,trigger_command,trigger_rec_ticks,trigger_timeout_ms, print_gui)
-    return timestamps,samples
+#def llc_acquire_data(wib, buf0=True,buf1=True,deframe=True,channels=True,ignore_failure=False,trigger_command=0,trigger_rec_ticks=0,trigger_timeout_ms=0, print_gui=None ): 
+#    timestamps,samples = wib.acquire_data(buf0,buf1,deframe,channels,ignore_failure,trigger_command,trigger_rec_ticks,trigger_timeout_ms, print_gui)
+#    return timestamps,samples
    
 def wib_peek(wib, reg, print_flg=False):
     req = wibpb.Peek()
