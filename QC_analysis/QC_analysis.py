@@ -316,7 +316,7 @@ class QC_analysis:
     
     def save_PWRCycle_from_allFolders(self, dataname='bias'):
         SE_df = self.get_PWRCycle_SE_from_allFolders(dataname=dataname)
-        csvname = dataname + '_SE_.csv'
+        csvname = dataname + '_SE.csv'
         SE_df.to_csv('/'.join([self.output_analysis_dir, csvname]), index=False)
         # get SE_SDF and DIFF
         pwr_test_types = ['SE_SDF_200mVBL', 'DIFF_200mVBL']
@@ -353,8 +353,8 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         elif data_meas=='V_meas':
             unit_data = 'V'
             # ylim = [0, 5.5]
-        csv_dir = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
-        data_df = pd.read_csv(csv_dir)
+        path_to_csv = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
+        data_df = pd.read_csv(path_to_csv)
         # get the right columns
         columns = [col for col in data_df.columns if data_meas in col]
         # selected dataframe
@@ -400,8 +400,8 @@ def all_PWR_Meas_plots(csv_source_dir='', measured_info_list=[], temperature_lis
 
 ##
 ##
-## ------ PWR Consumption ----
-def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[]): #data_csvname='Bias5V'):
+## ------ PWR Consumption -----------
+def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], power='PWR_Meas'):
     '''
     PWR_consumption here is the sum of all P_meas 
     ==> We will have a dictionary for SE, SE_SDF and DIFF
@@ -409,57 +409,229 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[]):
     df_SE = pd.DataFrame()
     df_SE_SDF = pd.DataFrame()
     df_DIFF = pd.DataFrame()
-    FEMB_ID = pd.Series()
-    for data_csvname in all_data_types:
-        csv_dir = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
-        df = pd.read_csv(csv_dir)
-        col_id = ['FEMB_ID']
-        cols = [col for col in df.columns if 'P_meas' in col] # we need the columns of Power measurement
-        FEMB_ID = df[col_id]
-        selected_df = df[cols]
-    
-        tmp_df_SE = selected_df[cols[0]]
-        tmp_df_SE_SDF = selected_df[cols[1]]
-        tmp_df_DIFF = selected_df[cols[2]]
+    #----------> PWR_Meas <------------
+    if power=='PWR_Meas':
+        FEMB_ID = pd.Series()
+        for data_csvname in all_data_types:
+            path_to_csv = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
+            df = pd.read_csv(path_to_csv)
+            col_id = ['FEMB_ID']
+            cols = [col for col in df.columns if 'P_meas' in col] # we need the columns of Power measurement
+            FEMB_ID = df[col_id]
+            selected_df = df[cols]
+        
+            tmp_df_SE = selected_df[cols[0]]
+            tmp_df_SE_SDF = selected_df[cols[1]]
+            tmp_df_DIFF = selected_df[cols[2]]
 
-        # rename the second column of the dataframe
-        tmp_df_SE.columns = ['_'.join([cols[0], data_csvname])]
-        tmp_df_SE_SDF.columns = ['_'.join([cols[1], data_csvname])]
-        tmp_df_DIFF.columns = ['_'.join([cols[2], data_csvname])]
-        df_SE = pd.concat([df_SE, tmp_df_SE], axis=1)
-        df_SE_SDF = pd.concat([df_SE_SDF, tmp_df_SE_SDF], axis=1)
-        df_DIFF = pd.concat([df_DIFF, tmp_df_DIFF], axis=1)
-    # create df to do the sum
-    final_df = pd.DataFrame(FEMB_ID)
-    final_df['PWR_Cons_SE'] = df_SE.sum(axis=1)
-    final_df['PWR_Cons_SE_SDF'] = df_SE_SDF.sum(axis=1)
-    final_df['PWR_Cons_DIFF'] = df_DIFF.sum(axis=1)
-    return final_df
+            # rename the second column of the dataframe
+            tmp_df_SE.columns = ['_'.join([cols[0], data_csvname])]
+            tmp_df_SE_SDF.columns = ['_'.join([cols[1], data_csvname])]
+            tmp_df_DIFF.columns = ['_'.join([cols[2], data_csvname])]
+            df_SE = pd.concat([df_SE, tmp_df_SE], axis=1)
+            df_SE_SDF = pd.concat([df_SE_SDF, tmp_df_SE_SDF], axis=1)
+            df_DIFF = pd.concat([df_DIFF, tmp_df_DIFF], axis=1)
+        # create df to do the sum
+        final_df = pd.DataFrame(FEMB_ID)
+        final_df['PWR_Cons_SE'] = df_SE.sum(axis=1)
+        final_df['PWR_Cons_SE_SDF'] = df_SE_SDF.sum(axis=1)
+        final_df['PWR_Cons_DIFF'] = df_DIFF.sum(axis=1)
+        return final_df
+    #-----------> End PWR_Meas <------------
 
-def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_types=[], output_dir=''):
-    ylim = [5, 10] # I noticed the value of the power consumption between 5W and 10W
-    for T in temperatures:
-        pwr_df = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=T, all_data_types=all_data_types)
+    #--> PWR_Cycle <------
+    elif power=='PWR_Cycle':
+        FEMB_ID_se = pd.Series()
+        FEMB_ID_sdf = pd.Series()
+        for part_dataname in all_data_types:
+            csvnames = [filename for filename in os.listdir('/'.join([csv_source_dir, temperature, 'PWR_Cycle'])) if part_dataname in filename]
+            for csv in csvnames:
+                path_to_csv = '/'.join([csv_source_dir, temperature, 'PWR_Cycle', csv])
+                df = pd.read_csv(path_to_csv)
+                # FEMB_ID = df['FEMB_ID']
+                cols = [col for col in df.columns if 'P_meas' in col] # get the power measured
+                cols.append('FEMB_ID')
+                selected_df = df[cols]
+                
+                tmp_df_SE = pd.DataFrame()
+                tmp_df_DIFF = pd.DataFrame()
+                tmp_df_SE_SDF = pd.DataFrame()
+                if 'SE.csv' in csv:
+                    FEMB_ID_se = selected_df['FEMB_ID']
+                    tmp_df_SE['_'.join([cols[0], csv.split('.')[0]])] = selected_df[cols[0]]
+                    # tmp_df_SE.columns = ['_'.join([cols[0], csv.split('.')[0]])]
+                    # print(tmp_df_SE.columns)
+                    df_SE = pd.concat([df_SE, tmp_df_SE], axis=1)
+                else:
+                    FEMB_ID_sdf = selected_df['FEMB_ID']
+                    tmp_df_SE_SDF['_'.join([cols[0], csv.split('.')[0]])] = selected_df[cols[0]]
+                    tmp_df_DIFF['_'.join([cols[1], csv.split('.')[0]])] = selected_df[cols[1]]
+                    # rename the column
+                    # tmp_df_SE_SDF.columns = ['_'.join([cols[0], csv.split('.')[0]])]
+                    # tmp_df_DIFF.columns = ['_'.join([cols[1], csv.split('.')[0]])]
+                    df_SE_SDF = pd.concat([df_SE_SDF, tmp_df_SE_SDF], axis=1)
+                    df_DIFF = pd.concat([df_DIFF, tmp_df_DIFF], axis=1)
+
+        # create df to do the sum
+        final_df_SE = pd.DataFrame(FEMB_ID_se)
+        final_df_SE['PWR_Cons_SE'] = df_SE.sum(axis=1)
+
+        final_df_others = pd.DataFrame(FEMB_ID_sdf)
+        final_df_others['PWR_Cons_SE_SDF'] = df_SE_SDF.sum(axis=1)
+        final_df_others['PWR_Cons_DIFF'] = df_DIFF.sum(axis=1)
+        return (final_df_SE, final_df_others)
+    #--------> End PWR_Cycle <--------
+
+def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_types=[], output_dir='', powerType='PWR_Meas'):
+    # ylim = [5, 10] # I noticed the value of the power consumption between 5W and 10W
+    colors=['blue','orange','green']
+    if powerType=='PWR_Meas':
+        for T in temperatures:
+            pwr_df = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=T, all_data_types=all_data_types)
+            figname = 'power_consumption_{}'.format(T)
+            tmp_output_dir = '/'.join([output_dir, T, figname])
+            cols = [col for col in pwr_df.columns if col!='FEMB_ID']
+            plt.figure(figsize=(12, 7))
+            for i, col in enumerate(cols):
+                # calculate mean and std
+                mean = np.mean(pwr_df[col])
+                std = np.std(pwr_df[col])
+                label = '_'.join(col.split('_')[2:])
+                label = '__'.join([label, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)])
+                plt.plot(pwr_df['FEMB_ID'].astype(str), pwr_df[col], marker='.', markersize=12, label=label, color=colors[i])
+            plt.xlabel('FEMB_ID')
+            plt.ylabel('PWR_Consumption(W)')
+            # plt.ylim(ylim)
+            plt.title('PWR_Consumption')
+            plt.legend()
+            plt.savefig(tmp_output_dir + '.png')
+            print('Plot of the power consumption {} saved.\n'.format(T))
+            pwr_df.to_csv(tmp_output_dir + '.csv', index=False)
+            print('csv file of the power consumption for {} saved.\n'.format(T))
+    elif powerType=='PWR_Cycle':
+        T = 'LN'
+        pwr_se, pwr_sesdf_diff = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=T, all_data_types=all_data_types, power='PWR_Cycle')
+        # PWR_SE
+        pwr_se[['FEMB_ID', 'cycle']] = pwr_se.FEMB_ID.str.split('_', expand=True)
+        # sort the dataframe by 'FEMB_ID' and cycle
+        pwr_se = pwr_se.sort_values(by=['FEMB_ID', 'cycle'], ascending=True)
+        pwr_se['FEMB_ID'] = pwr_se[['FEMB_ID', 'cycle']].agg('\n'.join, axis=1)
+        pwr_se.drop('cycle', axis=1, inplace=True)
+        # PWR_SE_SDF and PWR_DIFF
+        pwr_sesdf_diff['FEMB_ID'] = pwr_sesdf_diff['FEMB_ID'].astype(str)
+        pwr_sesdf_diff = pwr_sesdf_diff.sort_values(by='FEMB_ID', ascending=True)
+        pwr_sesdf_diff['FEMB_ID'] = ['\n'.join([str(femb), '0']) for femb in pwr_sesdf_diff['FEMB_ID']]
+        ##
+        # mean and std for SE, SE_SDF and DIFF
+        mean_SE = np.mean(pwr_se['PWR_Cons_SE'])
+        std_SE = np.std(pwr_se['PWR_Cons_SE'])
+        #
+        mean_SE_SDF = np.mean(pwr_sesdf_diff['PWR_Cons_SE_SDF'])
+        std_SE_SDF = np.std(pwr_sesdf_diff['PWR_Cons_SE_SDF'])
+        #
+        mean_DIFF = np.mean(pwr_sesdf_diff['PWR_Cons_DIFF'])
+        std_DIFF = np.std(pwr_sesdf_diff['PWR_Cons_DIFF'])
+        #
+        # produce the plot of the power consumption
+        plt.figure(figsize=(30, 15))
+        ## SE
+        plt.plot(pwr_se['FEMB_ID'], pwr_se['PWR_Cons_SE'], marker='.', markersize=20, color=colors[0],
+                label='__'.join(['SE', 'mean = {:.3f}'.format(mean_SE), 'std = {:.3f}'.format(std_SE)]))
+        plt.xticks(pwr_se['FEMB_ID'], fontsize=13)
+        # SE_SDF
+        plt.plot(pwr_sesdf_diff['FEMB_ID'], pwr_sesdf_diff['PWR_Cons_SE_SDF'], marker='.', markersize=20, color=colors[1],
+                label='__'.join(['SE_SDF', 'mean = {:.3f}'.format(mean_SE_SDF), 'std = {:.3f}'.format(std_SE_SDF)]))
+        # DIFF
+        plt.plot(pwr_sesdf_diff['FEMB_ID'], pwr_sesdf_diff['PWR_Cons_DIFF'], marker='.', markersize=20, color=colors[2],
+                label='__'.join(['DIFF', 'mean = {:.3f}'.format(mean_DIFF), 'std = {:.3f}'.format(std_DIFF)]))
+        plt.yticks(fontsize=20)
+        plt.xlabel('FEMB_ID\nCycle', fontsize=20)
+        plt.ylabel('PWR_Consumption(W)', fontsize=20)
+        plt.title('Power consumption for the PWR_Cycle', fontsize=20)
+        plt.legend(fontsize=20)
         figname = 'power_consumption_{}'.format(T)
-        tmp_output_dir = '/'.join([output_dir, T, figname])
-        cols = [col for col in pwr_df.columns if col!='FEMB_ID']
-        plt.figure(figsize=(12, 7))
-        for col in cols:
-            # calculate mean and std
-            mean = np.mean(pwr_df[col])
-            std = np.std(pwr_df[col])
-            label = '_'.join(col.split('_')[2:])
-            label = '__'.join([label, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)])
-            plt.plot(pwr_df['FEMB_ID'].astype(str), pwr_df[col], marker='.', markersize=12, label=label)
-        plt.xlabel('FEMB_ID')
-        plt.ylabel('PWR_Consumption(W)')
-        # plt.ylim(ylim)
-        plt.title('PWR_Consumption')
-        plt.legend()
-        plt.savefig(tmp_output_dir + '.png')
-        print('Plot of the power consumption {} saved.\n'.format(T))
-        pwr_df.to_csv(tmp_output_dir + '.csv', index=False)
-        print('csv file of the power consumption for {} saved.\n'.format(T))
+        tmp_output_dir = '/'.join([output_dir, T, 'PWR_Cycle', figname + '.png'])
+        plt.savefig(tmp_output_dir)
+        # save csv files
+        pwr_se.to_csv('/'.join([output_dir, T, 'PWR_Cycle', 'power_consumption_SE.csv']), index=False)
+        pwr_sesdf_diff.to_csv('/'.join([output_dir, T, 'PWR_Cycle', 'power_consumption_SE_SDF_DIFF.csv']), index=False)
+        print('--------------FILES SAVED---------------')
+        
+
+# plot power cycle
+def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
+    '''
+    In this function, we need to combine the data of Bias_SE, Bias_SE_SDF and Bias_DIFF.
+    Same for other datatypes.
+    '''
+    temperature = 'LN' # we only have PWR_Cycle on LN
+    dataname_list = ['Bias5V', 'ColdADC', 'ColdDATA', 'LArASIC']
+    colors=['blue','orange','green']
+    #
+    # create a folder nammed 'plots' to save the plots
+    try:
+        os.mkdir('/'.join([csv_source_dir, 'plots']))
+    except:
+        print('A folder nammed plots already exists.')
+    output_dir = '/'.join([csv_source_dir, 'plots'])
+    pwr_test_types = ['SE', 'SE_SDF', 'DIFF']
+    for dataname in dataname_list:
+        figurename = '_'.join([dataname, measured_param + '.png'])
+        plt.figure(figsize=(30,15))
+        for i, pwr in enumerate(pwr_test_types):
+            df = pd.DataFrame()
+            # figname = ''
+            param_meas = '_'.join([measured_param, pwr])
+
+            # --- START --->
+            if pwr=='SE':
+                figname = '_'.join([dataname, pwr])
+                csvname = figname + '.csv'
+                path_to_datafile = '/'.join([csv_source_dir, csvname])
+                df = pd.read_csv(path_to_datafile)
+                df[['FEMB_ID', 'cycle']] = df.FEMB_ID.str.split('_', expand=True)
+                # sort the dataframe by 'FEMB_ID' and cycle
+                df = df.sort_values(by=['FEMB_ID', 'cycle'], ascending=True)
+                df['FEMB_ID'] = df[['FEMB_ID', 'cycle']].agg('\n'.join, axis=1)
+                df.drop('cycle', axis=1, inplace=True)
+                # calculate the mean and std of the df[param_meas]
+                mean = np.mean(df[param_meas])
+                std = np.std(df[param_meas])
+                # plt.figure(figsize=(30, 10))
+                plt.plot(df['FEMB_ID'], df[param_meas], marker='.', markersize=15, color=colors[i],
+                        label='_'.join([pwr, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)]))
+                plt.xticks(df['FEMB_ID'], fontsize=13);plt.yticks(fontsize=15)
+                plt.xlabel('FEMB_ID\ncycle', fontsize=20)
+                #
+            else:
+                figname = '_'.join([dataname, pwr])
+                csvname = '_'.join([dataname, 'SE_SDF_DIFF']) + '.csv'
+                path_to_datafile = '/'.join([csv_source_dir, csvname])
+                df = pd.read_csv(path_to_datafile)
+                # sort the dataframe by 'FEMB_ID'
+                df['FEMB_ID'] = df['FEMB_ID'].astype(str)
+                df = df.sort_values(by='FEMB_ID', ascending=True)
+                df['FEMB_ID'] = ['\n'.join([str(femb), '0']) for femb in df['FEMB_ID']]
+                # calculate the mean and std of the df[param_meas]
+                mean = np.mean(df[param_meas])
+                std = np.std(df[param_meas])
+                #
+                plt.plot(df['FEMB_ID'].astype(str), df[param_meas], marker='.', markersize=20, color=colors[i],
+                        label='_'.join([pwr, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)]))
+            # <------ END ----
+            unit = ''
+            if measured_param=='I_meas':
+                unit = 'A'
+            elif measured_param=='P_meas':
+                unit='W'
+            elif measured_param=='V_meas':
+                unit='V'
+            plt.ylabel(measured_param + '({})'.format(unit), fontsize=20)
+            plt.title('_'.join([measured_param, dataname]), fontsize=20)
+            plt.legend(fontsize=20)
+            plt.savefig('/'.join([output_dir, figurename]))
+            
+
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
@@ -473,24 +645,34 @@ if __name__ == '__main__':
     measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
     temperatures = ['LN']
-    types_of_data = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
+    dataname_list = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     #-----------This is a group ---------------------------
     # save data in csv file
-    # save_allInfo_PWR_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
+    # save_allInfo_PWR_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=dataname_list)
     #
     # produce all the plots
-    # all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
-    # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=types_of_data)
+    # all_PWR_Meas_plots(csv_source_dir='../data/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=dataname_list)
+    # all_plots(csv_source_dir='D:/IO-1865-1C/QC/analysis', measured_info_list=measured_info, temperature_list=temperatures, dataname_list=dataname_list)
     #-----------------------------------------------------
-    #------Save RMS in csv files-------------------------
+    #------Save RMS in csv files--------------------------
     # for T in temperatures:
     #      qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature=T, dataType='RMS')
     #      qc.save_rms_pedestal_to_csv()
-    #
-    ### Get power consumption 
+    #-----------END saving--------------------------------
+    ### Get power consumption ------- PWR_Meas------------
     # plot_PWR_Consumption(csv_source_dir='../data/analysis', temperatures=temperatures,
-    #                     all_data_types=types_of_data, output_dir='../data/analysis')
+    #                     all_data_types=dataname_list, output_dir='../data/analysis', powerType='PWR_Meas')
+    #-------------------------------END PWR_Meas----------
+    ## -----------------save PWR_Cycle to csv files-------
+    # save_allInfo_PWRCycle_tocsv(data_input_dir='../data', output_dir='../data/analysis', temperature_list=temperatures, dataname_list=dataname_list)
+    # save_allInfo_PWRCycle_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=dataname_list)
     #
-    ## save PWR_Cycle to csv files
-    # save_allInfo_PWRCycle_tocsv(data_input_dir='../data', output_dir='../data/analysis', temperature_list=temperatures, dataname_list=types_of_data)
-    save_allInfo_PWRCycle_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=types_of_data)
+    # try to plot PWRCycle
+    for m_param in measured_info:
+        plot_PWR_Cycle(csv_source_dir='../data/analysis/LN/PWR_Cycle', measured_param=m_param)
+        # plot_PWR_Cycle(csv_source_dir='D:/IO-1865-1C/QC/analysis/LN/PWR_Cycle', measured_param=m_param)
+    # power consumption for PWR_Cycle
+    plot_PWR_Consumption(csv_source_dir='../data/analysis/', all_data_types=dataname_list,
+                        output_dir='../data/analysis', powerType='PWR_Cycle')
+    # plot_PWR_Consumption(csv_source_dir='D:/IO-1865-1C/QC/analysis/', all_data_types=dataname_list,
+    #                     output_dir='D:/IO-1865-1C/QC/analysis', powerType='PWR_Cycle')
