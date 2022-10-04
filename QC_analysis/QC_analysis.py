@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
+from scipy.signal import find_peaks
 from QC_tools import QC_tools
 
 def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_dir=''):
@@ -631,7 +632,67 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
             plt.legend(fontsize=20)
             plt.savefig('/'.join([output_dir, figurename]))
             
+#----------------------------------------------------------------------------
+### ASICDAC_CALI
+class ASICDAC_CALI:
+    def __init__(self, input_data_dir='', CALI_number=1):
+        '''
+        input_data_dir: the path to the bin files,
+        CALI_number: can be 1, 2, 3 or 4
+        '''
+        self.CALI = 'CALI{}'.format(CALI_number)
+        self.input_dir = '/'.join([input_data_dir, self.CALI])
 
+    def list_bin(self, BL=200, gain=4.7, shapingTime=2.0):
+        str_BL = str(BL) + 'mVBL'
+        str_gain = '_'.join(str(gain).split('.')) + 'mVfC'
+        str_shapingTime = '_'.join(str(shapingTime).split('.')) + 'us'
+        #
+        all_bins_in_CALI = os.listdir(self.input_dir)
+        # get the bin files matching the configuration
+        match_bin_files = []
+        for i in range(0, 64, 4):
+            part_of_filename = '_'.join([str_BL, str_gain, str_shapingTime, '{}'.format(hex(i))])
+            for f in all_bins_in_CALI:
+                if part_of_filename in f:
+                    match_bin_files.append(f)
+                    continue
+        return match_bin_files
+
+    def decode_onebin(self, bin_filename=''):
+        path_to_bin = '/'.join([self.input_dir, bin_filename])
+        # read bin
+        with open(path_to_bin, 'rb') as fp:
+            raw = pickle.load(fp)
+        rawdata = raw[0]
+        # pwr_meas = raw[1]
+        # data decoding <-- same as in QC_tools
+        qc = QC_tools()
+        pldata = qc.data_decode(rawdata)
+        pldata = np.array(pldata)
+        ##
+        nevent = len(pldata)
+        nfemb = 0
+        if nevent>100:
+            nevent=100
+
+        pkp, pkn = [], []
+        for ich in range(128):
+            global_ch = nfemb*128 + ich
+            pkpdata = np.empty(0)
+            pkndata = np.empty(0)
+            wfdata = np.zeros(500)
+            
+            npulse = 0
+            first = True
+            for itr in range(nevent):
+                evtdata = pldata[itr][global_ch]
+                pmax = np.amax(evtdata)
+                pos = np.argmax(evtdata)
+
+                pos_peaks, _ = find_peaks(evtdata, height=pmax-100)
+            # refer to QC tools data_ana but get only femb_id(from logs_env), ch_number, pkp and pkn
+        
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
@@ -668,11 +729,15 @@ if __name__ == '__main__':
     # save_allInfo_PWRCycle_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=dataname_list)
     #
     # try to plot PWRCycle
-    for m_param in measured_info:
-        plot_PWR_Cycle(csv_source_dir='../data/analysis/LN/PWR_Cycle', measured_param=m_param)
+    #for m_param in measured_info:
+    #    plot_PWR_Cycle(csv_source_dir='../data/analysis/LN/PWR_Cycle', measured_param=m_param)
         # plot_PWR_Cycle(csv_source_dir='D:/IO-1865-1C/QC/analysis/LN/PWR_Cycle', measured_param=m_param)
     # power consumption for PWR_Cycle
-    plot_PWR_Consumption(csv_source_dir='../data/analysis/', all_data_types=dataname_list,
-                        output_dir='../data/analysis', powerType='PWR_Cycle')
+    #plot_PWR_Consumption(csv_source_dir='../data/analysis/', all_data_types=dataname_list,
+    #                    output_dir='../data/analysis', powerType='PWR_Cycle')
     # plot_PWR_Consumption(csv_source_dir='D:/IO-1865-1C/QC/analysis/', all_data_types=dataname_list,
     #                     output_dir='D:/IO-1865-1C/QC/analysis', powerType='PWR_Cycle')
+    #--------------------------------------------------------------------------------------------------
+    #=======================ASICDAC_CALI===============================================================
+    asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_RT_150pF', CALI_number=1)
+    asic.decode_onebin(bin_filename=asic.list_bin(BL=200, gain=4.7, shapingTime=2.0)[0])
