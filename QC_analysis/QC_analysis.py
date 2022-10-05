@@ -534,7 +534,7 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         std_DIFF = np.std(pwr_sesdf_diff['PWR_Cons_DIFF'])
         #
         # produce the plot of the power consumption
-        plt.figure(figsize=(30, 15))
+        plt.figure(figsize=(40, 10))
         ## SE
         plt.plot(pwr_se['FEMB_ID'], pwr_se['PWR_Cons_SE'], marker='.', markersize=20, color=colors[0],
                 label='__'.join(['SE', 'mean = {:.3f}'.format(mean_SE), 'std = {:.3f}'.format(std_SE)]))
@@ -545,11 +545,11 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         # DIFF
         plt.plot(pwr_sesdf_diff['FEMB_ID'], pwr_sesdf_diff['PWR_Cons_DIFF'], marker='.', markersize=20, color=colors[2],
                 label='__'.join(['DIFF', 'mean = {:.3f}'.format(mean_DIFF), 'std = {:.3f}'.format(std_DIFF)]))
-        plt.yticks(fontsize=20)
-        plt.xlabel('FEMB_ID\nCycle', fontsize=20)
+        plt.yticks(fontsize=25);plt.yticks(fontsize=25)
+        plt.xlabel('FEMB_ID\nCycle', fontsize=15)
         plt.ylabel('PWR_Consumption(W)', fontsize=20)
-        plt.title('Power consumption for the PWR_Cycle', fontsize=20)
-        plt.legend(fontsize=20)
+        plt.title('Power consumption for the PWR_Cycle', fontsize=25)
+        plt.legend(fontsize=25)
         figname = 'power_consumption_{}'.format(T)
         tmp_output_dir = '/'.join([output_dir, T, 'PWR_Cycle', figname + '.png'])
         plt.savefig(tmp_output_dir)
@@ -578,7 +578,7 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
     pwr_test_types = ['SE', 'SE_SDF', 'DIFF']
     for dataname in dataname_list:
         figurename = '_'.join([dataname, measured_param + '.png'])
-        plt.figure(figsize=(30,15))
+        plt.figure(figsize=(45,7))
         for i, pwr in enumerate(pwr_test_types):
             df = pd.DataFrame()
             # figname = ''
@@ -601,7 +601,7 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
                 # plt.figure(figsize=(30, 10))
                 plt.plot(df['FEMB_ID'], df[param_meas], marker='.', markersize=15, color=colors[i],
                         label='_'.join([pwr, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)]))
-                plt.xticks(df['FEMB_ID'], fontsize=13);plt.yticks(fontsize=15)
+                plt.xticks(df['FEMB_ID'], fontsize=20);plt.yticks(fontsize=30)
                 plt.xlabel('FEMB_ID\ncycle', fontsize=20)
                 #
             else:
@@ -627,9 +627,9 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
                 unit='W'
             elif measured_param=='V_meas':
                 unit='V'
-            plt.ylabel(measured_param + '({})'.format(unit), fontsize=20)
-            plt.title('_'.join([measured_param, dataname]), fontsize=20)
-            plt.legend(fontsize=20)
+            plt.ylabel(measured_param + '({})'.format(unit), fontsize=30)
+            plt.title('_'.join([measured_param, dataname]), fontsize=30)
+            plt.legend(fontsize=30)
             plt.savefig('/'.join([output_dir, figurename]))
             
 #----------------------------------------------------------------------------
@@ -669,30 +669,30 @@ class ASICDAC_CALI:
         # data decoding <-- same as in QC_tools
         qc = QC_tools()
         pldata = qc.data_decode(rawdata)
-        pldata = np.array(pldata)
+        pldata = np.array(pldata, dtype=object)
         ##
         nevent = len(pldata)
-        nfemb = 0
-        if nevent>100:
-            nevent=100
-
-        pkp, pkn = [], []
+        #
+        # let's try for femb 0
+        femb_id = 0
+        # we have 128 channels
+        all_ch_data = []
         for ich in range(128):
-            global_ch = nfemb*128 + ich
-            pkpdata = np.empty(0)
-            pkndata = np.empty(0)
-            wfdata = np.zeros(500)
-            
-            npulse = 0
-            first = True
-            for itr in range(nevent):
-                evtdata = pldata[itr][global_ch]
-                pmax = np.amax(evtdata)
-                pos = np.argmax(evtdata)
+            iich = femb_id*128+ich
+            # only get the first event
+            for iev in range(nevent):
+                pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich]))
+                for ppeak in pos_peaks:
+                    startpos = ppeak - 50
+                    # go to the next pulse if the starting position is negative
+                    if startpos<0:
+                        continue
+                    endpos = startpos + 100
+                    all_ch_data.append(pldata[iev][iich][startpos:endpos])
+                    break
+        # I expect to get an array of length 128 where each element is an array of 2111 length
+        return all_ch_data
 
-                pos_peaks, _ = find_peaks(evtdata, height=pmax-100)
-            # refer to QC tools data_ana but get only femb_id(from logs_env), ch_number, pkp and pkn
-        
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
@@ -729,15 +729,27 @@ if __name__ == '__main__':
     # save_allInfo_PWRCycle_tocsv(data_input_dir='D:/IO-1865-1C/QC/data', output_dir='D:/IO-1865-1C/QC/analysis', temperature_list=temperatures, dataname_list=dataname_list)
     #
     # try to plot PWRCycle
-    #for m_param in measured_info:
+    # for m_param in measured_info:
     #    plot_PWR_Cycle(csv_source_dir='../data/analysis/LN/PWR_Cycle', measured_param=m_param)
         # plot_PWR_Cycle(csv_source_dir='D:/IO-1865-1C/QC/analysis/LN/PWR_Cycle', measured_param=m_param)
     # power consumption for PWR_Cycle
-    #plot_PWR_Consumption(csv_source_dir='../data/analysis/', all_data_types=dataname_list,
+    # plot_PWR_Consumption(csv_source_dir='../data/analysis/', all_data_types=dataname_list,
     #                    output_dir='../data/analysis', powerType='PWR_Cycle')
     # plot_PWR_Consumption(csv_source_dir='D:/IO-1865-1C/QC/analysis/', all_data_types=dataname_list,
     #                     output_dir='D:/IO-1865-1C/QC/analysis', powerType='PWR_Cycle')
     #--------------------------------------------------------------------------------------------------
     #=======================ASICDAC_CALI===============================================================
-    asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_RT_150pF', CALI_number=1)
-    asic.decode_onebin(bin_filename=asic.list_bin(BL=200, gain=4.7, shapingTime=2.0)[0])
+    # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_RT_150pF', CALI_number=1)
+    # asic.decode_onebin(bin_filename=asic.list_bin(BL=200, gain=4.7, shapingTime=2.0)[0])
+    asic = ASICDAC_CALI(input_data_dir='../data/New folder', CALI_number=1)
+    list_bins_files = asic.list_bin(BL=200, gain=14.0, shapingTime=2.0)
+    plt.figure()
+    for i in tqdm(range(16)):
+        peaks = asic.decode_onebin(bin_filename=list_bins_files[i])
+        hex = (list_bins_files[i].split('_')[-1]).split('.')[0]
+        dec = int(hex, base=16)
+        plt.plot(peaks[0], label=str(dec))
+    plt.legend()
+    plt.savefig('../data/New folder/test.png')
+    # peaks = asic.decode_onebin(bin_filename=list_bins_files[5])
+    # print(len(peaks[0]))
