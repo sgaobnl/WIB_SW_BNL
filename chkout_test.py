@@ -147,7 +147,8 @@ for femb_id in fembs:
                         [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                         [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                       ]
-    chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20 )
+    #chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20 )
+    chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, slk0=1, swdac=1, dac=0x20 ) #5nA
     adac_pls_en = 1 
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
     chk.femb_cfg(femb_id, adac_pls_en )

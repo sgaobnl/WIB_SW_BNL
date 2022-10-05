@@ -42,8 +42,8 @@ def GetFFT(data):
  
     return freq[1:oneside],a_fft[1:oneside]
 
-#datafolder = "D:/IO-1865-1C/QC/data/femb102_femb113_femb114_femb106_LN_150pF/"
-datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"
+datafolder = "D:/debug_data/"
+#datafolder = "/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/data/"
 
 filename = "Raw_07_09_2022_12_11_42_coherent.bin"
 #filename = "CALI1/CALI1_SE_200mVBL_14_0mVfC_2_0us_0x2c.bin"
