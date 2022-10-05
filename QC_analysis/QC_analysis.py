@@ -2,6 +2,7 @@
 # datadir : D:/IO-1865-1C/QC/data/..../PWR_Meas
 import csv
 import sys
+from tkinter import Listbox
 sys.path.append('..')
 import os
 import pickle
@@ -12,6 +13,8 @@ import numpy as np
 from tqdm import tqdm
 from scipy.signal import find_peaks
 from QC_tools import QC_tools
+
+import gc
 
 def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_dir=''):
     '''
@@ -659,7 +662,7 @@ class ASICDAC_CALI:
                     continue
         return match_bin_files
 
-    def decode_onebin(self, bin_filename=''):
+    def decode_onebin(self, bin_filename='', femb_number=0):
         path_to_bin = '/'.join([self.input_dir, bin_filename])
         # read bin
         with open(path_to_bin, 'rb') as fp:
@@ -674,11 +677,10 @@ class ASICDAC_CALI:
         nevent = len(pldata)
         #
         # let's try for femb 0
-        femb_id = 0
         # we have 128 channels
-        all_ch_data = []
+        all_ch_data = {}
         for ich in range(128):
-            iich = femb_id*128+ich
+            iich = femb_number*128+ich
             # only get the first event
             for iev in range(nevent):
                 pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich]))
@@ -693,6 +695,21 @@ class ASICDAC_CALI:
         # I expect to get an array of length 128 where each element is an array of 2111 length
         return all_ch_data
 
+    def plot_oneCH_allDAC(self, savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0]):
+        #
+        # get the femb_id from the file logs_env.bin
+        #
+        figname = 'peak_DAC_for_femb{}_channel{}.png'.format(femb_number, ch_number)
+        list_bins_files = self.list_bin(BL=config[0], gain=config[1], shapingTime=config[2])
+        plt.figure(figsize=(12, 7))
+        for i in tqdm(range(16)):
+            peak_data = self.decode_onebin(bin_filename=list_bins_files[i])
+            hex = (list_bins_files[i].split('_')[-1]).split('.')[0]
+            dec = int(hex, base=16)
+            plt.plot(peak_data[ch_number], label='DAC = {}'.format(dec))
+        plt.legend()
+        plt.savefig('/'.join([savedir, figname]))
+        
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
@@ -742,14 +759,4 @@ if __name__ == '__main__':
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_RT_150pF', CALI_number=1)
     # asic.decode_onebin(bin_filename=asic.list_bin(BL=200, gain=4.7, shapingTime=2.0)[0])
     asic = ASICDAC_CALI(input_data_dir='../data/New folder', CALI_number=1)
-    list_bins_files = asic.list_bin(BL=200, gain=14.0, shapingTime=2.0)
-    plt.figure()
-    for i in tqdm(range(16)):
-        peaks = asic.decode_onebin(bin_filename=list_bins_files[i])
-        hex = (list_bins_files[i].split('_')[-1]).split('.')[0]
-        dec = int(hex, base=16)
-        plt.plot(peaks[0], label=str(dec))
-    plt.legend()
-    plt.savefig('../data/New folder/test.png')
-    # peaks = asic.decode_onebin(bin_filename=list_bins_files[5])
-    # print(len(peaks[0]))
+    asic.plot_oneCH_allDAC(savedir='../data/analysis/testDAC', femb_number=0, ch_number=0)
