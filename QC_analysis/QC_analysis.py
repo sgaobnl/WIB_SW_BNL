@@ -678,8 +678,8 @@ class ASICDAC_CALI:
         #
         # let's try for femb 0
         # we have 128 channels
-        all_ch_data = {}
-        for ich in range(128):
+        all_ch_data = []
+        for ich in tqdm(range(128)):
             iich = femb_number*128+ich
             # only get the first event
             for iev in range(nevent):
@@ -695,21 +695,49 @@ class ASICDAC_CALI:
         # I expect to get an array of length 128 where each element is an array of 2111 length
         return all_ch_data
 
-    def plot_oneCH_allDAC(self, savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0]):
+    def get_oneCH_allDAC(self, savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0]):
+        # get the peak value and the DAC in this function
+        peak_values = []
+        DAC_values = []
         #
         # get the femb_id from the file logs_env.bin
+        input_dir = self.input_dir.split('/')[:-1]
+        logs_dir = '/'.join(input_dir)
+        logs_dir = '/'.join([logs_dir, 'logs_env.bin'])
+        with open(logs_dir, 'rb') as logs_pointer:
+            logs_env = pickle.load(logs_pointer)
         #
-        figname = 'peak_DAC_for_femb{}_channel{}.png'.format(femb_number, ch_number)
+        # get the list of femb_ids
+        femb_ids = logs_env['femb id']
+        femb_id = femb_ids['femb{}'.format(femb_number)]
+        #
+        #
+        #figname = 'peak_DAC_for_femb{}_channel{}.png'.format(femb_id, ch_number)
         list_bins_files = self.list_bin(BL=config[0], gain=config[1], shapingTime=config[2])
-        plt.figure(figsize=(12, 7))
+        #plt.figure(figsize=(12, 7))
         for i in tqdm(range(16)):
             peak_data = self.decode_onebin(bin_filename=list_bins_files[i])
             hex = (list_bins_files[i].split('_')[-1]).split('.')[0]
             dec = int(hex, base=16)
-            plt.plot(peak_data[ch_number], label='DAC = {}'.format(dec))
-        plt.legend()
-        plt.savefig('/'.join([savedir, figname]))
-        
+            # the peak value is the maximum in the plot
+            peak_values.append(np.max(peak_data[ch_number]))
+            DAC_values.append(dec)
+            #
+            #plt.plot(peak_data[ch_number], label='DAC = {}'.format(dec))
+        #plt.legend()
+        #plt.savefig('/'.join([savedir, figname]))
+        #
+        return femb_id, DAC_values, peak_values
+   
+    # need test
+    def plot_peakvalue_vs_DAC(self, savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0]):
+        femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(savedir=savedir, femb_number=femb_number, ch_number=ch_number, config=config)
+        plt.figure(figsize=(12, 7))
+        plt.scatter(DAC_values, peak_values, marker='+')
+        plt.xlabel('DAC')
+        plt.ylabel('peak value')
+        plt.savefig('/'.join([savedir, 'peakvalue_vs_DAC_ch{}_femb{}.png'.format(ch_number, femb_id)]))
+
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
@@ -758,5 +786,6 @@ if __name__ == '__main__':
     #=======================ASICDAC_CALI===============================================================
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_RT_150pF', CALI_number=1)
     # asic.decode_onebin(bin_filename=asic.list_bin(BL=200, gain=4.7, shapingTime=2.0)[0])
-    asic = ASICDAC_CALI(input_data_dir='../data/New folder', CALI_number=1)
-    asic.plot_oneCH_allDAC(savedir='../data/analysis/testDAC', femb_number=0, ch_number=0)
+    asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
+    #for i in range(128):
+    asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
