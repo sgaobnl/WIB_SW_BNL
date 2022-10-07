@@ -733,7 +733,7 @@ class ASICDAC_CALI:
         #
         return femb_id, DAC_values, peak_values
    
-    # need test
+    #
     def plot_peakvalue_vs_DAC(self, savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0]):
         femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(savedir=savedir, femb_number=femb_number, ch_number=ch_number, config=config)
         slope, intercept = np.polyfit(DAC_values, peak_values, 1)
@@ -763,18 +763,56 @@ class ASICDAC_CALI:
         # if the fitting curve is linear
         return (len(DAC_values)-1, DAC_values[len(DAC_values)-1], peak_values[len(DAC_values)-1])
 
-    def get_gains(self, savedir='', femb_number=0, config=[200, 14.0, 2.0]):
+    def get_gains(self, savedir='', femb_number=0, config=[200, 14.0, 2.0], nologs=False):
         Gains = []
         starting_of_nonlinearity = (0, 0, 0)
         for ich in range(128):
             femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(savedir=savedir, femb_number=femb_number,
-                                                                    ch_number=ich, config=config, nologs=False)
+                                                                    ch_number=ich, config=config, nologs=nologs)
             starting_of_nonlinearity = self.checkLinearity(DAC_values=DAC_values, peak_values=peak_values)
             slope, y0 = np.polyfit(DAC_values[:starting_of_nonlinearity[0]], peak_values[:starting_of_nonlinearity[0]], 1)
             Gains.append(slope)
         # return Gains for all of the channels, DAC_value and peak_value of the last point where we can fit the data with a line
-        return np.array(Gains), starting_of_nonlinearity[1], starting_of_nonlinearity[2]
+        return femb_id, np.array(Gains), starting_of_nonlinearity[1], starting_of_nonlinearity[2]
 
+    def save_gain_for_all_fembs(self, savedir='', temperature='', config=[200, 14.0, 2.0]):
+        try:
+            os.mkdir('/'.join([savedir, temperature, self.CALI]))
+        except:
+            print('Folder already exists....')
+        outputdir = '/'.join([savedir, temperature, self.CALI])
+        #
+        # max values of DACs and peak_values
+        DACs, peak_values = [], []
+        # femb numbers
+        femb_numbers = [0, 1, 2, 3]
+        for nfemb in femb_numbers:
+            femb_id, gains, DAC_max, peak_max = self.get_gains(savedir=savedir, femb_number=nfemb,
+                                                                config=config)
+            #
+            DACs.append(DAC_max)
+            peak_values.append(peak_max)
+            # figname
+            figname = 'gains_femb{}.png'.format(femb_id)
+            # csvname
+            gain_csvname = 'gains_femb{}.csv'.format(femb_id)
+            #
+            # save gain to csv
+            # channel list
+            channels = [i for i in range(128)]
+            df_gain = pd.DataFrame({'ch': channels, 'gain': gains})
+            df_gain.to_csv('/'.join([outputdir, gain_csvname]), index=False)
+            #
+            # save gains vs channel
+            plt.figure(figsize=(12, 8))
+            plt.plot(channels, gains, marker='.', markersize=7)
+            plt.xlabel('CH'); plt.ylabel('Gain')
+            plt.title(figname.split('.')[0])
+            plt.savefig('/'.join([outputdir, figname]))
+        #
+        # save DACs and peak_values in a csv file
+        df_DAC = pd.DataFrame({'dac': DACs, 'peak_max': peak_values})
+        df_DAC.to_csv('/'.join([savedir, temperature, self.input_dir.split('/')[-2] + '_saturation.csv']), index=False)
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
@@ -825,18 +863,15 @@ if __name__ == '__main__':
     # inputdir = '../data'
     inputdir = 'D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF'
     savedir = 'D:/IO-1865-1C/QC/analysis'
-    #asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1)
-    #femb_number = 0
-    #gains, DAC, peak = asic.get_gains(savedir=savedir, femb_number=femb_number, config=[200, 14.0, 2.0])
-    #channels = [i for i in range(128)]
-    #df_gains = pd.DataFrame({'ch': channels, 'gain': gains})
-    #df_gains.to_csv('/'.join([savedir, 'gains_femb{}.csv'.format(femb_number)]), index=False)
+    # try to save and plot the gains for the data in inputdir
+    asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1)
+    asic.save_gain_for_all_fembs(savedir=savedir, temperature='LN', config=[200, 14.0, 2.0])
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
-    df = pd.read_csv('/'.join([savedir, 'gains_femb0.csv']))
-    plt.figure(figsize=(12,7))
-    plt.plot(df['ch'], df['gain'], marker='.', markersize=7)
-    plt.xlabel('channel')
-    plt.ylabel('gain')
-    plt.savefig('/'.join([savedir, 'test_ch_vs_gain.png']))
-    plt.show()
+    # df = pd.read_csv('/'.join([savedir, 'gains_femb0.csv']))
+    # plt.figure(figsize=(12,7))
+    # plt.plot(df['ch'], df['gain'], marker='.', markersize=7)
+    # plt.xlabel('channel')
+    # plt.ylabel('gain')
+    # plt.savefig('/'.join([savedir, 'test_ch_vs_gain.png']))
+    # plt.show()
