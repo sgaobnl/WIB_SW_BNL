@@ -786,16 +786,16 @@ class ASICDAC_CALI:
         DACs, peak_values = [], []
         # femb numbers
         femb_numbers = [0, 1, 2, 3]
-        for nfemb in femb_numbers:
+        for nfemb in tqdm(femb_numbers):
             femb_id, gains, DAC_max, peak_max = self.get_gains(savedir=savedir, femb_number=nfemb,
                                                                 config=config)
             #
             DACs.append(DAC_max)
             peak_values.append(peak_max)
             # figname
-            figname = 'gains_femb{}.png'.format(femb_id)
+            figname = 'gains_femb{}_{}mVBL_{}mVfC_{}us.png'.format(femb_id, config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
             # csvname
-            gain_csvname = 'gains_femb{}.csv'.format(femb_id)
+            gain_csvname = 'gains_femb{}_{}mVBL_{}mVfC_{}us.csv'.format(femb_id, config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
             #
             # save gain to csv
             # channel list
@@ -811,8 +811,9 @@ class ASICDAC_CALI:
             plt.savefig('/'.join([outputdir, figname]))
         #
         # save DACs and peak_values in a csv file
+        configuration = '{}mVBL_{}mVfC_{}us'.format(config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
         df_DAC = pd.DataFrame({'dac': DACs, 'peak_max': peak_values})
-        df_DAC.to_csv('/'.join([savedir, temperature, self.input_dir.split('/')[-2] + '_saturation.csv']), index=False)
+        df_DAC.to_csv('/'.join([savedir, temperature, self.input_dir.split('/')[-2] + '_saturation_{}.csv'.format(configuration)]), index=False)
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
