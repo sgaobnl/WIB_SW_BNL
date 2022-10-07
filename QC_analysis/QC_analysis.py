@@ -644,6 +644,7 @@ class ASICDAC_CALI:
         input_data_dir: the path to the bin files,
         CALI_number: can be 1, 2, 3 or 4
         '''
+        self.sgp1 = False # add a condition about this
         self.CALI = 'CALI{}'.format(CALI_number)
         self.temperature = temperature
         self.input_dir_list = ['/'.join([input_dir, self.CALI]) for input_dir in os.listdir(input_data_dir) if self.temperature in input_dir]
@@ -681,7 +682,7 @@ class ASICDAC_CALI:
         # let's try for femb 0
         # we have 128 channels
         all_ch_data = []
-        for ich in tqdm(range(128)):
+        for ich in range(128):
             iich = femb_number*128+ich
             # only get the first event
             for iev in range(nevent):
@@ -765,6 +766,25 @@ class ASICDAC_CALI:
         return (len(DAC_values)-1, DAC_values[len(DAC_values)-1], peak_values[len(DAC_values)-1])
 
     def get_gains(self, input_dir='', femb_number=0, config=[200, 14.0, 2.0], withlogs=False):
+        #
+        #
+        dac_v = {} # mV/bit
+        dac_v['4_7mVfC'] = 18.66
+        dac_v['7_8mVfC'] = 14.33
+        dac_v['14_0mVfC'] = 8.08
+        dac_v['25_0mVfC'] = 4.61
+
+        CC = 1.85*pow(10, -13)
+        e = 1.602*pow(10, -19) # electron charge
+
+        sgs = '_'.join(str(config[1]).split('.')) + 'mVfC'
+
+        if self.sgp1:
+            dac_du = dac_v['4_7mVfC']
+        else:
+            dac_du = dac_v[sgs]
+        #
+        #
         Gains = []
         starting_of_nonlinearity = (0, 0, 0)
         for ich in range(128):
@@ -772,6 +792,12 @@ class ASICDAC_CALI:
                                                                     ch_number=ich, config=config, withlogs=withlogs)
             starting_of_nonlinearity = self.checkLinearity(DAC_values=DAC_values, peak_values=peak_values)
             slope, y0 = np.polyfit(DAC_values[:starting_of_nonlinearity[0]], peak_values[:starting_of_nonlinearity[0]], 1)
+            #
+            # convert gain to ADC bin/electron
+            slope = 1/slope * dac_du/1000 * CC/e
+            if slope < 0:
+                slope = 0
+            #
             Gains.append(slope)
         # return Gains for all of the channels, DAC_value and peak_value of the last point where we can fit the data with a line
         return femb_id, np.array(Gains), starting_of_nonlinearity[1], starting_of_nonlinearity[2]
