@@ -825,11 +825,18 @@ if __name__ == '__main__':
     # inputdir = '../data'
     inputdir = 'D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF'
     savedir = 'D:/IO-1865-1C/QC/analysis'
-    asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1)
-    femb_number = 0
-    gains, DAC, peak = asic.get_gains(savedir=savedir, femb_number=femb_number, config=[200, 14.0, 2.0])
-    channels = [i for i in range(128)]
-    df_gains = pd.DataFrame({'ch': channels, 'gain': gains})
-    df_gains.to_csv('/'.join([savedir, 'gains_femb{}.csv'.format(femb_number)]), index=False)
+    #asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1)
+    #femb_number = 0
+    #gains, DAC, peak = asic.get_gains(savedir=savedir, femb_number=femb_number, config=[200, 14.0, 2.0])
+    #channels = [i for i in range(128)]
+    #df_gains = pd.DataFrame({'ch': channels, 'gain': gains})
+    #df_gains.to_csv('/'.join([savedir, 'gains_femb{}.csv'.format(femb_number)]), index=False)
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
+    df = pd.read_csv('/'.join([savedir, 'gains_femb0.csv']))
+    plt.figure(figsize=(12,7))
+    plt.plot(df['ch'], df['gain'], marker='.', markersize=7)
+    plt.xlabel('channel')
+    plt.ylabel('gain')
+    plt.savefig('/'.join([savedir, 'test_ch_vs_gain.png']))
+    plt.show()
