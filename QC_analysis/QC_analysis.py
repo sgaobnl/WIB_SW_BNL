@@ -639,20 +639,21 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
 #----------------------------------------------------------------------------
 ### ASICDAC_CALI
 class ASICDAC_CALI:
-    def __init__(self, input_data_dir='', CALI_number=1):
+    def __init__(self, input_data_dir='', temperature='LN', CALI_number=1):
         '''
         input_data_dir: the path to the bin files,
         CALI_number: can be 1, 2, 3 or 4
         '''
         self.CALI = 'CALI{}'.format(CALI_number)
-        self.input_dir = '/'.join([input_data_dir, self.CALI])
+        self.temperature = temperature
+        self.input_dir_list = ['/'.join([input_dir, self.CALI]) for input_dir in os.listdir(input_data_dir) if self.temperature in input_dir]
 
-    def list_bin(self, BL=200, gain=4.7, shapingTime=2.0):
+    def list_bin(self, input_dir='', BL=200, gain=4.7, shapingTime=2.0):
         str_BL = str(BL) + 'mVBL'
         str_gain = '_'.join(str(gain).split('.')) + 'mVfC'
         str_shapingTime = '_'.join(str(shapingTime).split('.')) + 'us'
         #
-        all_bins_in_CALI = os.listdir(self.input_dir)
+        all_bins_in_CALI = os.listdir(input_dir)
         # get the bin files matching the configuration
         match_bin_files = []
         for i in range(0, 64, 4):
@@ -663,8 +664,8 @@ class ASICDAC_CALI:
                     continue
         return match_bin_files
 
-    def decode_onebin(self, bin_filename='', femb_number=0):
-        path_to_bin = '/'.join([self.input_dir, bin_filename])
+    def decode_onebin(self, input_dir='', bin_filename='', femb_number=0):
+        path_to_bin = '/'.join([input_dir, bin_filename])
         # read bin
         with open(path_to_bin, 'rb') as fp:
             raw = pickle.load(fp)
@@ -696,15 +697,15 @@ class ASICDAC_CALI:
         # I expect to get an array of length 128 where each element is an array of 2111 length
         return all_ch_data
 
-    def get_oneCH_allDAC(self, savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0], nologs=False):
-        # set nologs to True if you have the logs_env.bin in your input directory
+    def get_oneCH_allDAC(self, input_dir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0], withlogs=False):
+        # set withlogs to True if you have the logs_env.bin in your input directory
         # get the peak value and the DAC in this function
         peak_values = []
         DAC_values = []
         #
         # get the femb_id from the file logs_env.bin
         femb_id = femb_number
-        if nologs:
+        if withlogs:
             input_dir = self.input_dir.split('/')[:-1]
             logs_dir = '/'.join(input_dir)
             logs_dir = '/'.join([logs_dir, 'logs_env.bin'])
@@ -717,10 +718,10 @@ class ASICDAC_CALI:
         #
         #
         #figname = 'peak_DAC_for_femb{}_channel{}.png'.format(femb_id, ch_number)
-        list_bins_files = self.list_bin(BL=config[0], gain=config[1], shapingTime=config[2])
+        list_bins_files = self.list_bin(BL=config[0], gain=config[1], shapingTime=config[2], input_dir=input_dir)
         #plt.figure(figsize=(12, 7))
         for i in tqdm(range(16)):
-            peak_data = self.decode_onebin(bin_filename=list_bins_files[i])
+            peak_data = self.decode_onebin(bin_filename=list_bins_files[i], input_dir=input_dir)
             hex = (list_bins_files[i].split('_')[-1]).split('.')[0]
             dec = int(hex, base=16)
             # the peak value is the maximum in the plot
@@ -734,8 +735,8 @@ class ASICDAC_CALI:
         return femb_id, DAC_values, peak_values
    
     #
-    def plot_peakvalue_vs_DAC(self, savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0]):
-        femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(savedir=savedir, femb_number=femb_number, ch_number=ch_number, config=config)
+    def plot_peakvalue_vs_DAC(self, input_dir='', savedir='', femb_number=0, ch_number=0, config=[200, 14.0, 2.0]):
+        femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(input_dir=input_dir, femb_number=femb_number, ch_number=ch_number, config=config)
         slope, intercept = np.polyfit(DAC_values, peak_values, 1)
         x_fit = np.array(DAC_values)
         y_fit = slope * x_fit + intercept
@@ -763,39 +764,41 @@ class ASICDAC_CALI:
         # if the fitting curve is linear
         return (len(DAC_values)-1, DAC_values[len(DAC_values)-1], peak_values[len(DAC_values)-1])
 
-    def get_gains(self, savedir='', femb_number=0, config=[200, 14.0, 2.0], nologs=False):
+    def get_gains(self, input_dir='', femb_number=0, config=[200, 14.0, 2.0], withlogs=False):
         Gains = []
         starting_of_nonlinearity = (0, 0, 0)
         for ich in range(128):
-            femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(savedir=savedir, femb_number=femb_number,
-                                                                    ch_number=ich, config=config, nologs=nologs)
+            femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(input_dir=input_dir, femb_number=femb_number,
+                                                                    ch_number=ich, config=config, withlogs=withlogs)
             starting_of_nonlinearity = self.checkLinearity(DAC_values=DAC_values, peak_values=peak_values)
             slope, y0 = np.polyfit(DAC_values[:starting_of_nonlinearity[0]], peak_values[:starting_of_nonlinearity[0]], 1)
             Gains.append(slope)
         # return Gains for all of the channels, DAC_value and peak_value of the last point where we can fit the data with a line
         return femb_id, np.array(Gains), starting_of_nonlinearity[1], starting_of_nonlinearity[2]
 
-    def save_gain_for_all_fembs(self, savedir='', temperature='', config=[200, 14.0, 2.0]):
+    def save_gain_for_all_fembs(self, input_dir='', savedir='', config=[200, 14.0, 2.0]):
         try:
-            os.mkdir('/'.join([savedir, temperature, self.CALI]))
+            os.mkdir('/'.join([savedir, self.temperature, self.CALI]))
         except:
             print('Folder already exists....')
-        outputdir = '/'.join([savedir, temperature, self.CALI])
+        outputdir = '/'.join([savedir, self.temperature, self.CALI])
         #
         # max values of DACs and peak_values
         DACs, peak_values = [], []
         # femb numbers
         femb_numbers = [0, 1, 2, 3]
         for nfemb in tqdm(femb_numbers):
-            femb_id, gains, DAC_max, peak_max = self.get_gains(savedir=savedir, femb_number=nfemb,
-                                                                config=config)
+            femb_id, gains, DAC_max, peak_max = self.get_gains(input_dir=input_dir, femb_number=nfemb,
+                                                                config=config, withlogs=True)
             #
             DACs.append(DAC_max)
             peak_values.append(peak_max)
+            print(DACs)
             # figname
             figname = 'gains_femb{}_{}mVBL_{}mVfC_{}us.png'.format(femb_id, config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
             # csvname
             gain_csvname = 'gains_femb{}_{}mVBL_{}mVfC_{}us.csv'.format(femb_id, config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
+            print(figname)
             #
             # save gain to csv
             # channel list
@@ -813,7 +816,11 @@ class ASICDAC_CALI:
         # save DACs and peak_values in a csv file
         configuration = '{}mVBL_{}mVfC_{}us'.format(config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
         df_DAC = pd.DataFrame({'dac': DACs, 'peak_max': peak_values})
-        df_DAC.to_csv('/'.join([savedir, temperature, self.input_dir.split('/')[-2] + '_saturation_{}.csv'.format(configuration)]), index=False)
+        df_DAC.to_csv('/'.join([savedir, self.temperature, self.input_dir.split('/')[-2] + '_saturation_{}.csv'.format(configuration)]), index=False)
+    
+    def save_gain_for_allData_oneConfig(self, savedir='', config=[200, 14.0, 2.0]):
+        for input_dir in self.input_dir_list:
+            self.save_gain_for_all_fembs(input_dir=input_dir, savedir=savedir, config=config)
 ##---------------------------------------------------------------------------
 ##
 if __name__ == '__main__':
@@ -862,11 +869,12 @@ if __name__ == '__main__':
     #=======================ASICDAC_CALI===============================================================
     # savedir = '../data'
     # inputdir = '../data'
-    inputdir = 'D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF'
+    inputdir = 'D:/IO-1865-1C/QC/data'
     savedir = 'D:/IO-1865-1C/QC/analysis'
     # try to save and plot the gains for the data in inputdir
-    asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1)
-    asic.save_gain_for_all_fembs(savedir=savedir, temperature='LN', config=[200, 14.0, 2.0])
+    asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1, temperature='LN')
+    # asic.save_gain_for_all_fembs(savedir=savedir, config=[200, 14.0, 2.0])
+    asic.save_gain_for_allData_oneConfig(savedir=savedir, config=[200, 14.0, 2.0])
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
     # df = pd.read_csv('/'.join([savedir, 'gains_femb0.csv']))
