@@ -644,10 +644,11 @@ class ASICDAC_CALI:
         input_data_dir: the path to the bin files,
         CALI_number: can be 1, 2, 3 or 4
         '''
+        self.input_dir = input_data_dir
         self.sgp1 = False # add a condition about this
         self.CALI = 'CALI{}'.format(CALI_number)
         self.temperature = temperature
-        self.input_dir_list = ['/'.join([input_dir, self.CALI]) for input_dir in os.listdir(input_data_dir) if self.temperature in input_dir]
+        self.input_dir_list = ['/'.join([input_data_dir, input_dir, self.CALI]) for input_dir in os.listdir(input_data_dir) if self.temperature in input_dir]
 
     def list_bin(self, input_dir='', BL=200, gain=4.7, shapingTime=2.0):
         str_BL = str(BL) + 'mVBL'
@@ -707,8 +708,10 @@ class ASICDAC_CALI:
         # get the femb_id from the file logs_env.bin
         femb_id = femb_number
         if withlogs:
-            input_dir = self.input_dir.split('/')[:-1]
-            logs_dir = '/'.join(input_dir)
+            tmp_input_dir = input_dir.split('/')[:-1]
+            #print(input_dir)
+            #input_dir = self.input_dir
+            logs_dir = '/'.join(tmp_input_dir)
             logs_dir = '/'.join([logs_dir, 'logs_env.bin'])
             with open(logs_dir, 'rb') as logs_pointer:
                 logs_env = pickle.load(logs_pointer)
@@ -723,7 +726,10 @@ class ASICDAC_CALI:
         #plt.figure(figsize=(12, 7))
         for i in tqdm(range(16)):
             peak_data = self.decode_onebin(bin_filename=list_bins_files[i], input_dir=input_dir)
-            hex = (list_bins_files[i].split('_')[-1]).split('.')[0]
+            tmp = (list_bins_files[i].split('_')[-1]).split('.')[0]
+            if tmp=='sgp1':
+                tmp = (list_bins_files[i].split('_')[-2]).split('.')[0]
+            hex = tmp
             dec = int(hex, base=16)
             # the peak value is the maximum in the plot
             peak_values.append(np.max(peak_data[ch_number]))
@@ -819,12 +825,12 @@ class ASICDAC_CALI:
             #
             DACs.append(DAC_max)
             peak_values.append(peak_max)
-            print(DACs)
+            #print(DACs)
             # figname
             figname = 'gains_femb{}_{}mVBL_{}mVfC_{}us.png'.format(femb_id, config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
             # csvname
             gain_csvname = 'gains_femb{}_{}mVBL_{}mVfC_{}us.csv'.format(femb_id, config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
-            print(figname)
+            #print(figname)
             #
             # save gain to csv
             # channel list
@@ -898,7 +904,7 @@ if __name__ == '__main__':
     inputdir = 'D:/IO-1865-1C/QC/data'
     savedir = 'D:/IO-1865-1C/QC/analysis'
     # try to save and plot the gains for the data in inputdir
-    asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1, temperature='LN')
+    asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=3, temperature='LN')
     # asic.save_gain_for_all_fembs(savedir=savedir, config=[200, 14.0, 2.0])
     asic.save_gain_for_allData_oneConfig(savedir=savedir, config=[200, 14.0, 2.0])
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
