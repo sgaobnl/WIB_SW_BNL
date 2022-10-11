@@ -722,18 +722,18 @@ class ASICDAC_CALI:
         #
         # get the femb_id from the file logs_env.bin
         femb_id = femb_number
-        if withlogs:
-            tmp_input_dir = input_dir.split('/')[:-1]
-            #print(input_dir)
-            #input_dir = self.input_dir
-            logs_dir = '/'.join(tmp_input_dir)
-            logs_dir = '/'.join([logs_dir, 'logs_env.bin'])
-            with open(logs_dir, 'rb') as logs_pointer:
-                logs_env = pickle.load(logs_pointer)
-            #
-            # get the list of femb_ids
-            femb_ids = logs_env['femb id']
-            femb_id = femb_ids['femb{}'.format(femb_number)]
+        #if withlogs:
+        #    tmp_input_dir = input_dir.split('/')[:-1]
+        #    #print(input_dir)
+        #    #input_dir = self.input_dir
+        #    logs_dir = '/'.join(tmp_input_dir)
+        #    logs_dir = '/'.join([logs_dir, 'logs_env.bin'])
+        #    with open(logs_dir, 'rb') as logs_pointer:
+        #        logs_env = pickle.load(logs_pointer)
+        #    #
+        #    # get the list of femb_ids
+        #    femb_ids = logs_env['femb id']
+        #    femb_id = femb_ids['femb{}'.format(femb_number)]
         #
         #
         #figname = 'peak_DAC_for_femb{}_channel{}.png'.format(femb_id, ch_number)
@@ -741,7 +741,6 @@ class ASICDAC_CALI:
         #plt.figure(figsize=(12, 7))
         #for i in tqdm(range(16)):
         for i in range(16):
-            print('channel{}...'.format(i))
             peak_data = self.decode_onebin(bin_filename=list_bins_files[i], input_dir=input_dir, ch_number=ch_number) # I added the parameter ch_number
             tmp = (list_bins_files[i].split('_')[-1]).split('.')[0]
             if tmp=='sgp1':
@@ -812,6 +811,7 @@ class ASICDAC_CALI:
         Gains = []
         starting_of_nonlinearity = (0, 0, 0)
         for ich in range(128):
+            print('channel{}...'.format(ich))
             femb_id, DAC_values, peak_values = self.get_oneCH_allDAC(input_dir=input_dir, femb_number=femb_number,
                                                                     ch_number=ich, config=config, withlogs=withlogs)
             starting_of_nonlinearity = self.checkLinearity(DAC_values=DAC_values, peak_values=peak_values)
@@ -837,10 +837,26 @@ class ASICDAC_CALI:
         DACs, peak_values = [], []
         # femb numbers
         femb_numbers = [0, 1, 2, 3]
+        
         #for nfemb in tqdm(femb_numbers):
         for nfemb in femb_numbers:
             print('femb{}\n'.format(nfemb))
-            femb_id, gains, DAC_max, peak_max = self.get_gains(input_dir=input_dir, femb_number=nfemb,
+            #
+            # try to get the femb_id here
+            femb_id = nfemb
+            if withLogs:
+                tmp_input_dir = input_dir.split('/')[:-1]
+                #print(input_dir)
+                #input_dir = self.input_dir
+                logs_dir = '/'.join(tmp_input_dir)
+                logs_dir = '/'.join([logs_dir, 'logs_env.bin'])
+                with open(logs_dir, 'rb') as logs_pointer:
+                    logs_env = pickle.load(logs_pointer)
+                #
+                # get the list of femb_ids
+                femb_ids = logs_env['femb id']
+                femb_id = femb_ids['femb{}'.format(nfemb)]
+            _, gains, DAC_max, peak_max = self.get_gains(input_dir=input_dir, femb_number=nfemb,
                                                                 config=config, withlogs=withLogs)
             #
             DACs.append(DAC_max)
@@ -857,13 +873,7 @@ class ASICDAC_CALI:
             channels = [i for i in range(128)]
             df_gain = pd.DataFrame({'ch': channels, 'gain': gains})
             df_gain.to_csv('/'.join([outputdir, gain_csvname]), index=False)
-            #
-            # save gains vs channel
-            # plt.figure(figsize=(12, 8))
-            # plt.plot(channels, gains, marker='.', markersize=7)
-            # plt.xlabel('CH'); plt.ylabel('Gain')
-            # plt.title(figname.split('.')[0])
-            # plt.savefig('/'.join([outputdir, figname]))
+
         #
         # save DACs and peak_values in a csv file
         configuration = '{}mVBL_{}mVfC_{}us'.format(config[0], '_'.join(str(config[1]).split('.')), '_'.join(str(config[2]).split('.')))
