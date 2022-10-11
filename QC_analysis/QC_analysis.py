@@ -648,7 +648,7 @@ class ASICDAC_CALI:
         self.sgp1 = False # add a condition about this
         self.CALI = 'CALI{}'.format(CALI_number)
         self.temperature = temperature
-        self.input_dir_list = ['/'.join([self.input_dir, self.CALI]) for input_dir in os.listdir(input_data_dir) if self.temperature in input_dir]
+        self.input_dir_list = ['/'.join([self.input_dir, data_dir, self.CALI]) for data_dir in os.listdir(self.input_dir) if self.temperature in data_dir]
 
     def list_bin(self, input_dir='', BL=200, gain=4.7, shapingTime=2.0):
         str_BL = str(BL) + 'mVBL'
@@ -739,7 +739,9 @@ class ASICDAC_CALI:
         #figname = 'peak_DAC_for_femb{}_channel{}.png'.format(femb_id, ch_number)
         list_bins_files = self.list_bin(BL=config[0], gain=config[1], shapingTime=config[2], input_dir=input_dir)
         #plt.figure(figsize=(12, 7))
-        for i in tqdm(range(16)):
+        #for i in tqdm(range(16)):
+        for i in range(16):
+            print('channel{}...'.format(i))
             peak_data = self.decode_onebin(bin_filename=list_bins_files[i], input_dir=input_dir, ch_number=ch_number) # I added the parameter ch_number
             tmp = (list_bins_files[i].split('_')[-1]).split('.')[0]
             if tmp=='sgp1':
@@ -835,7 +837,9 @@ class ASICDAC_CALI:
         DACs, peak_values = [], []
         # femb numbers
         femb_numbers = [0, 1, 2, 3]
-        for nfemb in tqdm(femb_numbers):
+        #for nfemb in tqdm(femb_numbers):
+        for nfemb in femb_numbers:
+            print('femb{}\n'.format(nfemb))
             femb_id, gains, DAC_max, peak_max = self.get_gains(input_dir=input_dir, femb_number=nfemb,
                                                                 config=config, withlogs=withLogs)
             #
