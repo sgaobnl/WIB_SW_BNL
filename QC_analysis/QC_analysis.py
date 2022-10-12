@@ -712,7 +712,7 @@ class ASICDAC:
         #
         # instead of returning all data, let's directly get the peak value
         all_peak_values = []
-        for ich in range(128):
+        for ich in tqdm(range(128)):
             iich = femb_number*128+ich
             first_peak = False
             # only get the first event
@@ -838,6 +838,8 @@ class ASICDAC:
             femb_ids = info_logs['femb id']
             femb_id = femb_ids['femb{}'.format(femb_number)]
         gains_figname = 'gain_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], self.config[1], self.config[2])
+        if self.sgp1:
+            gains_figname += 'sgp1'
 
         plt.figure(figsize=(20,12))
         plt.plot(self.data_df['CH'].unique(), Gains, marker='.', markersize=7)
