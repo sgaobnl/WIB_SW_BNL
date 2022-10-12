@@ -641,13 +641,17 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
             
 #----------------------------------------------------------------------------
 class ASICDAC:
-    def __init__(self, input_data_dir='', output_dir='', temperature='LN', CALI_number=1):
+    def __init__(self, input_data_dir='', output_dir='', temperature='LN', CALI_number=1, sgp1=False):
         '''
             input_data_dir: path to the list of data folders,
             CALI_number: can be 1, 2, 3 or 4,
             temperature: can be LN or RT
         '''
         self.sgp1 = False
+        self.step = 4
+        if sgp1:
+            self.sgp1 = True
+            self.step = 1
         self.config = []
         self.CALI = 'CALI{}'.format(CALI_number)
         #
@@ -673,7 +677,7 @@ class ASICDAC:
         # get the bin files matching the configuration
         match_bin_files = []
         for f in all_bins_in_CALI:
-            for i in range(0, 64, 4):
+            for i in range(0, 64, self.step):
                 part_of_filename = '_'.join([str_BL, str_gain, str_shapingTime, '{}'.format(hex(i))])
                 if part_of_filename in f:
                     match_bin_files.append(f)    
@@ -835,10 +839,11 @@ class ASICDAC:
             femb_id = femb_ids['femb{}'.format(femb_number)]
         gains_figname = 'gain_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], self.config[1], self.config[2])
 
-        plt.figure(figsize=(40,15))
+        plt.figure(figsize=(20,12))
         plt.plot(self.data_df['CH'].unique(), Gains, marker='.', markersize=7)
-        plt.xticks(self.data_df['CH'].unique(), fontsize=10)
+        #plt.xticks(self.data_df['CH'].unique(), fontsize=10)
         plt.yticks(fontsize=15)
+        plt.xticks(fontsize=15)
         plt.xlabel('CH', fontsize=20)
         plt.ylabel('Gain(ADC bin/electron)', fontsize=20)
         plt.xlim([-1, 128])
@@ -856,12 +861,25 @@ class ASICDAC:
             self.get_gains(path_to_binfolder=path_to_binfolder, femb_number=nfemb, config=config, withlogs=withlogs)
 
 def Gains_CALI1(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
-    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=1)
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=1, sgp1=False)
     mVfC = [4.7, 7.8, 14.0, 25.0]
     for data_dir in asic.input_dir_list:
         for gain_in_mVfC in mVfC:
-            asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=[200, gain_in_mVfC, 2.0], withlogs=withlogs)    
+            asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=[200, gain_in_mVfC, 2.0], withlogs=withlogs)
 
+def Gains_CALI2(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=2, sgp1=False)
+    config = [900, 14.0, 2.0]
+    for data_dir in asic.input_dir_list:
+        asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
+
+def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False, CALI_number=3):
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
+    config = [200, 14.0, 2.0]
+    if CALI_number==4:
+        config = [900, 14.0, 2.0]
+    for data_dir in asic.input_dir_list:
+        asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 
 ##---------------------------------------------------------------------------
 ##
@@ -920,4 +938,7 @@ if __name__ == '__main__':
     # plot_gain_vs_CH(savedir=savedir, temperature='LN', CALI_number=1)
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
+    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=3)
+    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
     Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
+    Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
