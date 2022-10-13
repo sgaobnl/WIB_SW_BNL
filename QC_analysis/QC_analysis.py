@@ -823,9 +823,9 @@ class ASICDAC:
             # peak_max.append(starting_of_nonlinearity[2])
             #
             # convert gain to ADC bin/electron
-            slope = 1/slope * dac_du/1000 * CC/e
-            if slope < 0:
-                slope = 0
+            # slope = 1/slope * dac_du/1000 * CC/e
+            # if slope < 0:
+            #     slope = 0
             Gains.append(slope)
         #
         # get the femb_id if withlogs
@@ -837,9 +837,11 @@ class ASICDAC:
             #  get the list of femb_ids
             femb_ids = info_logs['femb id']
             femb_id = femb_ids['femb{}'.format(femb_number)]
-        gains_figname = 'gain_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], self.config[1], self.config[2])
+        config1 = '_'.join(str(self.config[1]).split('.'))
+        config2 = '_'.join(str(self.config[2]))
+        gains_figname = 'gain_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
         if self.sgp1:
-            gains_figname += 'sgp1'
+            gains_figname += '_sgp1'
 
         plt.figure(figsize=(20,12))
         plt.plot(self.data_df['CH'].unique(), Gains, marker='.', markersize=7)
@@ -847,7 +849,8 @@ class ASICDAC:
         plt.yticks(fontsize=15)
         plt.xticks(fontsize=15)
         plt.xlabel('CH', fontsize=20)
-        plt.ylabel('Gain(ADC bin/electron)', fontsize=20)
+        # plt.ylabel('Gain(ADC bin/electron)', fontsize=20)
+        plt.ylabel('Gain(ADC bin)', fontsize=20)
         plt.xlim([-1, 128])
         plt.savefig('/'.join([self.output_dir, gains_figname + '.png']))
         print('Figure saved....')
@@ -860,6 +863,7 @@ class ASICDAC:
     def get_gains_for_allFEMBs(self, path_to_binfolder='', config=[200, 14.0, 2.0], withlogs=False):
         nFEMBs = [0, 1, 2, 3]
         for nfemb in nFEMBs:
+            print('femb_number = {}...'.format(nfemb))
             self.get_gains(path_to_binfolder=path_to_binfolder, femb_number=nfemb, config=config, withlogs=withlogs)
 
 def Gains_CALI1(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
