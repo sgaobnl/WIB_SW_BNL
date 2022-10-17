@@ -1,12 +1,12 @@
 # outputdir : D:/IO-1865-1C/QC/analysis
 # datadir : D:/IO-1865-1C/QC/data/..../PWR_Meas
-import chunk
-import csv
+# import chunk
+# import csv
 from importlib.resources import path
 import sys
-from tkinter import Listbox
-from tracemalloc import start
-from turtle import begin_fill
+# from tkinter import Listbox
+# from tracemalloc import start
+# from turtle import begin_fill
 sys.path.append('..')
 import os
 import pickle
@@ -768,21 +768,66 @@ class ASICDAC:
         plt.xticks(df_for_ch['DAC'])
         plt.show()
 
-    def checkLinearity(self, DAC_values=[], peak_values=[]):
-        # let's assume that the first three points fit is linear
-        first_slope, first_y0 = np.polyfit(DAC_values[:3], peak_values[:3], 1)
-        x_fit = np.array(DAC_values)
-        y_fit = first_slope * x_fit + first_y0
-        std = np.std(peak_values[:3] - y_fit[:3])
-        for i in range(3, len(DAC_values)):
-            tmp_std = peak_values[i] - y_fit[i]
-            if tmp_std <= std:
-                first_slope, first_y0 = np.polyfit(DAC_values[:i], peak_values[:i], 1)
-            else:
-                index = i-1
-                return index, DAC_values[index], peak_values[index] # the last point where the fitting is linear
-        # if the fitting curve is linear
-        return (len(DAC_values)-1, DAC_values[len(DAC_values)-1], peak_values[len(DAC_values)-1])
+    # def checkLinearity(self, DAC_values=[], peak_values=[]):
+    #     # let's assume that the first three points fit is linear
+    #     first_slope, first_y0 = np.polyfit(DAC_values[:3], peak_values[:3], 1)
+    #     x_fit = np.array(DAC_values)
+    #     y_fit = first_slope * x_fit + first_y0
+    #     std = np.std(peak_values[:3] - y_fit[:3])
+    #     for i in range(3, len(DAC_values)):
+    #         tmp_std = peak_values[i] - y_fit[i]
+    #         if tmp_std <= std:
+    #             first_slope, first_y0 = np.polyfit(DAC_values[:i], peak_values[:i], 1)
+    #         else:
+    #             index = i-1
+    #             return index, DAC_values[index], peak_values[index] # the last point where the fitting is linear
+    #     # if the fitting curve is linear
+    #     return (len(DAC_values)-1, DAC_values[len(DAC_values)-1], peak_values[len(DAC_values)-1])
+    def checkLinearty(self, dac_list, pk_list, updac=20, lodac=10):
+
+        dac_init=[]
+        pk_init=[]
+        for i in range(len(dac_list)):
+            if dac_list[i]<updac and dac_list[i]>=lodac:
+               dac_init.append(dac_list[i])
+               pk_init.append(pk_list[i])
+
+        slope_i,intercept_i=np.polyfit(dac_init,pk_init,1)
+
+        y_min = pk_list[0]
+        y_max = pk_list[-1]
+        linear_dac_max=dac_list[-1]
+
+        index=-1
+        for i in range(len(dac_list)):
+            y_r = pk_list[i]
+            y_p = dac_list[i]*slope_i + intercept_i
+            inl = abs(y_r-y_p)/(y_max-y_min)
+            if inl>0.03:
+               linear_dac_max = dac_list[i-1]
+               index=i
+               break
+        
+        if index==0:
+            return 0,0,0
+
+        pmax = pk_list[index]
+
+        # return index, dac_max and max of peak value
+        return (index, linear_dac_max[index], pmax)
+        # slope_f,intercept_f=np.polyfit(dac_list[:index],pk_list[:index],1)
+
+        # y_max = pk_list[index-1]
+        # y_min = pk_list[0]
+        # INL=0
+        # for i in range(index):
+        #     y_r = pk_list[i]
+        #     y_p = dac_list[i]*slope_f + intercept_f
+        #     inl = abs(y_r-y_p)/(y_max-y_min)
+        #     if inl>INL:
+        #        INL=inl
+
+        # return slope_f, INL, linear_dac_max
 
     def get_gains(self, path_to_binfolder='', femb_number=0, config=[200, 14.0, 2.0], withlogs=False):
         self.get_peakValues_forallDAC(path_to_binfolder=path_to_binfolder, config=config, femb_number=femb_number)
@@ -816,7 +861,7 @@ class ASICDAC:
             df_for_ch = self.data_df[self.data_df['CH']==ich].reset_index()
             df_for_ch['DAC'] = df_for_ch['DAC'].astype(int)
             df_for_ch = df_for_ch.sort_values(by='DAC', ascending=True)
-            starting_of_nonlinearity = self.checkLinearity(DAC_values=df_for_ch['DAC'], peak_values=df_for_ch['peak_value'])
+            starting_of_nonlinearity = self.checkLinearity(dac_list=df_for_ch['DAC'], pk_list=df_for_ch['peak_value'])
             slope, y0 = np.polyfit(df_for_ch.loc[:starting_of_nonlinearity[0]]['DAC'], df_for_ch.loc[:starting_of_nonlinearity[0]]['peak_value'], 1)
             #
             # DAC_indices.append(starting_of_nonlinearity[1])
