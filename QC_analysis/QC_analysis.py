@@ -712,7 +712,8 @@ class ASICDAC:
         #
         # instead of returning all data, let's directly get the peak value
         all_peak_values = []
-        for ich in tqdm(range(128)):
+        #for ich in tqdm(range(128)):
+        for ich in tqdm(range(16)):
             iich = femb_number*128+ich
             first_peak = False
             # only get the first event
@@ -783,7 +784,7 @@ class ASICDAC:
     #             return index, DAC_values[index], peak_values[index] # the last point where the fitting is linear
     #     # if the fitting curve is linear
     #     return (len(DAC_values)-1, DAC_values[len(DAC_values)-1], peak_values[len(DAC_values)-1])
-    def checkLinearty(self, dac_list, pk_list, updac=20, lodac=10):
+    def checkLinearity(self, dac_list, pk_list, updac=20, lodac=10):
 
         dac_init=[]
         pk_init=[]
@@ -990,6 +991,6 @@ if __name__ == '__main__':
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
     Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=3)
-    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
-    Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
-    Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
+    #Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
+    #Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
+    #Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
