@@ -689,7 +689,7 @@ class ASICDAC:
                 continue
         return match_bin_files
 
-    def decode_onebin(self, path_to_binFolder='', bin_filename='', femb_number=0):
+    def decode_onebin(self, path_to_binFolder='', bin_filename=''): #, femb_number=0):
         '''
         This function returns the value of the DAC corresponding to the bin file and
         an array of the peak values for all channels in the bin file.
@@ -717,67 +717,81 @@ class ASICDAC:
         #
         # instead of returning all data, let's directly get the peak value
         all_peak_values = []
-    
-        for ich in tqdm(range(128)):
-            iich = femb_number*128+ich
-            first_peak = False
-            # only get the first event
-            for iev in range(nevent):
-                pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich]))
-                for ppeak in pos_peaks:
-                    startpos = ppeak - 50
-                    # go to the next pulse if the starting position is negative
-                    if startpos<0:
-                        continue
-                    endpos = startpos + 100
-                    all_peak_values.append(np.max(pldata[iev][iich][startpos:endpos]))
-                    first_peak = True
-                    break
-                if first_peak:
-                    first_peak = False
-                    break
+        for femb_number in [0, 1, 2, 3]:
+            print('nfemb  = {}'.format(femb_number))
+            peak_values = []
+            for ich in tqdm(range(128)):
+                iich = femb_number*128+ich
+                first_peak = False
+                # only get the first event
+                for iev in range(nevent):
+                    pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich]))
+                    for ppeak in pos_peaks:
+                        startpos = ppeak - 50
+                        # go to the next pulse if the starting position is negative
+                        if startpos<0:
+                            continue
+                        endpos = startpos + 100
+                        peak_values.append(np.max(pldata[iev][iich][startpos:endpos]))
+                        first_peak = True
+                        break
+                    if first_peak:
+                        first_peak = False
+                        break
+            all_peak_values.append((DAC, peak_values))
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
-        return DAC, all_peak_values
+        # return DAC, all_peak_values
+        return all_peak_values
 
-    def get_peakValues_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], femb_number=0, withlogs=False):
-        all_data_dict = {}
+    def get_peakValues_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], withlogs=False):
+        # all_data_dict = {}
         self.config = config
         list_binfiles = self.list_bin(input_dir=path_to_binfolder, BL=self.config[0], gain=self.config[1], shapingTime=self.config[2])
-        for ibin in range(len(list_binfiles)):
-            tmpDAC, tmpPeak_values = self.decode_onebin(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin], femb_number=femb_number)
-            all_data_dict[tmpDAC] = tmpPeak_values
         #
-        DACs, peaks, CHs = [], [], []
-        for dac, peak_array in all_data_dict.items():
-            tmp_dac = [dac for _ in range(len(peak_array))]
-            tmp_peaks_values = peak_array
-            ch_numbers = [i for i in range(len(peak_array))]
-            DACs += tmp_dac
-            peaks += tmp_peaks_values
-            CHs += ch_numbers
-        transformed_data_df = pd.DataFrame({
-            'CH': CHs,
-            'peak_value': peaks,
-            'DAC': DACs
-        })
-        self.data_df = pd.DataFrame()
-        self.data_df = transformed_data_df
+        data_list = []
+        for ibin in range(len(list_binfiles)):
+            # tmpDAC, tmpPeak_values = self.decode_onebin(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin], femb_number=femb_number)
+            data_list.append(self.decode_onebin(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin]))
         
-        # get the femb_id if withlogs
-        femb_id = femb_number
-        if withlogs:
-            dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
-            with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
-                info_logs = pickle.load(pointer_logs)
-            #  get the list of femb_ids
-            femb_ids = info_logs['femb id']
-            femb_id = femb_ids['femb{}'.format(femb_number)]
-        config1 = '_'.join(str(self.config[1]).split('.'))
-        config2 = '_'.join(str(self.config[2]).split('.'))
-        csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
-        if self.sgp1:
-            csvname += '_sgp1'
-        self.data_df.to_csv('/'.join([self.output_dir, csvname + '.csv']), index=False)
+        FEMBs = [0, 1, 2, 3]
+        for femb_number in FEMBs:
+            all_data_dict = {}
+            for ibin in range(len(list_binfiles)):
+                DAC = data_list[ibin][femb_number][0]
+                peak_values = data_list[ibin][femb_number][1]
+                all_data_dict[DAC] = peak_values
+            #
+            DACs, peaks, CHs = [], [], []
+            for dac, peak_array in all_data_dict.items():
+                tmp_dac = [dac for _ in range(len(peak_array))]
+                tmp_peaks_values = peak_array
+                ch_numbers = [i for i in range(len(peak_array))]
+                DACs += tmp_dac
+                peaks += tmp_peaks_values
+                CHs += ch_numbers
+            transformed_data_df = pd.DataFrame({
+                'CH': CHs,
+                'peak_value': peaks,
+                'DAC': DACs
+            })
+            self.data_df = pd.DataFrame()
+            self.data_df = transformed_data_df
+            
+            # get the femb_id if withlogs
+            femb_id = femb_number
+            if withlogs:
+                dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
+                with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
+                    info_logs = pickle.load(pointer_logs)
+                #  get the list of femb_ids
+                femb_ids = info_logs['femb id']
+                femb_id = femb_ids['femb{}'.format(femb_number)]
+            config1 = '_'.join(str(self.config[1]).split('.'))
+            config2 = '_'.join(str(self.config[2]).split('.'))
+            csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
+            if self.sgp1:
+                csvname += '_sgp1'
+            self.data_df.to_csv('/'.join([self.output_dir, csvname + '.csv']), index=False)
         
     #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
     def plot_peakValue_vs_DAC_allch(self, data_df, ch_list=range(128)):
@@ -885,9 +899,9 @@ class ASICDAC:
             # peak_max.append(starting_of_nonlinearity[2])
             #
             # convert gain to ADC bin/electron
-            # slope = 1/slope * dac_du/1000 * CC/e
-            # if slope < 0:
-            #     slope = 0
+            slope = 1/slope * dac_du/1000 * CC/e
+            if slope < 0:
+                slope = 0
             CHs.append(ich)
             Gains.append(slope)
         #
@@ -950,9 +964,7 @@ def save_peakValues_to_csv(path_to_dataFolder='', output_dir='', temperature='LN
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
     config = [200, 14.0, 2.0]
     for data_dir in asic.input_dir_list:
-        for nfemb in [0, 1, 2, 3]:
-            print('nfemb = {}'.format(nfemb))
-            asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, femb_number=nfemb, withlogs=withLogs)
+        asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withLogs)
 
 ##---------------------------------------------------------------------------
 ##
