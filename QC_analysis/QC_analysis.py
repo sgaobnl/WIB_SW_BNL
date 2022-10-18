@@ -3,6 +3,7 @@
 # import chunk
 # import csv
 from importlib.resources import path
+from re import I
 import sys
 # from tkinter import Listbox
 # from tracemalloc import start
@@ -657,6 +658,10 @@ class ASICDAC:
         #
         # self.input_dir = input_data_dir # this variable will be used to get the informations in logs_env.bin
         try:
+            os.mkdir('/'.join([output_dir, temperature]))
+        except:
+            pass
+        try:
             os.mkdir('/'.join([output_dir, temperature, self.CALI]))
         except:
             print('Folder already exists.....')
@@ -712,8 +717,8 @@ class ASICDAC:
         #
         # instead of returning all data, let's directly get the peak value
         all_peak_values = []
-        #for ich in tqdm(range(128)):
-        for ich in tqdm(range(16)):
+    
+        for ich in tqdm(range(128)):
             iich = femb_number*128+ich
             first_peak = False
             # only get the first event
@@ -734,7 +739,7 @@ class ASICDAC:
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
         return DAC, all_peak_values
 
-    def get_peakValues_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], femb_number=0):
+    def get_peakValues_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], femb_number=0, withlogs=False):
         all_data_dict = {}
         self.config = config
         list_binfiles = self.list_bin(input_dir=path_to_binfolder, BL=self.config[0], gain=self.config[1], shapingTime=self.config[2])
@@ -755,83 +760,88 @@ class ASICDAC:
             'peak_value': peaks,
             'DAC': DACs
         })
+        self.data_df = pd.DataFrame()
         self.data_df = transformed_data_df
         
-    def plot_peakValue_vs_DAC(self, ch_number=0):
+        # get the femb_id if withlogs
+        femb_id = femb_number
+        if withlogs:
+            dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
+            with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
+                info_logs = pickle.load(pointer_logs)
+            #  get the list of femb_ids
+            femb_ids = info_logs['femb id']
+            femb_id = femb_ids['femb{}'.format(femb_number)]
+        config1 = '_'.join(str(self.config[1]).split('.'))
+        config2 = '_'.join(str(self.config[2]).split('.'))
+        csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
+        if self.sgp1:
+            csvname += '_sgp1'
+        self.data_df.to_csv('/'.join([self.output_dir, csvname + '.csv']), index=False)
+        
+    #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
+    def plot_peakValue_vs_DAC_allch(self, data_df, ch_list=range(128)):
         '''
         Run get_peakValues_forallDAC before using this method
         '''
-        df_for_ch = self.data_df[self.data_df['CH']==ch_number]
-        df_for_ch['DAC'] = df_for_ch['DAC'].astype(int)
-        df_for_ch = df_for_ch.sort_values(by='DAC', ascending=True)
         plt.figure(figsize=(12, 7))
-        plt.plot(df_for_ch['DAC'], df_for_ch['peak_value'])
-        plt.xticks(df_for_ch['DAC'])
-        plt.show()
+        for ch in ch_list:
+            # self.plot_peakValue_vs_DAC(plt, ch_number=ch)
+            df_for_ch = data_df[data_df['CH']==ch].reset_index()
+            df_for_ch['DAC'] = df_for_ch['DAC'].astype(int)
+            df_for_ch = df_for_ch.sort_values(by='DAC', ascending=True)
+            # title = self.checkLinearity(DAC_values=df_for_ch['DAC'], peak_values=df_for_ch['peak_value'])
+            starting_of_nonlinearity = self.checkLinearity(DAC_values=df_for_ch['DAC'], peak_values=df_for_ch['peak_value'])
+            slope, y0 = np.polyfit(df_for_ch['DAC'][:starting_of_nonlinearity[0]+1], df_for_ch['peak_value'][:starting_of_nonlinearity[0]+1], 1)
+            y_pred = np.array(df_for_ch['DAC'] * slope) + y0
 
-    # def checkLinearity(self, DAC_values=[], peak_values=[]):
-    #     # let's assume that the first three points fit is linear
-    #     first_slope, first_y0 = np.polyfit(DAC_values[:3], peak_values[:3], 1)
-    #     x_fit = np.array(DAC_values)
-    #     y_fit = first_slope * x_fit + first_y0
-    #     std = np.std(peak_values[:3] - y_fit[:3])
-    #     for i in range(3, len(DAC_values)):
-    #         tmp_std = peak_values[i] - y_fit[i]
-    #         if tmp_std <= std:
-    #             first_slope, first_y0 = np.polyfit(DAC_values[:i], peak_values[:i], 1)
-    #         else:
-    #             index = i-1
-    #             return index, DAC_values[index], peak_values[index] # the last point where the fitting is linear
-    #     # if the fitting curve is linear
-    #     return (len(DAC_values)-1, DAC_values[len(DAC_values)-1], peak_values[len(DAC_values)-1])
-    def checkLinearity(self, dac_list, pk_list, updac=20, lodac=10):
+            plt.plot(df_for_ch['DAC'], df_for_ch['peak_value'])
+            plt.plot(df_for_ch['DAC'], y_pred, label='ch{}'.format(ch))
+            # plt.title(title)
+        plt.legend()
+        # plt.show()
+        plt.savefig('/'.join([self.output_dir, 'testfit.png']))
 
-        dac_init=[]
-        pk_init=[]
-        for i in range(len(dac_list)):
-            if dac_list[i]<updac and dac_list[i]>=lodac:
-               dac_init.append(dac_list[i])
-               pk_init.append(pk_list[i])
-
-        slope_i,intercept_i=np.polyfit(dac_init,pk_init,1)
-
-        y_min = pk_list[0]
-        y_max = pk_list[-1]
-        linear_dac_max=dac_list[-1]
-
-        index=-1
-        for i in range(len(dac_list)):
-            y_r = pk_list[i]
-            y_p = dac_list[i]*slope_i + intercept_i
-            inl = abs(y_r-y_p)/(y_max-y_min)
-            if inl>0.03:
-               linear_dac_max = dac_list[i-1]
-               index=i
-               break
+    def checkLinearity(self, DAC_values=[], peak_values=[]):
+        peak_values = np.array(peak_values)
+        DAC_values = np.array(DAC_values)
+        y_max = peak_values[-1]
+        #-> if y_max == peak_values[-2], maybe there's saturation
+        ## fit the two points with a line and calculate y_pred
+        index = -1
+        # if y_max == peak_values[-2]:
+        if np.abs(y_max - peak_values[-2]) <= 0.001:
+            y_pred = []
+            slope, y0 = np.polyfit(DAC_values[-2:], peak_values[-2:], 1)
+            y_pred = DAC_values * slope + y0
+            # find the last (last to start) value where y_true[i] - y_pred[i] != 0
+            for i in range(len(peak_values)-1, -1, -1):
+                if (np.abs(peak_values[i] - y_pred[i])/(peak_values[-1]-peak_values[0])) > 0.001:
+                    index = i
+                    break
+        return index, DAC_values[index], peak_values[index]
         
-        if index==0:
-            return 0,0,0
-
-        pmax = pk_list[index]
-
-        # return index, dac_max and max of peak value
-        return (index, linear_dac_max[index], pmax)
-        # slope_f,intercept_f=np.polyfit(dac_list[:index],pk_list[:index],1)
-
-        # y_max = pk_list[index-1]
-        # y_min = pk_list[0]
-        # INL=0
-        # for i in range(index):
-        #     y_r = pk_list[i]
-        #     y_p = dac_list[i]*slope_f + intercept_f
-        #     inl = abs(y_r-y_p)/(y_max-y_min)
-        #     if inl>INL:
-        #        INL=inl
-
-        # return slope_f, INL, linear_dac_max
 
     def get_gains(self, path_to_binfolder='', femb_number=0, config=[200, 14.0, 2.0], withlogs=False):
-        self.get_peakValues_forallDAC(path_to_binfolder=path_to_binfolder, config=config, femb_number=femb_number)
+        self.config = config
+        # get the femb_id if withlogs
+        femb_id = femb_number
+        if withlogs:
+            dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
+            with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
+                info_logs = pickle.load(pointer_logs)
+            #  get the list of femb_ids
+            femb_ids = info_logs['femb id']
+            femb_id = femb_ids['femb{}'.format(femb_number)]
+        config1 = '_'.join(str(self.config[1]).split('.'))
+        config2 = '_'.join(str(self.config[2]).split('.'))
+        peak_csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
+        if self.sgp1:
+            peak_csvname += '_sgp1'
+        #
+        # read the csv file in a dataframe
+        self.data_df = pd.read_csv('/'.join([self.output_dir, peak_csvname + '.csv']))
+        # self.get_peakValues_forallDAC(path_to_binfolder=path_to_binfolder, config=config, femb_number=femb_number)
         #
         #
         dac_v = {} # mV/bit
@@ -851,6 +861,7 @@ class ASICDAC:
             dac_du = dac_v[sgs]
         #
         #
+        CHs = []
         Gains = []
         starting_of_nonlinearity = (0, 0, 0)
 
@@ -858,12 +869,17 @@ class ASICDAC:
         # DAC_indices = []
         # peak_max = []
         #
+        DAC_for_peakmax = []
         for ich in self.data_df['CH'].unique():
+        # for ich in [0, 1, 2]:
             df_for_ch = self.data_df[self.data_df['CH']==ich].reset_index()
             df_for_ch['DAC'] = df_for_ch['DAC'].astype(int)
             df_for_ch = df_for_ch.sort_values(by='DAC', ascending=True)
-            starting_of_nonlinearity = self.checkLinearity(dac_list=df_for_ch['DAC'], pk_list=df_for_ch['peak_value'])
-            slope, y0 = np.polyfit(df_for_ch.loc[:starting_of_nonlinearity[0]]['DAC'], df_for_ch.loc[:starting_of_nonlinearity[0]]['peak_value'], 1)
+            starting_of_nonlinearity = self.checkLinearity(DAC_values=df_for_ch['DAC'], peak_values=df_for_ch['peak_value'])
+            slope, y0 = np.polyfit(df_for_ch['DAC'][:starting_of_nonlinearity[0]+1], df_for_ch['peak_value'][:starting_of_nonlinearity[0]+1], 1)
+            #
+            # DAC value corresponding to peak_max
+            DAC_for_peakmax.append(starting_of_nonlinearity[1])
             #
             # DAC_indices.append(starting_of_nonlinearity[1])
             # peak_max.append(starting_of_nonlinearity[2])
@@ -872,26 +888,15 @@ class ASICDAC:
             # slope = 1/slope * dac_du/1000 * CC/e
             # if slope < 0:
             #     slope = 0
+            CHs.append(ich)
             Gains.append(slope)
         #
-        # get the femb_id if withlogs
-        femb_id = femb_number
-        if withlogs:
-            dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
-            with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
-                info_logs = pickle.load(pointer_logs)
-            #  get the list of femb_ids
-            femb_ids = info_logs['femb id']
-            femb_id = femb_ids['femb{}'.format(femb_number)]
-        config1 = '_'.join(str(self.config[1]).split('.'))
-        config2 = '_'.join(str(self.config[2]))
-        gains_figname = 'gain_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
-        if self.sgp1:
-            gains_figname += '_sgp1'
-
+        tmp_gains_figname = peak_csvname.split('_')
+        tmp_gains_figname[0] = 'gains'
+        gains_figname = '_'.join(tmp_gains_figname)
+        # GAIN
         plt.figure(figsize=(20,12))
-        plt.plot(self.data_df['CH'].unique(), Gains, marker='.', markersize=7)
-        #plt.xticks(self.data_df['CH'].unique(), fontsize=10)
+        plt.plot(CHs, Gains, marker='.', markersize=7)
         plt.yticks(fontsize=15)
         plt.xticks(fontsize=15)
         plt.xlabel('CH', fontsize=20)
@@ -899,15 +904,22 @@ class ASICDAC:
         plt.ylabel('Gain(ADC bin)', fontsize=20)
         plt.xlim([-1, 128])
         plt.savefig('/'.join([self.output_dir, gains_figname + '.png']))
-        print('Figure saved....')
+        #
+        # DAC corresponding to peak_max
+        plt.figure(figsize=(12, 7))
+        plt.plot(CHs, DAC_for_peakmax, marker='.', markersize=7)
+        plt.xlabel('CH');plt.ylabel('DAC_for_peakmax')
+        plt.savefig('/'.join([self.output_dir, '_'.join([gains_figname, 'DAC_peakmax', '.png'])]))
+        print('Figures saved....')
         #
         # save the Gains in a csv file
-        gain_df = pd.DataFrame({'CH': self.data_df['CH'].unique(), 'Gain': Gains})
+        gain_df = pd.DataFrame({'CH': self.data_df['CH'].unique(), 'Gain': Gains, 'DAC_peakmax': DAC_for_peakmax})
         gain_df.to_csv('/'.join([self.output_dir, gains_figname + '.csv']), index=False)
         print('Gains saved in a csv file at {}'.format(self.output_dir))
         
     def get_gains_for_allFEMBs(self, path_to_binfolder='', config=[200, 14.0, 2.0], withlogs=False):
         nFEMBs = [0, 1, 2, 3]
+        # nFEMBs = [0]
         for nfemb in nFEMBs:
             print('femb_number = {}...'.format(nfemb))
             self.get_gains(path_to_binfolder=path_to_binfolder, femb_number=nfemb, config=config, withlogs=withlogs)
@@ -932,6 +944,15 @@ def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN',
         config = [900, 14.0, 2.0]
     for data_dir in asic.input_dir_list:
         asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
+            
+
+def save_peakValues_to_csv(path_to_dataFolder='', output_dir='', temperature='LN', withLogs=False, CALI_number=3):
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
+    config = [200, 14.0, 2.0]
+    for data_dir in asic.input_dir_list:
+        for nfemb in [0, 1, 2, 3]:
+            print('nfemb = {}'.format(nfemb))
+            asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, femb_number=nfemb, withlogs=withLogs)
 
 ##---------------------------------------------------------------------------
 ##
@@ -979,10 +1000,10 @@ if __name__ == '__main__':
     #                     output_dir='D:/IO-1865-1C/QC/analysis', powerType='PWR_Cycle')
     #--------------------------------------------------------------------------------------------------
     #=======================ASICDAC_CALI===============================================================
-    # savedir = '../results'
-    # inputdir = '../data'
-    inputdir = 'D:/IO-1865-1C/QC/data'
-    savedir = 'D:/IO-1865-1C/QC/analysis'
+    savedir = '../results'
+    inputdir = '../data'
+    # inputdir = 'D:/IO-1865-1C/QC/data'
+    # savedir = 'D:/IO-1865-1C/QC/analysis'
     # try to save and plot the gains for the data in inputdir
     # asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1, temperature='LN')
     # asic.save_gain_for_all_fembs(savedir=savedir, config=[200, 14.0, 2.0])
@@ -994,3 +1015,5 @@ if __name__ == '__main__':
     #Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
     #Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
     #Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
+    # save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN',
+    #                     withLogs=True, CALI_number=3)
