@@ -823,7 +823,7 @@ class ASICDAC:
         y_max = peak_values[-1]
         #-> if y_max == peak_values[-2], maybe there's saturation
         ## fit the two points with a line and calculate y_pred
-        index = -1
+        index = len(peak_values)-1
         # if y_max == peak_values[-2]:
         if np.abs(y_max - peak_values[-2]) <= 0.001:
             y_pred = []
@@ -891,6 +891,7 @@ class ASICDAC:
             df_for_ch['DAC'] = df_for_ch['DAC'].astype(int)
             df_for_ch = df_for_ch.sort_values(by='DAC', ascending=True)
             starting_of_nonlinearity = self.checkLinearity(DAC_values=df_for_ch['DAC'], peak_values=df_for_ch['peak_value'])
+            print(starting_of_nonlinearity)
             slope, y0 = np.polyfit(df_for_ch['DAC'][:starting_of_nonlinearity[0]+1], df_for_ch['peak_value'][:starting_of_nonlinearity[0]+1], 1)
             #
             # DAC value corresponding to peak_max
