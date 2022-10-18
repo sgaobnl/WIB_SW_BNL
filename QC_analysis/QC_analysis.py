@@ -2,6 +2,7 @@
 # datadir : D:/IO-1865-1C/QC/data/..../PWR_Meas
 # import chunk
 # import csv
+from distutils.command.config import config
 from importlib.resources import path
 from re import I
 import sys
@@ -943,12 +944,15 @@ def Gains_CALI1(path_to_dataFolder='', output_dir='', temperature='LN', withlogs
     mVfC = [4.7, 7.8, 14.0, 25.0]
     for data_dir in asic.input_dir_list:
         for gain_in_mVfC in mVfC:
-            asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=[200, gain_in_mVfC, 2.0], withlogs=withlogs)
+            config = [200, gain_in_mVfC, 2.0]
+            asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
+            asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 
 def Gains_CALI2(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=2, sgp1=False)
     config = [900, 14.0, 2.0]
     for data_dir in asic.input_dir_list:
+        asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
         asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 
 def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False, CALI_number=3):
@@ -957,9 +961,10 @@ def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN',
     if CALI_number==4:
         config = [900, 14.0, 2.0]
     for data_dir in asic.input_dir_list:
+        asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
         asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
             
-
+# this function is for CALI_number = 3 only and was used for test
 def save_peakValues_to_csv(path_to_dataFolder='', output_dir='', temperature='LN', withLogs=False, CALI_number=3):
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
     config = [200, 14.0, 2.0]
@@ -1012,10 +1017,10 @@ if __name__ == '__main__':
     #                     output_dir='D:/IO-1865-1C/QC/analysis', powerType='PWR_Cycle')
     #--------------------------------------------------------------------------------------------------
     #=======================ASICDAC_CALI===============================================================
-    savedir = '../results'
-    inputdir = '../data'
-    # inputdir = 'D:/IO-1865-1C/QC/data'
-    # savedir = 'D:/IO-1865-1C/QC/analysis'
+    # savedir = '../results'
+    # inputdir = '../data'
+    inputdir = 'D:/IO-1865-1C/QC/data'
+    savedir = 'D:/IO-1865-1C/QC/analysis'
     # try to save and plot the gains for the data in inputdir
     # asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1, temperature='LN')
     # asic.save_gain_for_all_fembs(savedir=savedir, config=[200, 14.0, 2.0])
@@ -1023,9 +1028,10 @@ if __name__ == '__main__':
     # plot_gain_vs_CH(savedir=savedir, temperature='LN', CALI_number=1)
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
+    
+    Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
+    Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
     Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=3)
-    #Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
-    #Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
-    #Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
+    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
     # save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN',
     #                     withLogs=True, CALI_number=3)
