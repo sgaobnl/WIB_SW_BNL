@@ -308,20 +308,20 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             if 1 in fembs:
                 link4to7 = llc.wib_peek(self.wib, 0xA00C00AC)
             else:
-                link0to3 = 0x0
+                link4to7 = 0x0
             if 2 in fembs:
                 link8tob = llc.wib_peek(self.wib, 0xA00C00B0)
             else:
-                link0to3 = 0x0
+                link8tob = 0x0
             if 3 in fembs:
                 linkctof = llc.wib_peek(self.wib, 0xA00C00B4)
             else:
-                link0to3 = 0x0
+                linkctof = 0x0
 
             if ((link0to3 & 0xe0e0e0e0) == 0) and ((link4to7 & 0xe0e0e0e0) == 0)and ((link8tob & 0xe0e0e0e0) == 0) and ((linkctof & 0xe0e0e0e0) == 0):
                 print ("Data is aligned when dts_time_delay = 0x%x"%dts_time_delay )
                 break
-            if dts_time_delay >= 0x68:
+            if dts_time_delay >= 0x6f:
                 print ("Error: data can't be aligned, exit anyway")
                 exit()
 
@@ -358,10 +358,19 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9f, wrdata=0)
                 time.sleep(0.01)
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9f, wrdata=0x03)
-        if autocali:
+        if autocali&0x01:
             time.sleep(0.5) #wait for ADC automatic calbiraiton process to complete
             for adc_no in range(8):
+                c_id    = self.adcs_paras[adc_no][0]
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9f, wrdata=0x00)
+        if autocali&0x02: #output ADC back-end data pattern
+            for adc_no in range(8):
+                c_id    = self.adcs_paras[adc_no][0]
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB2, wrdata=0x20)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB3, wrdata=0xCD)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB4, wrdata=0xAB)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB5, wrdata=0x34)
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0xB6, wrdata=0x12)
 
     def femb_fe_cfg(self, femb_id):
         #reset LARASIC chips
