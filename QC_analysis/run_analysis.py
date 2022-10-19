@@ -1,3 +1,9 @@
+#-----------------------------------------------------------------------
+# Author: Rado
+# email: radofana@gmail.com
+# last update: 10/19/2022
+#----------------------------------------------------------------------
+
 # from QC_analysis import *
 from ASICDAC import savegains
 

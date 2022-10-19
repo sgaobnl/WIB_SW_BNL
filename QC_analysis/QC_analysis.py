@@ -1,5 +1,11 @@
-from utils import *
+#-----------------------------------------------------------------------
+# Author: Rado
+# email: radofana@gmail.com
+# last update: 10/19/2022
+#----------------------------------------------------------------------
 
+from utils import *
+# ----------------------------------------------
 def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_dir=''):
     '''
     This function checks if the femb data in the folder new_femb_dir is already saved in temperature/dataname.csv.
