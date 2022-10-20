@@ -192,7 +192,7 @@ class ASICDAC:
             # save peakdata with DAC in csv
             self.peakdata_df.to_csv('/'.join([self.output_dir, peak_csvname + '.csv']), index=False)
             # save rmsdata in csv
-            self.rmsdata_df.to_csv('/'.join[self.output_dir, rms_csvname + '.csv'], index=False)
+            self.rmsdata_df.to_csv('/'.join([self.output_dir, rms_csvname + '.csv']), index=False)
         
     #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
     def plot_peakValue_vs_DAC_allch(self, data_df, ch_list=range(128)):
