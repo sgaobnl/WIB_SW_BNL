@@ -5,7 +5,7 @@
 #----------------------------------------------------------------------
 
 # from QC_analysis import *
-from ASICDAC import savegains
+from ASICDAC import savegains, Gains_CALI1, Gains_CALI2, Gains_CALI3_or_CALI4
 
 if __name__ == '__main__':
     #------------------------------------------------------
