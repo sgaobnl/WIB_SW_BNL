@@ -97,32 +97,35 @@ class ASICDAC:
                 
                 #allpls = np.empty(0)
                 allpls = []
+
                 # only get the first event
                 for iev in range(nevent):
                     pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich]))
-                    for ppeak in pos_peaks:
-                        startpos = ppeak - 50
-                        # go to the next pulse if the starting position is negative
-                        if startpos<0:
-                            continue
-                        endpos = startpos + 100
-                        selected_peak = np.max(pldata[iev][iich][startpos:endpos])
-                        peak_values.append(selected_peak)
-                        #allpls = np.append(allpls, pldata[iev][iich][startpos:endpos]) # to get the rms
-                        rms_list.append(np.std(pldata[iev][iich][startpos:endpos])) #
-                        ch_count += 1
-                        first_peak = True
-                        break
-                    if first_peak:
-                        first_peak = False
+                    if not first_peak:
+                        for ppeak in pos_peaks:
+                            startpos = ppeak - 50
+                            # go to the next pulse if the starting position is negative
+                            if startpos<0:
+                                startpos_neg = True
+                                continue
+                            endpos = startpos + 100
+                            selected_peak = np.max(pldata[iev][iich][startpos:endpos])
+                            peak_values.append(selected_peak)
+                            #allpls = np.append(allpls, pldata[iev][iich][startpos:endpos]) # to get the rms
+                            #rms_list.append(np.std(pldata[iev][iich][startpos:endpos])) #
+                            ch_count += 1
+                            first_peak = True
+                            break
+                        allpls = np.append(allpls, pldata[iev][iich]) # to get the rms
+                    else:
                         break
                 # get rms
                 #allpls = np.empty(0)
                 #for iev in range(nevent):
                 #    evtdata = pldata[iev][iich]
                 #    allpls = np.append(allpls, evtdata)
-                #ch_rms = np.std(allpls)
-                #rms_list.append(ch_rms)
+                ch_rms = np.std(allpls)
+                rms_list.append(ch_rms)
             # append DAC and peak_values for one femb
             all_peak_values.append((DAC, peak_values))
             # append rms for one femb
