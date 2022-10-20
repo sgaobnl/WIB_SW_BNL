@@ -90,9 +90,13 @@ class ASICDAC:
             print('nfemb  = {}'.format(femb_number))
             peak_values = []
             rms_list = [] # rms for one femb
+            ch_count = 0
             for ich in tqdm(range(128)):
                 iich = femb_number*128+ich
                 first_peak = False
+                
+                #allpls = np.empty(0)
+                allpls = []
                 # only get the first event
                 for iev in range(nevent):
                     pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich]))
@@ -102,23 +106,30 @@ class ASICDAC:
                         if startpos<0:
                             continue
                         endpos = startpos + 100
-                        peak_values.append(np.max(pldata[iev][iich][startpos:endpos]))
+                        selected_peak = np.max(pldata[iev][iich][startpos:endpos])
+                        peak_values.append(selected_peak)
+                        #allpls = np.append(allpls, pldata[iev][iich][startpos:endpos]) # to get the rms
+                        rms_list.append(np.std(pldata[iev][iich][startpos:endpos])) #
+                        ch_count += 1
                         first_peak = True
                         break
                     if first_peak:
                         first_peak = False
                         break
                 # get rms
-                allpls = np.empty(0)
-                for iev in range(nevent):
-                    evtdata = pldata[iev][iich]
-                    allpls = np.append(allpls, evtdata)
-                ch_rms = np.std(allpls)
-                rms_list.append(ch_rms)
+                #allpls = np.empty(0)
+                #for iev in range(nevent):
+                #    evtdata = pldata[iev][iich]
+                #    allpls = np.append(allpls, evtdata)
+                #ch_rms = np.std(allpls)
+                #rms_list.append(ch_rms)
             # append DAC and peak_values for one femb
             all_peak_values.append((DAC, peak_values))
             # append rms for one femb
             all_rms_list.append((DAC, rms_list))
+            if len(peak_values) != len(rms_list):
+                print('ch_count = {}'.format(ch_count))
+                print('len(rms_list) = {}\tlen(peak_values) = {}\t dac = {}'.format(len(rms_list), len(peak_values), DAC))
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
         # return the (DAC, rms) for 4 fembs and the (DAC, peak_values) for 4 fembs
         return (all_rms_list, all_peak_values)
@@ -155,24 +166,34 @@ class ASICDAC:
                 tmp_peaks_values = peak_array
                 tmp_rms = all_rmsdata_dict[dac] # get rms using dac
                 ch_numbers = [i for i in range(len(peak_array))]
+                # try to catch the error in the length of RMS
+                if len(tmp_rms) != len(tmp_peaks_values):
+                    print('dac = {}'.format(dac))
+
                 DACs += tmp_dac
                 peaks += tmp_peaks_values
                 RMSs += tmp_rms # append rms to RMSs
                 CHs += ch_numbers
+
             
-            transformed_rmsdata_df = pd.DataFrame({
-                'CH': CHs,
-                'RMS': RMSs,
-                'DAC': DACs
-            })
+            # try to catch the error
+            if len(DACs) != len(RMSs):
+                print('config = {}\t len(DACs) = {}\t len(RMS) = {}'.format(config, len(DACs), len(RMSs)))
+            
+            #transformed_rmsdata_df = pd.DataFrame({
+            #    'CH': CHs,
+            #    'RMS': RMSs,
+            #    'DAC': DACs
+            #})
             transformed_peakdata_df = pd.DataFrame({
                 'CH': CHs,
                 'peak_value': peaks,
-                'DAC': DACs
+                'DAC': DACs,
+                'RMS': RMSs
             })
             self.peakdata_df = pd.DataFrame()
             self.peakdata_df = transformed_peakdata_df
-            self.rmsdata_df = transformed_rmsdata_df
+            #self.rmsdata_df = transformed_rmsdata_df
 
             # get the femb_id if withlogs
             femb_id = femb_number
@@ -192,7 +213,7 @@ class ASICDAC:
             # save peakdata with DAC in csv
             self.peakdata_df.to_csv('/'.join([self.output_dir, peak_csvname + '.csv']), index=False)
             # save rmsdata in csv
-            self.rmsdata_df.to_csv('/'.join([self.output_dir, rms_csvname + '.csv']), index=False)
+            #self.rmsdata_df.to_csv('/'.join([self.output_dir, rms_csvname + '.csv']), index=False)
         
     #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
     def plot_peakValue_vs_DAC_allch(self, data_df, ch_list=range(128)):
