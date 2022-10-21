@@ -45,10 +45,10 @@ if __name__ == '__main__':
     #                     output_dir='D:/IO-1865-1C/QC/analysis', powerType='PWR_Cycle')
     #--------------------------------------------------------------------------------------------------
     #=======================ASICDAC_CALI===============================================================
-    savedir = '../results'
-    inputdir = '../data'
-    # inputdir = 'D:/IO-1865-1C/QC/data'
-    # savedir = 'D:/IO-1865-1C/QC/analysis'
+    # savedir = '../results'
+    # inputdir = '../data'
+    inputdir = 'D:/IO-1865-1C/QC/data'
+    savedir = 'D:/IO-1865-1C/QC/analysis'
     # try to save and plot the gains for the data in inputdir
     # asic = ASICDAC_CALI(input_data_dir=inputdir, CALI_number=1, temperature='LN')
     # asic.save_gain_for_all_fembs(savedir=savedir, config=[200, 14.0, 2.0])
@@ -58,9 +58,9 @@ if __name__ == '__main__':
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
     
     Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
-    # Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
-    # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=3)
-    # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
+    Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
+    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=3)
+    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
     # save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN',
     #                     withLogs=True, CALI_number=4)
     # savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN')
