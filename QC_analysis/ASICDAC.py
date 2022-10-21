@@ -132,6 +132,7 @@ class ASICDAC:
             # append rms for one femb
             all_rms_list.append((DAC, rms_list))
             if len(peak_values) != len(rms_list):
+                print('binfilename = {}'.format(bin_filename))
                 print('ch_count = {}'.format(ch_count))
                 print('len(rms_list) = {}\tlen(peak_values) = {}\t dac = {}'.format(len(rms_list), len(peak_values), DAC))
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
