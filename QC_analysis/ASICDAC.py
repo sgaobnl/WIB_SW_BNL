@@ -100,13 +100,13 @@ class ASICDAC:
 
                 # only get the first event
                 for iev in range(nevent):
-                    pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich]))
+                    pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich])-100)
                     if not first_peak:
                         for ppeak in pos_peaks:
                             startpos = ppeak - 50
                             # go to the next pulse if the starting position is negative
                             if startpos<0:
-                                startpos_neg = True
+                                # print('pos_peaks = {}'.format(pos_peaks))
                                 continue
                             endpos = startpos + 100
                             selected_peak = np.max(pldata[iev][iich][startpos:endpos])
