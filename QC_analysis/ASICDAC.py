@@ -124,8 +124,9 @@ class ASICDAC:
                 #for iev in range(nevent):
                 #    evtdata = pldata[iev][iich]
                 #    allpls = np.append(allpls, evtdata)
-                ch_rms = np.std(allpls)
-                rms_list.append(ch_rms)
+                if first_peak: # if the first peak meeting the requirements was found
+                    ch_rms = np.std(allpls)
+                    rms_list.append(ch_rms)
             # append DAC and peak_values for one femb
             all_peak_values.append((DAC, peak_values))
             # append rms for one femb
