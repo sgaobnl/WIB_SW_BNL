@@ -9,10 +9,7 @@ import struct
 from spymemory_decode import wib_spy_dec_syn
 
 
-fp ="D:/debug_data/Raw_27_09_2022_17_59_32.bin"
-fp ="D:/debug_data/Raw_28_09_2022_10_39_00.bin"
-fp ="D:/debug_data/Raw_29_09_2022_12_37_40.bin"
-
+fp ="/home/hanjie/Desktop/protoDUNE/cold_electronics/FEMB_QC/new_qc_data/Raw_29_09_2022_12_37_40.bin"
 
 with open(fp, 'rb') as fn:
     raw = pickle.load(fn)
