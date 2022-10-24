@@ -330,8 +330,7 @@ class ASICDAC:
         plt.yticks(fontsize=15)
         plt.xticks(fontsize=15)
         plt.xlabel('CH', fontsize=20)
-        # plt.ylabel('Gain(ADC bin/electron)', fontsize=20)
-        plt.ylabel('Gain', fontsize=20)
+        plt.ylabel('Gain (electron/ADC bin)', fontsize=20)
         plt.xlim([-1, 128])
         plt.savefig('/'.join([output_dir, gains_figname + '.png']))
         #
@@ -389,7 +388,7 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
             asic.get_gains(peak_csvname=csv_filename)
 
 #************************get ENC*********************************
-def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[75]):
+def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[75], sgp1=False):
     # input_dir: e.g: ../analysis
     # exclude SAMTEC FEMBs
     # only include MINI-SAS FEMBs
@@ -397,6 +396,9 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
     path_to_CALI_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
     path_to_rms = '/'.join([input_dir, temperature, 'RMS'])
     #
+    # if sgp==1
+    if (CALI_number==3) or (CALI_number==4):
+        sgp1 = True
     # output directory
     output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
     try:
@@ -423,17 +425,20 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
             df_enc = pd.merge(df_cali, df_rms, on='CH', how='left')
             df_enc['ENC'] = df_enc.apply(lambda x: x.Gain * x.RMS, axis=1)
             #
+            figname = '_'.join(femb_config)
+            if sgp1:
+                figname += '_sgp1'
             # plot ENC vs CH number
             # save the plot in png file
             plt.figure(figsize=(12, 7))
             plt.plot(df_enc['CH'], df_enc['ENC'], marker='.', markersize=7.5)
             plt.xlabel('CH')
-            plt.ylabel('ENC')
-            plt.title('_'.join(femb_config))
-            plt.savefig('/'.join([output_enc, '_'.join(femb_config) + '.png']))
+            plt.ylabel('ENC(electron)')
+            plt.title(figname)
+            plt.savefig('/'.join([output_enc, figname + '.png']))
             # save dataframe with enc to csv file
-            df_enc.to_csv('/'.join([output_enc, '_'.join(femb_config) + '.csv']), index=False)
-            print('CALI{}/{} saved'.format(CALI_number, '_'.join(femb_config) + '.csv'))
+            df_enc.to_csv('/'.join([output_enc, figname + '.csv']), index=False)
+            print('CALI{}/{} saved'.format(CALI_number, figname + '.csv'))
             
 
 #****************************************************************
