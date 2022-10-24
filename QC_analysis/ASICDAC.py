@@ -347,6 +347,8 @@ class ASICDAC:
         gain_df.to_csv('/'.join([output_dir, gains_figname + '.csv']), index=False)
         print('Gains saved in a csv file at {}'.format(output_dir))
 
+#***************************************************************
+# These functions get the peak values and DAC from the bin files
 def Gains_CALI1(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=1, sgp1=False)
     mVfC = [4.7, 7.8, 14.0, 25.0]
@@ -369,9 +371,14 @@ def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN',
         config = [900, 14.0, 2.0]
     for data_dir in asic.input_dirCALI_list:
         asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
-            
+#***************************************************************
+
 def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
-    CALI_numbers = [1,2,3] #,4]
+    '''
+        This function is to be run after Gains_CALI{} functions.
+        It saves the gains in a new folder named 'gains' once the peak values are available.
+    '''
+    CALI_numbers = [1,2,3,4]
     for cali in CALI_numbers:
         sgp1 = False
         if cali==3 or cali==4:
@@ -381,6 +388,56 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
         for csv_filename in list_csv:
             asic.get_gains(peak_csvname=csv_filename)
 
+#************************get ENC*********************************
+def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[75]):
+    # input_dir: e.g: ../analysis
+    # exclude SAMTEC FEMBs
+    # only include MINI-SAS FEMBs
+    list_fembs_to_exclude = ['femb{}'.format(femb) for femb in fembs_to_exclude]
+    path_to_CALI_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
+    path_to_rms = '/'.join([input_dir, temperature, 'RMS'])
+    #
+    # output directory
+    output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
+    try:
+        os.mkdir(output_enc)
+    except:
+        pass
+    #
+    for femb in list_fembs_to_exclude:
+        list_cali_files = [cali_csvfile for cali_csvfile in os.listdir(path_to_CALI_gains) if (femb not in cali_csvfile) & ('.csv' in cali_csvfile)]
+        for cali_file in list_cali_files:
+            femb_config = (cali_file.split('.')[0]).split('_')[1:7]
+            femb_id = femb_config[0]
+            config = '_'.join(femb_config[1:])
+            # get the name of the rms csv file
+            rms_csvname = [rms_file for rms_file in os.listdir(path_to_rms) if (femb_id in rms_file) & (config in rms_file)][0]
+            #
+            # dataframes
+            df_cali = pd.read_csv('/'.join([path_to_CALI_gains, cali_file]),
+                                usecols=['CH', 'Gain'])
+            df_rms = pd.read_csv('/'.join([path_to_rms, rms_csvname]),
+                                usecols=['channelNumber', 'RMS'])
+            df_rms['CH'] = df_rms['channelNumber'].astype(int)
+            df_rms.drop('channelNumber', axis=1, inplace=True)
+            df_enc = pd.merge(df_cali, df_rms, on='CH', how='left')
+            df_enc['ENC'] = df_enc.apply(lambda x: x.Gain * x.RMS, axis=1)
+            #
+            # plot ENC vs CH number
+            # save the plot in png file
+            plt.figure(figsize=(12, 7))
+            plt.plot(df_enc['CH'], df_enc['ENC'], marker='.', markersize=7.5)
+            plt.xlabel('CH')
+            plt.ylabel('ENC')
+            plt.title('_'.join(femb_config))
+            plt.savefig('/'.join([output_enc, '_'.join(femb_config) + '.png']))
+            # save dataframe with enc to csv file
+            df_enc.to_csv('/'.join([output_enc, '_'.join(femb_config) + '.csv']), index=False)
+            print('CALI{}/{} saved'.format(CALI_number, '_'.join(femb_config) + '.csv'))
+            
+
+#****************************************************************
+#----------------------------------------------------------------
 # this function is for one CALI_number only and was used for test
 def save_peakValues_to_csv(path_to_dataFolder='', output_dir='', temperature='LN', withLogs=False, CALI_number=3):
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
