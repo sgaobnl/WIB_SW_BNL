@@ -1,11 +1,12 @@
 #-----------------------------------------------------------------------
 # Author: Rado
 # email: radofana@gmail.com
-# last update: 10/19/2022
+# last update: 10/22/2022
 #----------------------------------------------------------------------
 
-from asyncio import transports
+from importlib.resources import path
 from utils import *
+# from QC_analysis import QC_analysis
 
 #----------------------------------------------------------------------------
 class ASICDAC:
@@ -32,14 +33,16 @@ class ASICDAC:
             os.mkdir('/'.join([output_dir, temperature, self.CALI]))
         except:
             print('Folder already exists.....')
-        self.output_dir = '/'.join([output_dir, temperature, self.CALI]) # this variable will be used to save the output of the code
+        self.output_dirCALI = '/'.join([output_dir, temperature, self.CALI]) # this variable will be used to save the output of the code
         #
         self.temperature = temperature
-        self.input_dir_list = ['/'.join([input_data_dir, data_folder, self.CALI]) for data_folder in os.listdir(input_data_dir) if self.temperature in data_folder]
+        self.input_dirCALI_list = ['/'.join([input_data_dir, data_folder, self.CALI]) for data_folder in os.listdir(input_data_dir) if self.temperature in data_folder]
+        # dir to get RMS
+        self.input_dirRMS_list = ['/'.join([input_data_dir, data_folder, 'RMS']) for data_folder in os.listdir(input_data_dir) if self.temperature in data_folder]
         #
         # variable to store the data in a dataframe
         self.peakdata_df = pd.DataFrame()
-        self.rmsdata_df = pd.DataFrame()
+        #
     
     def list_bin(self, input_dir='', BL=200, gain=4.7, shapingTime=2.0):
         str_BL = str(BL) + 'mVBL'
@@ -56,8 +59,8 @@ class ASICDAC:
                     match_bin_files.append(f)    
                 continue
         return match_bin_files
-
-    def decode_onebin(self, path_to_binFolder='', bin_filename=''): #, femb_number=0):
+        
+    def decode_onebin_peakvalues(self, path_to_binFolder='', bin_filename=''): #, femb_number=0):
         '''
         This function returns the value of the DAC corresponding to the bin file and
         an array of the peak values for all channels in the bin file.
@@ -85,12 +88,9 @@ class ASICDAC:
         #
         # instead of returning all data, let's directly get the peak value
         all_peak_values = []
-        all_rms_list = [] # save the rms in this variable
         for femb_number in [0, 1, 2, 3]:
             print('nfemb  = {}'.format(femb_number))
             peak_values = []
-            rms_list = [] # rms for one femb
-            ch_count = 0
             for ich in tqdm(range(128)):
                 iich = femb_number*128+ich
                 first_peak = False
@@ -111,94 +111,55 @@ class ASICDAC:
                             endpos = startpos + 100
                             selected_peak = np.max(pldata[iev][iich][startpos:endpos])
                             peak_values.append(selected_peak)
-                            #allpls = np.append(allpls, pldata[iev][iich][startpos:endpos]) # to get the rms
-                            #rms_list.append(np.std(pldata[iev][iich][startpos:endpos])) #
-                            ch_count += 1
+    
                             first_peak = True
                             break
-                        allpls = np.append(allpls, pldata[iev][iich]) # to get the rms
                     else:
                         break
-                # get rms
-                #allpls = np.empty(0)
-                #for iev in range(nevent):
-                #    evtdata = pldata[iev][iich]
-                #    allpls = np.append(allpls, evtdata)
-                if first_peak: # if the first peak meeting the requirements was found
-                    ch_rms = np.std(allpls)
-                    rms_list.append(ch_rms)
             # append DAC and peak_values for one femb
             all_peak_values.append((DAC, peak_values))
-            # append rms for one femb
-            all_rms_list.append((DAC, rms_list))
-            if len(peak_values) != len(rms_list):
-                print('binfilename = {}'.format(bin_filename))
-                print('ch_count = {}'.format(ch_count))
-                print('len(rms_list) = {}\tlen(peak_values) = {}\t dac = {}'.format(len(rms_list), len(peak_values), DAC))
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
-        # return the (DAC, rms) for 4 fembs and the (DAC, peak_values) for 4 fembs
-        return (all_rms_list, all_peak_values)
+        return all_peak_values
 
-    def get_peakValues_withRMS_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], withlogs=False):
+    def get_peakValues_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], withlogs=False):
         # all_peakdata_dict = {}
         self.config = config
         list_binfiles = self.list_bin(input_dir=path_to_binfolder, BL=self.config[0], gain=self.config[1], shapingTime=self.config[2])
         #
         data_list = []
         for ibin in range(len(list_binfiles)):
-            # tmpDAC, tmpPeak_values = self.decode_onebin(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin], femb_number=femb_number)
-            data_list.append(self.decode_onebin(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin]))
+            # tmpDAC, tmpPeak_values = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin], femb_number=femb_number)
+            data_list.append(self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin]))
         
         FEMBs = [0, 1, 2, 3]
         for femb_number in FEMBs:
             all_peakdata_dict = {}
-            all_rmsdata_dict = {}
             for ibin in range(len(list_binfiles)):
                 # all_rmsdata_list.append(data_list[ibin][0][femb_number])
 
-                DAC = data_list[ibin][1][femb_number][0]
-                peak_values = data_list[ibin][1][femb_number][1]
+                DAC = data_list[ibin][femb_number][0]
+                peak_values = data_list[ibin][femb_number][1]
                 all_peakdata_dict[DAC] = peak_values
-                #
-                rms_values = data_list[ibin][0][femb_number][1]
-                all_rmsdata_dict[DAC] = rms_values
             #
             # peak and DAC
             DACs, peaks, CHs = [], [], []
-            RMSs = []
             for dac, peak_array in all_peakdata_dict.items():
                 tmp_dac = [dac for _ in range(len(peak_array))]
                 tmp_peaks_values = peak_array
-                tmp_rms = all_rmsdata_dict[dac] # get rms using dac
                 ch_numbers = [i for i in range(len(peak_array))]
-                # try to catch the error in the length of RMS
-                if len(tmp_rms) != len(tmp_peaks_values):
-                    print('dac = {}'.format(dac))
 
                 DACs += tmp_dac
                 peaks += tmp_peaks_values
-                RMSs += tmp_rms # append rms to RMSs
                 CHs += ch_numbers
 
             
-            # try to catch the error
-            if len(DACs) != len(RMSs):
-                print('config = {}\t len(DACs) = {}\t len(RMS) = {}'.format(config, len(DACs), len(RMSs)))
-            
-            #transformed_rmsdata_df = pd.DataFrame({
-            #    'CH': CHs,
-            #    'RMS': RMSs,
-            #    'DAC': DACs
-            #})
             transformed_peakdata_df = pd.DataFrame({
                 'CH': CHs,
                 'peak_value': peaks,
-                'DAC': DACs,
-                'RMS': RMSs
+                'DAC': DACs
             })
             self.peakdata_df = pd.DataFrame()
             self.peakdata_df = transformed_peakdata_df
-            #self.rmsdata_df = transformed_rmsdata_df
 
             # get the femb_id if withlogs
             femb_id = femb_number
@@ -212,18 +173,16 @@ class ASICDAC:
             config1 = '_'.join(str(self.config[1]).split('.'))
             config2 = '_'.join(str(self.config[2]).split('.'))
             peak_csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
-            rms_csvname = 'rms_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2) # csv file for rms
+            
             if self.sgp1:
                 peak_csvname += '_sgp1'
             # save peakdata with DAC in csv
-            self.peakdata_df.to_csv('/'.join([self.output_dir, peak_csvname + '.csv']), index=False)
-            # save rmsdata in csv
-            #self.rmsdata_df.to_csv('/'.join([self.output_dir, rms_csvname + '.csv']), index=False)
+            self.peakdata_df.to_csv('/'.join([self.output_dirCALI, peak_csvname + '.csv']), index=False)
         
     #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
     def plot_peakValue_vs_DAC_allch(self, data_df, ch_list=range(128)):
         '''
-        Run get_peakValues_withRMS_forallDAC before using this method
+        Run get_peakValues_forallDAC before using this method
         '''
         plt.figure(figsize=(12, 7))
         for ch in ch_list:
@@ -241,7 +200,7 @@ class ASICDAC:
             # plt.title(title)
         plt.legend()
         # plt.show()
-        plt.savefig('/'.join([self.output_dir, 'testfit.png']))
+        plt.savefig('/'.join([self.output_dirCALI, 'testfit.png']))
 
     # def checkLinearity(self, DAC_values=[], peak_values=[]):
     #     peak_values = np.array(peak_values)
@@ -298,8 +257,8 @@ class ASICDAC:
         # self.config = config
         peak_csvname = '_'.join(peak_csvname.split('.')[:-1])
         # read the csv file in a dataframe
-        self.peakdata_df = pd.read_csv('/'.join([self.output_dir, peak_csvname + '.csv']))
-        # self.get_peakValues_withRMS_forallDAC(path_to_binfolder=path_to_binfolder, config=config, femb_number=femb_number)
+        self.peakdata_df = pd.read_csv('/'.join([self.output_dirCALI, peak_csvname + '.csv']))
+        # self.get_peakValues_forallDAC(path_to_binfolder=path_to_binfolder, config=config, femb_number=femb_number)
         #
         #
         dac_v = {} # mV/bit
@@ -357,10 +316,10 @@ class ASICDAC:
         #
         # try to create a folder named gains
         try:
-            os.mkdir('/'.join([self.output_dir, 'gains']))
+            os.mkdir('/'.join([self.output_dirCALI, 'gains']))
         except:
             pass
-        output_dir = '/'.join([self.output_dir, 'gains'])
+        output_dir = '/'.join([self.output_dirCALI, 'gains'])
         #
         tmp_gains_figname = peak_csvname.split('_')
         tmp_gains_figname[0] = 'gains'
@@ -388,20 +347,19 @@ class ASICDAC:
         gain_df.to_csv('/'.join([output_dir, gains_figname + '.csv']), index=False)
         print('Gains saved in a csv file at {}'.format(output_dir))
 
-# look at the github repo and change it to the original one in order to save data in the future
 def Gains_CALI1(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=1, sgp1=False)
     mVfC = [4.7, 7.8, 14.0, 25.0]
-    for data_dir in asic.input_dir_list:
+    for data_dir in asic.input_dirCALI_list:
         for gain_in_mVfC in mVfC:
             config = [200, gain_in_mVfC, 2.0]
-            asic.get_peakValues_withRMS_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
+            asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 
 def Gains_CALI2(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=2, sgp1=False)
     config = [900, 14.0, 2.0]
-    for data_dir in asic.input_dir_list:
-        asic.get_peakValues_withRMS_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
+    for data_dir in asic.input_dirCALI_list:
+        asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
         # asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 
 def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False, CALI_number=3):
@@ -409,17 +367,17 @@ def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN',
     config = [200, 14.0, 2.0]
     if CALI_number==4:
         config = [900, 14.0, 2.0]
-    for data_dir in asic.input_dir_list:
-        asic.get_peakValues_withRMS_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
+    for data_dir in asic.input_dirCALI_list:
+        asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
             
 def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
-    CALI_numbers = [1,2,3,4]
+    CALI_numbers = [1,2,3] #,4]
     for cali in CALI_numbers:
         sgp1 = False
         if cali==3 or cali==4:
             sgp1 = True
         asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=cali, sgp1=sgp1)
-        list_csv = [csvname for csvname in os.listdir(asic.output_dir) if '.csv' in csvname]
+        list_csv = [csvname for csvname in os.listdir(asic.output_dirCALI) if '.csv' in csvname]
         for csv_filename in list_csv:
             asic.get_gains(peak_csvname=csv_filename)
 
@@ -427,7 +385,7 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
 def save_peakValues_to_csv(path_to_dataFolder='', output_dir='', temperature='LN', withLogs=False, CALI_number=3):
     asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
     config = [200, 14.0, 2.0]
-    for data_dir in asic.input_dir_list:
-        # asic.get_peakValues_withRMS_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withLogs)
-        data_df = pd.read_csv('/'.join([asic.output_dir, 'peakValues_femb75_900mVBL_14_0mVfC_2_0us_sgp1.csv']))
+    for data_dir in asic.input_dirCALI_list:
+        # asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withLogs)
+        data_df = pd.read_csv('/'.join([asic.output_dirCALI, 'peakValues_femb75_900mVBL_14_0mVfC_2_0us_sgp1.csv']))
         asic.plot_peakValue_vs_DAC_allch(data_df, ch_list=range(128))

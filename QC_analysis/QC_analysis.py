@@ -609,7 +609,7 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
 
 ##---------------------------------------------------------------------------
 ##
-if __name__ == '__main__':
+# if __name__ == '__main__':
 	#------maybe we will not use this part ----------------
     #qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data/', output_dir='D:/IO-1865-1C/QC/analysis', temperature='LN')
     #qc.save_PWRdata_from_allFolders(dataname='Bias5V')
