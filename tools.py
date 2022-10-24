@@ -18,7 +18,6 @@ def LoadMap(femb_no):
        filename = "femb_10_11_12_map.csv"
 
     df = pd.read_csv(r'channel_maps/'+filename)
-    print(df)
     return df
 
 def FindStrips(mapdf, femb_no, chan):
