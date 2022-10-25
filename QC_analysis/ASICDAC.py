@@ -91,7 +91,8 @@ class ASICDAC:
         for femb_number in [0, 1, 2, 3]:
             print('nfemb  = {}'.format(femb_number))
             peak_values = []
-            for ich in tqdm(range(128)):
+            # for ich in tqdm(range(128)):
+            for ich in range(128):
                 iich = femb_number*128+ich
                 first_peak = False
                 
@@ -178,6 +179,9 @@ class ASICDAC:
                 peak_csvname += '_sgp1'
             # save peakdata with DAC in csv
             self.peakdata_df.to_csv('/'.join([self.output_dirCALI, peak_csvname + '.csv']), index=False)
+            #
+            # print this line instead of a progessbar
+            print('saved in {}/{}.csv'.format(self.CALI, peak_csvname))
         
     #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
     def plot_peakValue_vs_DAC_allch(self, data_df, ch_list=range(128)):
