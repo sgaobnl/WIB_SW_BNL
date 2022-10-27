@@ -4,6 +4,8 @@ import ROOT
 from ROOT import TFile, TTree, addressof
 from array import array
 import numpy as np
+import uproot
+import matplotlib.pyplot as plt
 
 def genroot(fp):
 
@@ -30,14 +32,15 @@ def genroot(fp):
     femb6 = np.zeros((128,2111))
     femb7 = np.zeros((128,2111))
     
-    tree.Branch('femb0', addressof(femb0), 'femb0[128][2111]/D')
-    tree.Branch('femb1', addressof(femb1), 'femb1[128][2111]/D')
-    tree.Branch('femb2', addressof(femb2), 'femb2[128][2111]/D')
-    tree.Branch('femb3', addressof(femb3), 'femb3[128][2111]/D')
-    tree.Branch('femb4', addressof(femb4), 'femb4[128][2111]/D')
-    tree.Branch('femb5', addressof(femb5), 'femb5[128][2111]/D')
-    tree.Branch('femb6', addressof(femb6), 'femb6[128][2111]/D')
-    tree.Branch('femb7', addressof(femb7), 'femb7[128][2111]/D')
+    #tree.Branch('femb0', addressof(femb0), 'femb0[128][2111]/D')
+    tree.Branch('femb0', femb0, 'femb0[128][2111]/D')
+    tree.Branch('femb1', femb1, 'femb1[128][2111]/D')
+    tree.Branch('femb2', femb2, 'femb2[128][2111]/D')
+    tree.Branch('femb3', femb3, 'femb3[128][2111]/D')
+    tree.Branch('femb4', femb4, 'femb4[128][2111]/D')
+    tree.Branch('femb5', femb5, 'femb5[128][2111]/D')
+    tree.Branch('femb6', femb6, 'femb6[128][2111]/D')
+    tree.Branch('femb7', femb7, 'femb7[128][2111]/D')
 
     maxwords=0
     for iev in range(nevents):
@@ -65,31 +68,52 @@ def genroot(fp):
               ff2.append(dec_data[1][iword]["FEMB0_2"])
               ff3.append(dec_data[1][iword]["FEMB1_3"])    
 
-          if iwib==0:
-            femb0 = list(zip(*ff0))
-            femb1 = list(zip(*ff1))
-            femb2 = list(zip(*ff2))
-            femb3 = list(zip(*ff3))
+          ff0 = list(zip(*ff0))
+          ff1 = list(zip(*ff1))
+          ff2 = list(zip(*ff2))
+          ff3 = list(zip(*ff3))
 
-            femb0 = np.array(femb0,dtype=int)
-            femb1 = np.array(femb1,dtype=int)
-            femb2 = np.array(femb2,dtype=int)
-            femb3 = np.array(femb3,dtype=int)
-          else:
-            femb4 = list(zip(*ff0))
-            femb5 = list(zip(*ff1))
-            femb6 = list(zip(*ff2))
-            femb7 = list(zip(*ff3))
-          
-            femb4 = np.array(femb4,dtype=int)
-            femb5 = np.array(femb5,dtype=int)
-            femb6 = np.array(femb6,dtype=int)
-            femb7 = np.array(femb7,dtype=int)
+          if iwib==0:
+            for ich in range(128):
+                femb0[ich] = ff0[ich]
+                femb1[ich] = ff1[ich]
+                femb2[ich] = ff2[ich]
+                femb3[ich] = ff3[ich]
+          if iwib==1:
+            for ich in range(128):
+                femb4[ich] = ff0[ich]
+                femb5[ich] = ff1[ich]
+                femb6[ich] = ff2[ich]
+                femb7[ich] = ff3[ich]
+
         tree.Fill()
 
     f.Write()
     f.Close()
+
+def Loadroot(rootfile):
+    rf = uproot.open(rootfile)
+    tree = rf["T"]
+    nfemb = len(tree.keys())
+    print("nfemb:  ",nfemb)
+
+    femb=[]
+    for i in range(nfemb):
+       arr = tree["femb%d"%i].array(library="np")
+       femb.append(arr)
+      
+    femb = np.array(femb)   # femb_no, event_no, chan, tick
+    return femb
+
+def exampleplot(data):
+    nticks = len(data[0][0][0])
+    plt.plot(range(nticks),data[0][0][0])
+    plt.show()
+    
+
+if __name__=='__main__':    
    
-    print(femb0[0]) 
-file = "data/Raw_29_09_2022_12_37_40.bin"
-genroot(file)
+  f = "../new_qc_data/Raw_29_09_2022_12_37_40.bin"
+  #genroot(f)
+  data = Loadroot("output.root")
+  exampleplot(data)
