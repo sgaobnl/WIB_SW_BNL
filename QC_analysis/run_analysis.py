@@ -69,6 +69,6 @@ if __name__ == '__main__':
     savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
     #
     #********************************ENC***************************************************************
-    CALI_numbers = [1, 2, 3, 4]
-    for CALI_number in CALI_numbers:
-        get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=[75])
+    # CALI_numbers = [1, 2, 3, 4]
+    # for CALI_number in CALI_numbers:
+    #     get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=[75])
