@@ -385,7 +385,7 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
         This function is to be run after Gains_CALI{} functions.
         It saves the gains in a new folder named 'gains' once the peak values are available.
     '''
-    CALI_numbers = [1,2]#,3,4]
+    CALI_numbers = [1,2,3,4]
     for cali in CALI_numbers:
         sgp1 = False
         if cali==3 or cali==4:
