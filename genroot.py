@@ -2,7 +2,7 @@ import pickle
 from spymemory_decode import wib_spy_dec_syn
 import ROOT
 from ROOT import TFile, TTree, addressof
-#from array import array
+from array import array
 import numpy as np
 
 def genroot(fp):
@@ -21,23 +21,23 @@ def genroot(fp):
     print("nevent: ", nevents)
     print("nwibs:  ", nwibs)
 
-    femb0 = np.zeros((128,2111),dtype=np.int32)
-    femb1 = np.zeros((128,2111),dtype=np.int32)
-    femb2 = np.zeros((128,2111),dtype=np.int32)
-    femb3 = np.zeros((128,2111),dtype=np.int32)
-    femb4 = np.zeros((128,2111),dtype=np.int32)
-    femb5 = np.zeros((128,2111),dtype=np.int32)
-    femb6 = np.zeros((128,2111),dtype=np.int32)
-    femb7 = np.zeros((128,2111),dtype=np.int32)
+    femb0 = np.zeros((128,2111))
+    femb1 = np.zeros((128,2111))
+    femb2 = np.zeros((128,2111))
+    femb3 = np.zeros((128,2111))
+    femb4 = np.zeros((128,2111))
+    femb5 = np.zeros((128,2111))
+    femb6 = np.zeros((128,2111))
+    femb7 = np.zeros((128,2111))
     
-    tree.Branch('femb0', addressof(femb0), 'femb0[128][2111]/I')
-    tree.Branch('femb1', addressof(femb1), 'femb1[128][2111]/I')
-    tree.Branch('femb2', addressof(femb2), 'femb2[128][2111]/I')
-    tree.Branch('femb3', addressof(femb3), 'femb3[128][2111]/I')
-    tree.Branch('femb4', addressof(femb4), 'femb4[128][2111]/I')
-    tree.Branch('femb5', addressof(femb5), 'femb5[128][2111]/I')
-    tree.Branch('femb6', addressof(femb6), 'femb6[128][2111]/I')
-    tree.Branch('femb7', addressof(femb7), 'femb7[128][2111]/I')
+    tree.Branch('femb0', addressof(femb0), 'femb0[128][2111]/D')
+    tree.Branch('femb1', addressof(femb1), 'femb1[128][2111]/D')
+    tree.Branch('femb2', addressof(femb2), 'femb2[128][2111]/D')
+    tree.Branch('femb3', addressof(femb3), 'femb3[128][2111]/D')
+    tree.Branch('femb4', addressof(femb4), 'femb4[128][2111]/D')
+    tree.Branch('femb5', addressof(femb5), 'femb5[128][2111]/D')
+    tree.Branch('femb6', addressof(femb6), 'femb6[128][2111]/D')
+    tree.Branch('femb7', addressof(femb7), 'femb7[128][2111]/D')
 
     maxwords=0
     for iev in range(nevents):
@@ -60,39 +60,36 @@ def genroot(fp):
              maxwords=nwords
        
           for iword in range(nwords):       
-            ff0.append(dec_data[0][iword]["FEMB0_2"])
-            ff1.append(dec_data[0][iword]["FEMB1_3"])
-            ff2.append(dec_data[1][iword]["FEMB0_2"])
-            ff3.append(dec_data[1][iword]["FEMB1_3"])    
+              ff0.append(dec_data[0][iword]["FEMB0_2"])
+              ff1.append(dec_data[0][iword]["FEMB1_3"])
+              ff2.append(dec_data[1][iword]["FEMB0_2"])
+              ff3.append(dec_data[1][iword]["FEMB1_3"])    
 
           if iwib==0:
             femb0 = list(zip(*ff0))
             femb1 = list(zip(*ff1))
             femb2 = list(zip(*ff2))
             femb3 = list(zip(*ff3))
-  
-            print(type(femb0[0]))
-            print(len(femb0))
-            print(len(femb0[0]))
- 
-            femb0 = np.array(femb0)
-            femb1 = np.array(femb1)
-            femb2 = np.array(femb2)
-            femb3 = np.array(femb3)
+
+            femb0 = np.array(femb0,dtype=int)
+            femb1 = np.array(femb1,dtype=int)
+            femb2 = np.array(femb2,dtype=int)
+            femb3 = np.array(femb3,dtype=int)
           else:
             femb4 = list(zip(*ff0))
             femb5 = list(zip(*ff1))
             femb6 = list(zip(*ff2))
             femb7 = list(zip(*ff3))
           
-            femb4 = np.array(femb4)
-            femb5 = np.array(femb5)
-            femb6 = np.array(femb6)
-            femb7 = np.array(femb7)
+            femb4 = np.array(femb4,dtype=int)
+            femb5 = np.array(femb5,dtype=int)
+            femb6 = np.array(femb6,dtype=int)
+            femb7 = np.array(femb7,dtype=int)
         tree.Fill()
 
     f.Write()
     f.Close()
-    
+   
+    print(femb0[0]) 
 file = "data/Raw_29_09_2022_12_37_40.bin"
 genroot(file)
