@@ -440,6 +440,13 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
             plt.ylabel('ENC(electron)')
             plt.title(figname)
             plt.savefig('/'.join([output_enc, figname + '.png']))
+            # save the plot of RMS for all channel number in png file
+            plt.figure(figsize=(12, 7))
+            plt.plot(df_enc['CH'], df_enc['RMS'], marker='.', markersize=7.5)
+            plt.xlabel('CH')
+            plt.ylabel('RMS')
+            plt.title(figname)
+            plt.savefig('/'.join([output_enc, 'RMS_' + figname + '.png']))
             # save dataframe with enc to csv file
             df_enc.to_csv('/'.join([output_enc, figname + '.csv']), index=False)
             print('CALI{}/{} saved'.format(CALI_number, figname + '.csv'))

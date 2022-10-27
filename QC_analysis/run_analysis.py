@@ -6,7 +6,7 @@
 
 # from QC_analysis import QC_analysis
 from ASICDAC import savegains, Gains_CALI1, Gains_CALI2, Gains_CALI3_or_CALI4
-# from ASICDAC import get_ENC_CALI
+from ASICDAC import get_ENC_CALI
 
 if __name__ == '__main__':
     #------------------------------------------------------
@@ -59,15 +59,16 @@ if __name__ == '__main__':
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
     
-    Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
-    Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True)
-    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=3)
-    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN', withlogs=True, CALI_number=4)
-    # save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN',
-    #                     withLogs=True, CALI_number=4)
-    # savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature='LN')
+    temperature = 'RT' # RT or LN
+    Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+    Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=3)
+    Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
+    # save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature,
+    #                     withLogs=True, CALI_number=4) <==========TEST FUNCTION
+    savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
     #
     #********************************ENC***************************************************************
-    # CALI_numbers = [1, 2, 3, 4]
-    # for CALI_number in CALI_numbers:
-    #     get_ENC_CALI(input_dir=savedir, temperature='LN', CALI_number=CALI_number, fembs_to_exclude=[75])
+    CALI_numbers = [1, 2, 3, 4]
+    for CALI_number in CALI_numbers:
+        get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=[75])
