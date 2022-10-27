@@ -280,11 +280,13 @@ class ASICDAC:
         # print(peak_csvname)
         # print(gain_mVfC)
         sgs = gain_mVfC
+        print(sgs)
 
         if self.sgp1:
             dac_du = dac_v['4_7mVfC']
         else:
             dac_du = dac_v[sgs]
+        print(dac_du)
         #
         #
         CHs = []
@@ -336,12 +338,14 @@ class ASICDAC:
         plt.xlabel('CH', fontsize=20)
         plt.ylabel('Gain (electron/ADC bin)', fontsize=20)
         plt.xlim([-1, 128])
+        plt.title(gains_figname, fontsize=20)
         plt.savefig('/'.join([output_dir, gains_figname + '.png']))
         #
         # DAC corresponding to peak_max
         plt.figure(figsize=(12, 7))
         plt.plot(CHs, DAC_for_peakmax, marker='.', markersize=7)
         plt.xlabel('CH');plt.ylabel('DAC_for_peakmax')
+        plt.title(gains_figname, fontsize=20)
         plt.savefig('/'.join([output_dir, '_'.join([gains_figname, 'DAC_peakmax', '.png'])]))
         print('Figures saved....')
         #
@@ -381,7 +385,7 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
         This function is to be run after Gains_CALI{} functions.
         It saves the gains in a new folder named 'gains' once the peak values are available.
     '''
-    CALI_numbers = [1,2,3,4]
+    CALI_numbers = [1,2]#,3,4]
     for cali in CALI_numbers:
         sgp1 = False
         if cali==3 or cali==4:
