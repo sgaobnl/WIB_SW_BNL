@@ -233,6 +233,9 @@ class ASICDAC:
         peak_values = np.array(peak_values)
         DAC_values = np.array(DAC_values)
 
+        # print('DAC_values = {}'.format(DAC_values))
+        # print('low dac = {}'.format(lowdac))
+        
         index_low_dac = np.where(DAC_values >= lowdac)[0][0]
         old_index = np.where(DAC_values >= updac)[0][0]
         # print('low = {}\t old = {}'.format(index_low_dac, old_index))
