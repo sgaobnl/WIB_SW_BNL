@@ -94,7 +94,7 @@ class ASICDAC:
             # for ich in tqdm(range(128)):
             for ich in range(128):
                 iich = femb_number*128+ich
-                first_peak = False
+                first_peak_found = False
                 
                 #allpls = np.empty(0)
                 allpls = []
@@ -102,7 +102,7 @@ class ASICDAC:
                 # only get the first event
                 for iev in range(nevent):
                     pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich])-100)
-                    if not first_peak:
+                    if not first_peak_found:
                         for ppeak in pos_peaks:
                             startpos = ppeak - 50
                             # go to the next pulse if the starting position is negative
@@ -113,7 +113,7 @@ class ASICDAC:
                             selected_peak = np.max(pldata[iev][iich][startpos:endpos])
                             peak_values.append(selected_peak)
     
-                            first_peak = True
+                            first_peak_found = True
                             break
                     else:
                         break
