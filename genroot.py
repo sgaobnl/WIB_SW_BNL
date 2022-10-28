@@ -6,6 +6,7 @@ from array import array
 import numpy as np
 import uproot
 import matplotlib.pyplot as plt
+from tools import Tools
 
 def genroot(fp):
 
@@ -105,6 +106,25 @@ def Loadroot(rootfile):
     femb = np.array(femb)   # femb_no, event_no, chan, tick
     return femb
 
+def MapStrips(data):
+
+    nfemb = len(data)
+    uplane=[[]]*476
+    vplane=[[]]*476
+    xplane=[[]]*584
+
+    smap = Tools()
+    for i in range(nfemb):
+        df=smap.LoadMap(i+1)
+        for ich in range(128):
+            plane,strip = smap.FindStrips(df, i+1, ich) 
+            if plane==1:
+               uplane[strip-1]=data[i,:,ich,:]
+            if plane==2:
+               vplane[strip-1]=data[i,:,ich,:]
+            if plane==3:
+               xplane[strip-1]=data[i,:,ich,:]
+   
 def exampleplot(data):
     nticks = len(data[0][0][0])
     plt.plot(range(nticks),data[0][0][0])
@@ -116,4 +136,5 @@ if __name__=='__main__':
   f = "../new_qc_data/Raw_29_09_2022_12_37_40.bin"
   #genroot(f)
   data = Loadroot("output.root")
-  exampleplot(data)
+  #exampleplot(data)
+  MapStrips(data)
