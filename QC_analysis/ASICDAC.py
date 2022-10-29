@@ -1,12 +1,12 @@
 #-----------------------------------------------------------------------
 # Author: Rado
 # email: radofana@gmail.com
-# last update: 10/22/2022
+# last update: 10/28/2022
 #----------------------------------------------------------------------
 
 from importlib.resources import path
 from utils import *
-# from QC_analysis import QC_analysis
+from QC_analysis import QC_analysis
 
 #----------------------------------------------------------------------------
 class ASICDAC:
@@ -43,6 +43,9 @@ class ASICDAC:
         # variable to store the data in a dataframe
         self.peakdata_df = pd.DataFrame()
         #
+        # use QC_analysis to get rms instead of writing a new function
+        self.qc_analysis = QC_analysis(self, datadir='', output_dir='',
+                                        temperature=self.temperature, dataType='RMS')
     
     def list_bin(self, input_dir='', BL=200, gain=4.7, shapingTime=2.0):
         str_BL = str(BL) + 'mVBL'
@@ -59,25 +62,8 @@ class ASICDAC:
                     match_bin_files.append(f)    
                 continue
         return match_bin_files
-        
-    def decode_onebin_peakvalues(self, path_to_binFolder='', bin_filename=''): #, femb_number=0):
-        '''
-        This function returns the value of the DAC corresponding to the bin file and
-        an array of the peak values for all channels in the bin file.
-        '''
-        path_to_bin = '/'.join([path_to_binFolder, bin_filename])
-        # read bin
-        with open(path_to_bin, 'rb') as fp:
-            raw = pickle.load(fp)
-        rawdata = raw[0]
-        # pwr_meas = raw[1]
-        # data decoding <-- same as in QC_tools
-        qc = QC_tools()
-        pldata = qc.data_decode(rawdata)
-        pldata = np.array(pldata, dtype=object)
-        ##
-        nevent = len(pldata)
-        #
+    
+    def get_DAC_fromfilename(self, bin_filename=''):
         # get the value of DAC
         tmp = (bin_filename.split('_')[-1]).split('.')[0]
         if tmp=='sgp1':
@@ -85,10 +71,14 @@ class ASICDAC:
             self.sgp1 = True
         hex = tmp
         DAC = int(hex, base=16)
+        return DAC
+
+    def get_pkDAC_from_decodebin(self, pldata, nevent, bin_filename='', femb_numbers=[0, 1, 2, 3]):
+        DAC = self.get_DAC_fromfilename(bin_filename=bin_filename)
         #
         # instead of returning all data, let's directly get the peak value
         all_peak_values = []
-        for femb_number in [0, 1, 2, 3]:
+        for femb_number in femb_numbers:
             print('nfemb  = {}'.format(femb_number))
             peak_values = []
             # for ich in tqdm(range(128)):
@@ -119,6 +109,27 @@ class ASICDAC:
                         break
             # append DAC and peak_values for one femb
             all_peak_values.append((DAC, peak_values))
+        return all_peak_values
+
+    def decode_onebin_peakvalues(self, path_to_binFolder='', bin_filename=''): #, femb_number=0):
+        '''
+        This function returns the value of the DAC corresponding to the bin file and
+        an array of the peak values for all channels in the bin file.
+        '''
+        path_to_bin = '/'.join([path_to_binFolder, bin_filename])
+        # read bin
+        with open(path_to_bin, 'rb') as fp:
+            raw = pickle.load(fp)
+        rawdata = raw[0]
+        # pwr_meas = raw[1]
+        # data decoding <-- same as in QC_tools
+        qc = QC_tools()
+        pldata = qc.data_decode(rawdata)
+        pldata = np.array(pldata, dtype=object)
+        ##
+        nevent = len(pldata)
+        #
+        all_peak_values = self.get_pkDAC_from_decodebin(pldata=pldata, nevent=nevent, bin_filename=bin_filename, femb_numbers=[0, 1, 2, 3])
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
         return all_peak_values
 
