@@ -116,6 +116,9 @@ class ASICDAC:
         This function returns the value of the DAC corresponding to the bin file and
         an array of the peak values for all channels in the bin file.
         '''
+        # get DAC
+        DAC = self.get_DAC_fromfilename(bin_filename=bin_filename)
+
         path_to_bin = '/'.join([path_to_binFolder, bin_filename])
         # read bin
         with open(path_to_bin, 'rb') as fp:
@@ -130,27 +133,35 @@ class ASICDAC:
         nevent = len(pldata)
         #
         all_peak_values = self.get_pkDAC_from_decodebin(pldata=pldata, nevent=nevent, bin_filename=bin_filename, femb_numbers=[0, 1, 2, 3])
+        rms_dict, ped_dict = {}, {}
+        if DAC==0:
+            rms_dict, ped_dict = qc.rms(pldata=pldata, nevent=nevent, nfembs=[0, 1, 2, 3], logs_env=dict())
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
-        return all_peak_values
+        return all_peak_values, rms_dict, ped_dict
 
     def get_peakValues_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], withlogs=False):
         # all_peakdata_dict = {}
         self.config = config
         list_binfiles = self.list_bin(input_dir=path_to_binfolder, BL=self.config[0], gain=self.config[1], shapingTime=self.config[2])
         #
-        data_list = []
+        peakdata_list = []
+        rms_data, ped_data = {}, {}
         for ibin in range(len(list_binfiles)):
             # tmpDAC, tmpPeak_values = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin], femb_number=femb_number)
-            data_list.append(self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin]))
+            peak_data, tmprms_data, tmpped_data = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin])
+            peakdata_list.append(peak_data)
+            if tmprms_data != {}:
+                rms_data = tmprms_data
+                ped_data = tmpped_data
         
         FEMBs = [0, 1, 2, 3]
         for femb_number in FEMBs:
             all_peakdata_dict = {}
             for ibin in range(len(list_binfiles)):
-                # all_rmsdata_list.append(data_list[ibin][0][femb_number])
+                # all_rmspeakdata_list.append(peakdata_list[ibin][0][femb_number])
 
-                DAC = data_list[ibin][femb_number][0]
-                peak_values = data_list[ibin][femb_number][1]
+                DAC = peakdata_list[ibin][femb_number][0]
+                peak_values = peakdata_list[ibin][femb_number][1]
                 all_peakdata_dict[DAC] = peak_values
             #
             # peak and DAC
