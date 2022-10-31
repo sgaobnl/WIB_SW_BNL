@@ -29,6 +29,42 @@ def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_d
     except:
         return dict() # return an empty dictionary if the csv file doesn't exist
 
+def rms(pldata, nevent, nfembs, logs_env=dict()):
+            ch_list = []
+            femb_id_list = []
+            rms_list = []
+            ped_list = []
+            for nfemb in nfembs:
+                #print('Getting data for femb id: {}....\n'.format(logs_env['femb id']['femb'+str(nfemb)]))
+                # rms = []
+                # ped = []
+                for ich in range(128):
+                    global_ch = nfemb*128 + ich
+                    peddata = np.empty(0)
+                        
+                    allpls = np.empty(0)
+                    for itr in range(nevent):
+                        evtdata = pldata[itr][global_ch]
+                        allpls = np.append(allpls, evtdata)
+                    ch_ped = np.mean(allpls)
+                    ch_mean = np.std(allpls)
+                    # ped.append(ch_ped)
+                    # rms.append(ch_mean)
+                    ch_list.append(ich)
+                    if logs_env != dict():
+                        femb_id_list.append(logs_env['femb id']['femb'+str(nfemb)])
+                    else:
+                        femb_id_list.append(nfemb)
+                    rms_list.append(ch_mean)
+                    ped_list.append(ch_ped)
+                # rms_list.append((str(nfemb), rms))
+                # ped_list.append((str(nfemb), ped))
+            # rms_dict = dict(rms_list)
+            # ped_dict = dict(ped_list)
+            rms_dict = {'channelNumber': ch_list, 'femb_ids': femb_id_list, 'RMS': rms_list}
+            ped_dict = {'channelNumber': ch_list, 'femb_ids': femb_id_list, 'Pedestal': ped_list}
+            return rms_dict, ped_dict
+
 class QC_analysis:
     def __init__(self, datadir='', output_dir='', temperature='RT', dataType='power_measurement'):
         try:
@@ -60,6 +96,7 @@ class QC_analysis:
             print('{} folder already exists !!!'.format(self.particularDataFolderName))
         self.output_analysis_dir = '/'.join([output_dir, temperature, self.particularDataFolderName])
 
+        print(datadir)
         #
         # check if a folder named PWR_Meas exists --> if self.particularDataFolderName exists
         new_data_dir = []
