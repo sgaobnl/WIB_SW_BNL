@@ -5,8 +5,9 @@
 #----------------------------------------------------------------------
 
 from importlib.resources import path
+from tkinter import Listbox
+from QC_analysis import rms
 from utils import *
-from QC_analysis import QC_analysis
 
 #----------------------------------------------------------------------------
 class ASICDAC:
@@ -44,8 +45,8 @@ class ASICDAC:
         self.peakdata_df = pd.DataFrame()
         #
         # use QC_analysis to get rms instead of writing a new function
-        self.qc_analysis = QC_analysis(self, datadir='', output_dir='',
-                                        temperature=self.temperature, dataType='RMS')
+        # self.qc_analysis = QC_analysis(self, datadir=input_data_dir, output_dir=output_dir,
+        #                                 temperature=self.temperature, dataType='RMS')
     
     def list_bin(self, input_dir='', BL=200, gain=4.7, shapingTime=2.0):
         str_BL = str(BL) + 'mVBL'
@@ -75,11 +76,12 @@ class ASICDAC:
 
     def get_pkDAC_from_decodebin(self, pldata, nevent, bin_filename='', femb_numbers=[0, 1, 2, 3]):
         DAC = self.get_DAC_fromfilename(bin_filename=bin_filename)
+        print('DAC = {}'.format(DAC))
         #
         # instead of returning all data, let's directly get the peak value
         all_peak_values = []
-        for femb_number in femb_numbers:
-            print('nfemb  = {}'.format(femb_number))
+        for femb_number in tqdm(femb_numbers):
+            # print('nfemb  = {}'.format(femb_number))
             peak_values = []
             # for ich in tqdm(range(128)):
             for ich in range(128):
@@ -111,7 +113,7 @@ class ASICDAC:
             all_peak_values.append((DAC, peak_values))
         return all_peak_values
 
-    def decode_onebin_peakvalues(self, path_to_binFolder='', bin_filename=''): #, femb_number=0):
+    def decode_onebin_peakvalues(self, path_to_binFolder='', bin_filename='', logs_env=dict()): #, femb_number=0):
         '''
         This function returns the value of the DAC corresponding to the bin file and
         an array of the peak values for all channels in the bin file.
@@ -132,37 +134,122 @@ class ASICDAC:
         ##
         nevent = len(pldata)
         #
-        all_peak_values = self.get_pkDAC_from_decodebin(pldata=pldata, nevent=nevent, bin_filename=bin_filename, femb_numbers=[0, 1, 2, 3])
+        all_peak_values = []
         rms_dict, ped_dict = {}, {}
         if DAC==0:
-            rms_dict, ped_dict = qc.rms(pldata=pldata, nevent=nevent, nfembs=[0, 1, 2, 3], logs_env=dict())
+            rms_dict, ped_dict = rms(pldata=pldata, nevent=nevent, nfembs=[0, 1, 2, 3], logs_env=logs_env)
+            return rms_dict, ped_dict
+        else:
+            # all_peak_values = self.get_pkDAC_from_decodebin(pldata=pldata, nevent=nevent, bin_filename=bin_filename, femb_numbers=[0, 1, 2, 3])
+            all_peak_values = []
+            femb_numbers = [0, 1, 2, 3]
+            for femb_number in tqdm(femb_numbers):
+                # print('nfemb  = {}'.format(femb_number))
+                peak_values = []
+                # for ich in tqdm(range(128)):
+                for ich in range(128):
+                    iich = femb_number*128+ich
+                    first_peak_found = False
+                    
+                    #allpls = np.empty(0)
+                    allpls = []
+
+                    # only get the first event
+                    for iev in range(nevent):
+                        pos_peaks, _ = find_peaks(pldata[iev][iich], height=np.amax(pldata[iev][iich])-100)
+                        if not first_peak_found:
+                            for ppeak in pos_peaks:
+                                startpos = ppeak - 50
+                                # go to the next pulse if the starting position is negative
+                                if startpos<0:
+                                    # print('pos_peaks = {}'.format(pos_peaks))
+                                    continue
+                                endpos = startpos + 100
+                                selected_peak = np.max(pldata[iev][iich][startpos:endpos])
+                                peak_values.append(selected_peak)
+        
+                                first_peak_found = True
+                                break
+                        else:
+                            break
+                # append DAC and peak_values for one femb
+                all_peak_values.append((DAC, peak_values))
+            return all_peak_values
         # I expect to get the DAC value and an array of length 128 where each element is a value of one peak for each channel
-        return all_peak_values, rms_dict, ped_dict
+        # return all_peak_values, rms_dict, ped_dict
+        # return all_peak_values
 
     def get_peakValues_forallDAC(self, path_to_binfolder='', config=[200,  14.0, 2.0], withlogs=False):
         # all_peakdata_dict = {}
         self.config = config
+        config1 = '_'.join(str(self.config[1]).split('.'))
+        config2 = '_'.join(str(self.config[2]).split('.'))
         list_binfiles = self.list_bin(input_dir=path_to_binfolder, BL=self.config[0], gain=self.config[1], shapingTime=self.config[2])
+        #
+        logs_env = dict()
+        if withlogs:
+            dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
+            with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
+                info_logs = pickle.load(pointer_logs)
+                logs_env = info_logs
         #
         peakdata_list = []
         rms_data, ped_data = {}, {}
+        new_bin_files = []
         for ibin in range(len(list_binfiles)):
             # tmpDAC, tmpPeak_values = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin], femb_number=femb_number)
-            peak_data, tmprms_data, tmpped_data = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, bin_filename=list_binfiles[ibin])
-            peakdata_list.append(peak_data)
-            if tmprms_data != {}:
-                rms_data = tmprms_data
-                ped_data = tmpped_data
+            # peak_data = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, 
+            #                                                                     bin_filename=list_binfiles[ibin], logs_env=logs_env)
+            DAC = self.get_DAC_fromfilename(bin_filename=list_binfiles[ibin])
+            if DAC == 0:
+                rms_dict, _ = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, 
+                                                                                bin_filename=list_binfiles[ibin], logs_env=logs_env)
+                rms_csvname = 'rms_{}mVBL_{}mVfC_{}us'.format(self.config[0], config1, config2)
+                if self.sgp1:
+                    rms_csvname += '_sgp1'
+                # print(rms_data)
+                pd.DataFrame(rms_dict).to_csv('/'.join([self.output_dirCALI, rms_csvname + '.csv']), index=False)
+            else:
+                peak_data = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, 
+                                                                                bin_filename=list_binfiles[ibin], logs_env=logs_env)
+                peakdata_list.append(peak_data)
+                new_bin_files.append(list_binfiles[ibin])
+            # peak_data, tmprms_data, tmpped_data = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, 
+            #                                                                     bin_filename=list_binfiles[ibin], logs_env=logs_env)
+            # peakdata_list.append(peak_data)
+            # if tmprms_data == {}:
+            #     print(tmprms_data)
+            # if tmprms_data != {}:
+            #     rms_data = tmprms_data
+            #     ped_data = tmpped_data
+            #     rms_csvname = 'rms_{}mVBL_{}mVfC_{}us'.format(self.config[0], config1, config2)
+            #     if self.sgp1:
+            #         rms_csvname += '_sgp1'
+            #     # print(rms_data)
+            #     pd.DataFrame(rms_data).to_csv('/'.join([self.output_dirCALI, rms_csvname + '.csv']), index=False)
         
+        # if DAC == 0, rms_data != {}
+        # if rms_data != {}:
+        #     # save rms in csv
+        #     rms_csvname = 'rms_{}mVBL_{}mVfC_{}us'.format(self.config[0], config1, config2)
+        #     if self.sgp1:
+        #         rms_csvname += '_sgp1'
+        #     print(rms_data)
+        #     pd.DataFrame(rms_data).to_csv('/'.join([self.output_dirCALI, rms_csvname + '.csv']), index=False)
+
         FEMBs = [0, 1, 2, 3]
         for femb_number in FEMBs:
             all_peakdata_dict = {}
-            for ibin in range(len(list_binfiles)):
+            # for ibin in range(len(list_binfiles)):
+            for ibin in range(len(new_bin_files)):
                 # all_rmspeakdata_list.append(peakdata_list[ibin][0][femb_number])
 
-                DAC = peakdata_list[ibin][femb_number][0]
-                peak_values = peakdata_list[ibin][femb_number][1]
-                all_peakdata_dict[DAC] = peak_values
+                # DAC = peakdata_list[ibin][femb_number][0]
+                DAC = self.get_DAC_fromfilename(bin_filename=new_bin_files[ibin])
+                if DAC!=0:
+                    # DAC = peakdata_list[ibin][femb_number][0]
+                    peak_values = peakdata_list[ibin][femb_number][1]
+                    all_peakdata_dict[DAC] = peak_values
             #
             # peak and DAC
             DACs, peaks, CHs = [], [], []
@@ -187,14 +274,13 @@ class ASICDAC:
             # get the femb_id if withlogs
             femb_id = femb_number
             if withlogs:
-                dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
-                with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
-                    info_logs = pickle.load(pointer_logs)
+                # dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
+                # with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
+                #     info_logs = pickle.load(pointer_logs)
+                #     logs_env = info_logs
                 #  get the list of femb_ids
                 femb_ids = info_logs['femb id']
                 femb_id = femb_ids['femb{}'.format(femb_number)]
-            config1 = '_'.join(str(self.config[1]).split('.'))
-            config2 = '_'.join(str(self.config[2]).split('.'))
             peak_csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
             
             if self.sgp1:
@@ -206,7 +292,7 @@ class ASICDAC:
             print('saved in {}/{}.csv'.format(self.CALI, peak_csvname))
         
     #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
-    def plot_peakValue_vs_DAC_allch(self, data_df, ch_list=range(128)):
+    def plot_peakValue_vs_DAC_allch(self, data_df, figname='', ch_list=range(128)):
         '''
         Run get_peakValues_forallDAC before using this method
         '''
@@ -224,9 +310,10 @@ class ASICDAC:
             plt.plot(df_for_ch['DAC'], df_for_ch['peak_value'])
             plt.plot(df_for_ch['DAC'], y_pred, label='ch{}'.format(ch))
             # plt.title(title)
+        plt.title(figname)
         plt.legend()
         # plt.show()
-        plt.savefig('/'.join([self.output_dirCALI, 'testfit.png']))
+        plt.savefig('/'.join([self.output_dirCALI, '{}.png'.format(figname)]))
 
     # def checkLinearity(self, DAC_values=[], peak_values=[]):
     #     peak_values = np.array(peak_values)
@@ -279,6 +366,7 @@ class ASICDAC:
             DAC_values_init = DAC_values[index_low_dac : index+1]
             #
             slope, y0 = np.polyfit(DAC_values_init, peak_values_init, 1)
+            # print(slope)
         return index, DAC_values[index], peak_values[index]
         
 
@@ -301,9 +389,10 @@ class ASICDAC:
         ifirst = 3
         ilast = 5
        
+        print(peak_csvname)
         gain_mVfC = '_'.join(peak_csvname.split('_')[ifirst:ilast])
         # print(peak_csvname)
-        # print(gain_mVfC)
+        print('gain mVfC ',gain_mVfC)
         sgs = gain_mVfC
         print(sgs)
 
@@ -328,8 +417,8 @@ class ASICDAC:
             df_for_ch = self.peakdata_df[self.peakdata_df['CH']==ich].reset_index()
             df_for_ch['DAC'] = df_for_ch['DAC'].astype(int)
             df_for_ch = df_for_ch.sort_values(by='DAC', ascending=True)
-            starting_of_nonlinearity = self.checkLinearity(DAC_values=df_for_ch['DAC'], peak_values=df_for_ch['peak_value'])
-            slope, y0 = np.polyfit(df_for_ch['DAC'][:starting_of_nonlinearity[0]], df_for_ch['peak_value'][:starting_of_nonlinearity[0]], 1)
+            starting_of_nonlinearity = self.checkLinearity(DAC_values=df_for_ch['DAC'], peak_values=df_for_ch['peak_value'], lowdac=10, updac=25)
+            slope, y0 = np.polyfit(df_for_ch['DAC'][:starting_of_nonlinearity[0]+1], df_for_ch['peak_value'][:starting_of_nonlinearity[0]+1], 1)
 
             #
             # DAC value corresponding to peak_max
@@ -410,13 +499,13 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
         This function is to be run after Gains_CALI{} functions.
         It saves the gains in a new folder named 'gains' once the peak values are available.
     '''
-    CALI_numbers = [1,2,3,4]
+    CALI_numbers = [1, 2,3,4]
     for cali in CALI_numbers:
         sgp1 = False
         if cali==3 or cali==4:
             sgp1 = True
         asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=cali, sgp1=sgp1)
-        list_csv = [csvname for csvname in os.listdir(asic.output_dirCALI) if '.csv' in csvname]
+        list_csv = [csvname for csvname in os.listdir(asic.output_dirCALI) if ('.csv' in csvname) & ('rms' not in csvname)]
         for csv_filename in list_csv:
             asic.get_gains(peak_csvname=csv_filename)
 
@@ -427,7 +516,8 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
     # only include MINI-SAS FEMBs
     list_fembs_to_exclude = ['femb{}'.format(femb) for femb in fembs_to_exclude]
     path_to_CALI_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
-    path_to_rms = '/'.join([input_dir, temperature, 'RMS'])
+    # path_to_rms = '/'.join([input_dir, temperature, 'RMS'])
+    path_to_rms = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'rms'])
     #
     # if sgp==1
     if (CALI_number==3) or (CALI_number==4):
@@ -440,13 +530,14 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
         pass
     #
     for femb in list_fembs_to_exclude:
-        list_cali_files = [cali_csvfile for cali_csvfile in os.listdir(path_to_CALI_gains) if (femb not in cali_csvfile) & ('.csv' in cali_csvfile)]
+        list_cali_files = [cali_csvfile for cali_csvfile in os.listdir(path_to_CALI_gains) if (str(femb) not in cali_csvfile) & ('.csv' in cali_csvfile)]
         for cali_file in list_cali_files:
             femb_config = (cali_file.split('.')[0]).split('_')[1:7]
             femb_id = femb_config[0]
             config = '_'.join(femb_config[1:])
             # get the name of the rms csv file
-            rms_csvname = [rms_file for rms_file in os.listdir(path_to_rms) if (femb_id in rms_file) & (config in rms_file)][0]
+            rms_csvname = [rms_file for rms_file in os.listdir(path_to_rms)
+                        if ('rms' in rms_file) & (femb_id in rms_file) & (config in rms_file)][0]
             #
             # dataframes
             df_cali = pd.read_csv('/'.join([path_to_CALI_gains, cali_file]),
@@ -484,10 +575,41 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
 #****************************************************************
 #----------------------------------------------------------------
 # this function is for one CALI_number only and was used for test
-def save_peakValues_to_csv(path_to_dataFolder='', output_dir='', temperature='LN', withLogs=False, CALI_number=3):
-    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
+def save_peakValues_to_csv(path_to_dataFolder='', output_dir='', temperature='LN', withLogs=False, CALI_number=1):
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=False)
+    listcsvname = [f for f in os.listdir(asic.output_dirCALI) if ('.csv' in f) & ('rms' not in f)]
     config = [200, 14.0, 2.0]
-    for data_dir in asic.input_dirCALI_list:
+    # for data_dir in asic.input_dirCALI_list:
+    for csvname in listcsvname:
         # asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withLogs)
-        data_df = pd.read_csv('/'.join([asic.output_dirCALI, 'peakValues_femb75_900mVBL_14_0mVfC_2_0us_sgp1.csv']))
-        asic.plot_peakValue_vs_DAC_allch(data_df, ch_list=range(128))
+        figname = csvname.split('.')[0]
+        data_df = pd.read_csv('/'.join([asic.output_dirCALI, csvname]))
+        asic.plot_peakValue_vs_DAC_allch(data_df, ch_list=range(128), figname=figname)
+
+##
+## Function from Xilinx
+def separateCSV_foreachFEMB(path_to_csv='', output_path='', datanames=['CALI1']):
+    '''
+        Having csv files of 4 fembs, this function separate one csv file to 4 csv files for each femb
+    '''
+    for dataname in datanames:
+        path_to_file = '/'.join([path_to_csv, dataname])
+        output_path_file = '/'.join([output_path, dataname, 'rms'])
+        # try to create the output folder
+        try:
+            os.mkdir(output_path_file)
+        except:
+            pass
+        #
+        for csvname in os.listdir(path_to_file):
+            if (('rms' in csvname) or ('RMS' in csvname)) & ('.csv' in csvname):
+                part_csvname = csvname.split('.')[0]
+                #
+                # dataframe
+                df = pd.read_csv('/'.join([path_to_file, csvname]))
+                femb_ids = df['femb_ids'].unique()
+                for femb in femb_ids:
+                    df_femb = df[df['femb_ids']==femb].reset_index().drop('index', axis=1)
+                    femb_csvname = '_'.join(['femb{}'.format(femb), part_csvname + '.csv'])
+                    df_femb.to_csv('/'.join([output_path_file, femb_csvname]), index=False)
+                    print(femb_csvname)
