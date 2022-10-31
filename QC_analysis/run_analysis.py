@@ -7,13 +7,14 @@
 # from QC_analysis import QC_analysis
 from ASICDAC import savegains, Gains_CALI1, Gains_CALI2, Gains_CALI3_or_CALI4
 from ASICDAC import get_ENC_CALI
-
+from ASICDAC import save_peakValues_to_csv
+from ASICDAC import separateCSV_foreachFEMB
 if __name__ == '__main__':
     #------------------------------------------------------
-    savedir = '../results'
-    inputdir = '../data'
-    # inputdir = 'D:/IO-1865-1C/QC/data'
-    # savedir = 'D:/IO-1865-1C/QC/analysis'
+    # savedir = '../results'
+    # inputdir = '../data'
+    inputdir = 'D:/IO-1865-1C/QC/data'
+    savedir = 'D:/IO-1865-1C/QC/analysis'
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
@@ -59,20 +60,28 @@ if __name__ == '__main__':
     # asic = ASICDAC_CALI(input_data_dir='D:/IO-1865-1C/QC/data/femb115_femb103_femb112_femb75_LN_150pF', CALI_number=1)
     # asic.plot_peakvalue_vs_DAC(savedir='D:/IO-1865-1C/QC/analysis/test', femb_number=3, ch_number=127)
     
-    temperature = 'RT'
+    # temperature = 'LN'
     # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=3)
     # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
 
     # temperature = 'RT' # RT or LN
-    # Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
-    # Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
-    # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=3)
-    # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
-    # save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature,
-    #                     withLogs=True, CALI_number=4) <==========TEST FUNCTION
-    savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
-    #
-    #********************************ENC***************************************************************
-    # CALI_numbers = [1, 2, 3, 4]
-    # for CALI_number in CALI_numbers:
-    #     get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=[75])
+    temperatures = ['LN', 'RT']
+    for temperature in temperatures:
+        Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+        Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+        Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=3)
+        Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
+        # for cali in [1, 3]:
+        #     save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature,
+        #                         withLogs=True, CALI_number=cali) #<==========TEST FUNCTION
+        savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
+        #
+        separateCSV_foreachFEMB(path_to_csv='../results/LN/', output_path='../results/LN', datanames=['CALI1', 'CALI2', 'CALI3', 'CALI4'])
+        #********************************ENC***************************************************************
+        CALI_numbers = [1, 2, 3, 4]
+        fembs_to_exclude = [75]
+        if temperature == 'RT':
+            CALI_numbers = ['']
+            fembs_to_exclude = ['07', 24, 27, 55, 75]
+        for CALI_number in CALI_numbers:
+            get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=fembs_to_exclude)
