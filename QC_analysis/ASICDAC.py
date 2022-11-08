@@ -202,9 +202,10 @@ class ASICDAC:
             #                                                                     bin_filename=list_binfiles[ibin], logs_env=logs_env)
             DAC = self.get_DAC_fromfilename(bin_filename=list_binfiles[ibin])
             if DAC == 0:
+                datafolder_name = path_to_binfolder.split('/')[-2] # gets the name of the data folder
                 rms_dict, _ = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, 
                                                                                 bin_filename=list_binfiles[ibin], logs_env=logs_env)
-                rms_csvname = 'rms_{}mVBL_{}mVfC_{}us'.format(self.config[0], config1, config2)
+                rms_csvname = 'rms_{}_{}mVBL_{}mVfC_{}us'.format(datafolder_name, self.config[0], config1, config2)
                 if self.sgp1:
                     rms_csvname += '_sgp1'
                 # print(rms_data)
@@ -494,7 +495,7 @@ def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN',
         asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 #***************************************************************
 
-def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
+def savegains(path_to_dataFolder='', output_dir='', temperature='LN', femb_to_excludes=[7, 24, 27, 55, 75]):
     '''
         This function is to be run after Gains_CALI{} functions.
         It saves the gains in a new folder named 'gains' once the peak values are available.
@@ -506,7 +507,21 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN'):
             sgp1 = True
         asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=cali, sgp1=sgp1)
         list_csv = [csvname for csvname in os.listdir(asic.output_dirCALI) if ('.csv' in csvname) & ('rms' not in csvname)]
-        for csv_filename in list_csv:
+        #
+        samtec = []
+        for femb in femb_to_excludes:
+            strfemb = 'femb{}'.format(femb)
+            if femb < 10:
+                strfemb = 'femb0{}'.format(femb)
+                samtec.append(strfemb)
+        csv_to_be_used = []
+        for csvname in list_csv:
+            femb = csvname.split('_')[1]
+            if femb not in samtec:
+                csv_to_be_used.append(csvname)
+        #
+        #print(csv_to_be_used)
+        for csv_filename in csv_to_be_used:
             asic.get_gains(peak_csvname=csv_filename)
 
 #************************get ENC*********************************

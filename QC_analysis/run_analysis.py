@@ -65,23 +65,23 @@ if __name__ == '__main__':
     # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
 
     # temperature = 'RT' # RT or LN
-    temperatures = ['LN', 'RT']
+    #temperatures = ['LN', 'RT']
+    temperatures = ['RT']
     for temperature in temperatures:
-        Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
-        Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
-        Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=3)
-        Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
+        #Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+        #Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+        #Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=3)
+        #Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
         # for cali in [1, 3]:
         #     save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature,
         #                         withLogs=True, CALI_number=cali) #<==========TEST FUNCTION
-        savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
+        #savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
         #
-        separateCSV_foreachFEMB(path_to_csv='../results/LN/', output_path='../results/LN', datanames=['CALI1', 'CALI2', 'CALI3', 'CALI4'])
+        #separateCSV_foreachFEMB(path_to_csv='/'.join([savedir, temperature]), output_path='/'.join([savedir, temperature]), datanames=['CALI1', 'CALI2', 'CALI3', 'CALI4'])
         #********************************ENC***************************************************************
         CALI_numbers = [1, 2, 3, 4]
         fembs_to_exclude = [75]
         if temperature == 'RT':
-            CALI_numbers = ['']
             fembs_to_exclude = ['07', 24, 27, 55, 75]
         for CALI_number in CALI_numbers:
             get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=fembs_to_exclude)

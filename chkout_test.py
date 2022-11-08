@@ -63,7 +63,7 @@ logs['date']=datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
 
 ####### Create data save directory #######
 
-datadir = "D:/IO-1865-1C/CHKOUT/data/"
+datadir = "D:/IO-1865-1D/CHKOUT/data/"
 for key,femb_no in fembNo.items():
     datadir = datadir + "femb{}_".format(femb_no)
 
@@ -91,7 +91,7 @@ fp = datadir + "logs_env.bin"
 with open(fp, 'wb') as fn:
      pickle.dump(logs, fn)
 
-reportdir = "D:/IO-1865-1C/CHKOUT/reports/"
+reportdir = "D:/IO-1865-1D/CHKOUT/reports/"
 PLOTDIR = {}
 
 for ifemb,femb_no in fembNo.items():
@@ -147,13 +147,12 @@ for femb_id in fembs:
                         [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                         [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                       ]
-    #chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20 )
-    chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, slk0=1, swdac=1, dac=0x20 ) #5nA
+    chk.set_fe_board(sts=1, snc=snc, sg0=sg0, sg1=sg1, st0=st0, st1=st1, swdac=1, dac=0x20 )
     adac_pls_en = 1 
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
     chk.femb_cfg(femb_id, adac_pls_en )
 
-chk.data_align(fembs)
+#chk.data_align(fembs)
 time.sleep(0.5)
 
 ####### Take data #######
