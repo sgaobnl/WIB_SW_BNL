@@ -1,9 +1,10 @@
 #-----------------------------------------------------------------------
 # Author: Rado
 # email: radofana@gmail.com
-# last update: 10/19/2022
+# last update: 11/01/2022
 #----------------------------------------------------------------------
 
+from typing_extensions import dataclass_transform
 from utils import *
 # ----------------------------------------------
 def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_dir=''):
@@ -359,6 +360,46 @@ def save_allInfo_PWRCycle_tocsv(data_input_dir='', output_dir='', temperature_li
             for dataname in tqdm(dataname_list):
                 qc.save_PWRCycle_from_allFolders(dataname=dataname)
 #
+
+# ----- From Xilinx repo -----------
+## The dataFrame needs to have a columns named femb_ids
+## Function to remove informations about one femb
+def removeInfo_for_FEMB(dataFrame=pd.DataFrame(), fembID=24, datatype='PWR_Meas'):
+    if datatype=='PWR_Cycle':
+        # return dataFrame[str(fembID) not in dataFrame['FEMB_ID']]
+        print(dataFrame.head())
+        condition = ((dataFrame['FEMB_ID'] != '_'.join([str(fembID), '1'])) & (dataFrame['FEMB_ID'] != '_'.join([str(fembID), '2'])) 
+                    & (dataFrame['FEMB_ID'] != '_'.join([str(fembID), '0'])) & (dataFrame['FEMB_ID'] != int(fembID)))
+        print(condition)
+        return dataFrame[condition]
+    return dataFrame[dataFrame['FEMB_ID'] != int(fembID)]
+
+## Function to remove informations about a list of femb
+def removeInfo_for_FEMBs(dataFrame=pd.DataFrame(), femb_list=[], datatype='PWR_Meas'):
+    df = dataFrame
+    for femb_id in femb_list:
+        df = removeInfo_for_FEMB(dataFrame=df, fembID=femb_id, datatype=datatype)
+    return df
+
+# remove some FEMBs from a folder nammed T='LN' or T='RT'
+def removeFEMB_from_T(csv_source_dir='', output_dir='', temperature='LN', datatype='PWR_Meas', femb_list=[]):
+    output_dir = '/'.join([output_dir, temperature])
+    try:
+        os.mkdir(output_dir)
+    except:
+        pass
+    output_dir = '/'.join([output_dir, datatype])
+    try:
+        os.mkdir(output_dir)
+    except:
+        pass
+    source_dir = '/'.join([csv_source_dir, temperature, datatype])
+    if len(femb_list) != 0:
+        for f in os.listdir(source_dir):
+            if '.csv' in f:
+                df = removeInfo_for_FEMBs(dataFrame=pd.read_csv('/'.join([source_dir, f])), femb_list=femb_list, datatype=datatype)
+                df.to_csv('/'.join([output_dir, f]), index=False)
+                print('new {} saved'.format(f))
 #
 # produce plots of PWR_Meas vs femb_id
 def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_meas='P_meas', marker='.'):
@@ -373,6 +414,10 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         elif data_meas=='V_meas':
             unit_data = 'V'
             # ylim = [0, 5.5]
+        # modification
+        tmp_list_csv = [f for f in os.listdir('/'.join([csv_source_dir, temperature])) if '.csv' in f]
+        if len(tmp_list_csv)==0:
+            temperature = '/'.join([temperature, 'PWR_Meas'])
         path_to_csv = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
         data_df = pd.read_csv(path_to_csv)
         # get the right columns
@@ -408,6 +453,7 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         plt.savefig('/'.join([csv_source_dir, temperature, 'plots', '_'.join([figTitle, data_csvname, '.png'])]))
         plt.clf() # clear figure
 
+# PWR_Meas plots for all measured_info_list and temperature_list
 def all_PWR_Meas_plots(csv_source_dir='', measured_info_list=[], temperature_list=[], dataname_list=[]):
     mpl.rcParams.update({'figure.max_open_warning': 0})
     marker = '.' # add this marker to the plots
@@ -464,6 +510,7 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], 
         FEMB_ID_se = pd.Series()
         FEMB_ID_sdf = pd.Series()
         for part_dataname in all_data_types:
+            print('/'.join([csv_source_dir, temperature, 'PWR_Cycle']))
             csvnames = [filename for filename in os.listdir('/'.join([csv_source_dir, temperature, 'PWR_Cycle'])) if part_dataname in filename]
             for csv in csvnames:
                 path_to_csv = '/'.join([csv_source_dir, temperature, 'PWR_Cycle', csv])
@@ -507,8 +554,13 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
     colors=['blue','orange','green']
     if powerType=='PWR_Meas':
         for T in temperatures:
-            pwr_df = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=T, all_data_types=all_data_types)
-            figname = 'power_consumption_{}'.format(T)
+            # tmp_csvfile = [f for f in os.listdir('/'.join([csv_source_dir, temperatures])) if '.csv' in f]
+            # print(tmp_csvfile)
+            # if len(tmp_csvfile)==0:
+            Temp_T = '/'.join([T, 'PWR_Meas']) # remove this line if there's any error
+            pwr_df = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=Temp_T, all_data_types=all_data_types)
+            # figname = 'power_consumption_{}'.format(T)
+            figname = 'power_consumption_{}_PWR_Meas'.format(T)
             tmp_output_dir = '/'.join([output_dir, T, figname])
             cols = [col for col in pwr_df.columns if col!='FEMB_ID']
             plt.figure(figsize=(12, 7))
@@ -529,7 +581,8 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
             pwr_df.to_csv(tmp_output_dir + '.csv', index=False)
             print('csv file of the power consumption for {} saved.\n'.format(T))
     elif powerType=='PWR_Cycle':
-        T = 'LN'
+        T = 'LN' # uncomment if error
+        # Temp_T = 'LN/PWR_Cycle' # comment
         pwr_se, pwr_sesdf_diff = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=T, all_data_types=all_data_types, power='PWR_Cycle')
         # PWR_SE
         pwr_se[['FEMB_ID', 'cycle']] = pwr_se.FEMB_ID.str.split('_', expand=True)
@@ -569,7 +622,8 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         plt.ylabel('PWR_Consumption(W)', fontsize=20)
         plt.title('Power consumption for the PWR_Cycle', fontsize=25)
         plt.legend(fontsize=25)
-        figname = 'power_consumption_{}'.format(T)
+        # figname = 'power_consumption_{}'.format(T)
+        figname = 'power_consumption_{}_PWR_Cycle'.format(T)
         tmp_output_dir = '/'.join([output_dir, T, 'PWR_Cycle', figname + '.png'])
         plt.savefig(tmp_output_dir)
         # save csv files
@@ -650,6 +704,7 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
             plt.title('_'.join([measured_param, dataname]), fontsize=30)
             plt.legend(fontsize=30)
             plt.savefig('/'.join([output_dir, figurename]))
+
 
 ##---------------------------------------------------------------------------
 ##
