@@ -289,8 +289,6 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         llc.wib_poke(self.wib, rdaddr, wrreg) 
             
         for dts_time_delay in  range(0x48, 0x90,1):
-            print (dts_time_delay)
-            time.sleep(0.1)
             rdaddr = 0xA00C000C
             rdreg = llc.wib_peek(self.wib, rdaddr)
             wrvalue = dts_time_delay #0x58 #dts_time_delay = 1

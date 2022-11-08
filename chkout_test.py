@@ -63,7 +63,7 @@ logs['date']=datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
 
 ####### Create data save directory #######
 
-datadir = "D:/IO-1865-1D/CHKOUT/data/"
+datadir = "D:/IO-1826-1B/CHKOUT/data/"
 for key,femb_no in fembNo.items():
     datadir = datadir + "femb{}_".format(femb_no)
 
@@ -91,7 +91,7 @@ fp = datadir + "logs_env.bin"
 with open(fp, 'wb') as fn:
      pickle.dump(logs, fn)
 
-reportdir = "D:/IO-1865-1D/CHKOUT/reports/"
+reportdir = "D:/IO-1826-1B/CHKOUT/reports/"
 PLOTDIR = {}
 
 for ifemb,femb_no in fembNo.items():
