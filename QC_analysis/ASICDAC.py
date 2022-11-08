@@ -525,66 +525,115 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN', femb_to_ex
             asic.get_gains(peak_csvname=csv_filename)
 
 #************************get ENC*********************************
+def select_fembs_report_dir(input_dir='', fembs_to_exclude=[], temperature='LN'):
+    selected = []
+    for DIR in os.listdir(input_dir):
+        femb_report = DIR.split('_')[0]
+        if (femb_report not in fembs_to_exclude) & (temperature in DIR):
+            selected.append('/'.join([input_dir, DIR]))
+    return selected
+
+def get_fembID_list(input_dir='', fembs_to_exclude=[], temperature='LN'):
+    tmp_listdir = select_fembs_report_dir(input_dir=input_dir, fembs_to_exclude=fembs_to_exclude, temperature=temperature)
+    femb_ids = []
+    for rmsfilename in tmp_listdir:
+        femb = (rmsfilename.split('/')[-1]).split('_')[0]
+        femb_ids.append(femb.split('B')[-1])
+    return femb_ids
+
+def read_rms_ana(list_path_to_file=[], femb_id='101',
+                 gain_larasic='14_0mVfC'):
+    input_femb = 'femb{}'.format(femb_id)
+    for f in list_path_to_file:
+        femb = (f.split('/')[-1]).split('_')[0]
+        filename = f.split('/')[-1]
+        if (input_femb == femb) & (gain_larasic in filename):
+            df = pd.read_csv(f)
+            return df
+
+def read_gain_ana(list_path_to_file=[], femb_id='101', gain_larasic='14_0mVfC'):
+    input_femb = 'femb{}'.format(femb_id)
+    for f in list_path_to_file:
+        femb = (f.split('/')[-1]).split('_')[1]
+        filename = f.split('/')[-1]
+        if (input_femb == femb) & (gain_larasic in filename):
+            df = pd.read_csv(f)
+            return df
+
 def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[75], sgp1=False):
-    # input_dir: e.g: ../analysis
-    # exclude SAMTEC FEMBs
-    # only include MINI-SAS FEMBs
-    list_fembs_to_exclude = ['femb{}'.format(femb) for femb in fembs_to_exclude]
-    path_to_CALI_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
-    # path_to_rms = '/'.join([input_dir, temperature, 'RMS'])
-    path_to_rms = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'rms'])
-    #
-    # if sgp==1
-    if (CALI_number==3) or (CALI_number==4):
-        sgp1 = True
-    # output directory
+    # to get results faster, let's hard code some part
+    # list samtec fembs to exclude
+    samtec_fembs = []
+    samtec_reports = []
+    for femb in fembs_to_exclude:
+        if femb < 10:
+            samtec_fembs.append('femb0{}'.format(femb))
+            samtec_reports.append('FEMB0{}'.format(femb))
+        else:
+            samtec_fembs.append('femb{}'.format(femb))
+            samtec_reports.append('FEMB{}'.format(femb))
+    
+    # list larasic gains
+    listgains = ['4_7', '7_8', '14_0', '25_0']
+    larasic_gains = ['{}mVfC'.format(g) for g in listgains]
+
+    # seelct rms files without samtec fembs
+    ana_rms_files = []
+    rms_input_dir = '/'.join([input_dir, temperature, 'CALI1', 'rms'])
+    for rms_file in os.listdir(rms_input_dir):
+        femb_ana = rms_file.split('_')[0]
+        if femb_ana not in fembs_to_exclude:
+            ana_rms_files.append('/'.join([rms_input_dir, rms_file]))
+    
+    # get fembs list from report
+    report_dir = '../results/reports'
+    list_fembs = get_fembID_list(input_dir=report_dir, fembs_to_exclude=samtec_reports)
+
+
     output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
-    try:
-        os.mkdir(output_enc)
-    except:
-        pass
-    #
-    for femb in list_fembs_to_exclude:
-        list_cali_files = [cali_csvfile for cali_csvfile in os.listdir(path_to_CALI_gains) if (str(femb) not in cali_csvfile) & ('.csv' in cali_csvfile)]
-        for cali_file in list_cali_files:
-            femb_config = (cali_file.split('.')[0]).split('_')[1:7]
-            femb_id = femb_config[0]
-            config = '_'.join(femb_config[1:])
-            # get the name of the rms csv file
-            rms_csvname = [rms_file for rms_file in os.listdir(path_to_rms)
-                        if ('rms' in rms_file) & (femb_id in rms_file) & (config in rms_file)][0]
-            #
-            # dataframes
-            df_cali = pd.read_csv('/'.join([path_to_CALI_gains, cali_file]),
-                                usecols=['CH', 'Gain'])
-            df_rms = pd.read_csv('/'.join([path_to_rms, rms_csvname]),
-                                usecols=['channelNumber', 'RMS'])
-            df_rms['CH'] = df_rms['channelNumber'].astype(int)
-            df_rms.drop('channelNumber', axis=1, inplace=True)
-            df_enc = pd.merge(df_cali, df_rms, on='CH', how='left')
-            df_enc['ENC'] = df_enc.apply(lambda x: x.Gain * x.RMS, axis=1)
-            #
-            figname = '_'.join(femb_config)
-            if sgp1:
-                figname += '_sgp1'
-            # plot ENC vs CH number
-            # save the plot in png file
-            plt.figure(figsize=(12, 7))
-            plt.plot(df_enc['CH'], df_enc['ENC'], marker='.', markersize=7.5)
-            plt.xlabel('CH')
-            plt.ylabel('ENC(electron)')
-            plt.title(figname)
-            plt.savefig('/'.join([output_enc, figname + '.png']))
-            # save the plot of RMS for all channel number in png file
-            plt.figure(figsize=(12, 7))
-            plt.plot(df_enc['CH'], df_enc['RMS'], marker='.', markersize=7.5)
-            plt.xlabel('CH')
-            plt.ylabel('RMS')
-            plt.title(figname)
-            plt.savefig('/'.join([output_enc, 'RMS_' + figname + '.png']))
-            # save dataframe with enc to csv file
-            df_enc.to_csv('/'.join([output_enc, figname + '.csv']), index=False)
-            print('CALI{}/{} saved'.format(CALI_number, figname + '.csv'))
+    # select gains csv files
+    # path_to_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
+    path_to_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
+    selected_gains_csv = []
+    for csvfile in os.listdir(path_to_gains):
+        if '.csv' in csvfile:
+            femb = csvfile.split('_')[1]
+            if femb not in samtec_fembs:
+                selected_gains_csv.append('/'.join([path_to_gains, csvfile]))
+    
+    # get enc for each femb and larasic gains
+    for femb in list_fembs:
+        for larasicgain in larasic_gains:
+            try:
+                ana_rms = read_rms_ana(list_path_to_file=ana_rms_files, femb_id=femb, gain_larasic=larasicgain)[['channelNumber', 'RMS']]
+                # print(ana_rms.head())
+                ana_gain = read_gain_ana(list_path_to_file=selected_gains_csv, femb_id=femb, gain_larasic=larasicgain)[['CH', 'Gain']]
+                ana_rms['CH'] = ana_rms['channelNumber'].astype(int)
+                ana_rms.drop('channelNumber', axis=1, inplace=True)
+                df_enc = pd.merge(ana_gain, ana_rms, on='CH', how='left')
+                df_enc['ENC'] = df_enc.apply(lambda x: x.Gain * x.RMS, axis=1)
+                #
+                figname = '_'.join(['femb{}'.format(femb), '200mVBL', larasicgain, '2_0us'])
+                # plot ENC vs CH number
+                # save the plot in png file
+                plt.figure(figsize=(12, 7))
+                plt.plot(df_enc['CH'], df_enc['ENC'], marker='.', markersize=7.5)
+                plt.xlabel('CH')
+                plt.ylabel('ENC(electron)')
+                plt.title(figname)
+                plt.savefig('/'.join([output_enc, figname + '.jpg']))
+                # save the plot of RMS for all channel number in jpg file
+                plt.figure(figsize=(12, 7))
+                plt.plot(df_enc['CH'], df_enc['RMS'], marker='.', markersize=7.5)
+                plt.xlabel('CH')
+                plt.ylabel('RMS')
+                plt.title(figname)
+                plt.savefig('/'.join([output_enc, 'RMS_' + figname + '.jpg']))
+                # save dataframe with enc to csv file
+                df_enc.to_csv('/'.join([output_enc, figname + '.csv']), index=False)
+                print('CALI{}/{} saved'.format(CALI_number, figname + '.csv'))
+            except:
+                print('error : fem = {}, gain = {}'.format(femb, larasicgain))
             
 
 #****************************************************************
