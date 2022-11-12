@@ -91,7 +91,7 @@ fp = datadir + "logs_env.bin"
 with open(fp, 'wb') as fn:
      pickle.dump(logs, fn)
 
-reportdir = "D:/IO-1826-1B/CHKOUT/reports/"
+reportdir = "D:/IO-1865-1D/CHKOUT/reports/"
 PLOTDIR = {}
 
 for ifemb,femb_no in fembNo.items():
