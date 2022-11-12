@@ -42,7 +42,10 @@ else:
     print (f"Turn All FEMB off")
 #Measure powers on FEMB
 pwr_meas = chk.get_sensors()
-print (pwr_meas)
+for key in pwr_meas:
+    for x in pwr_meas[key]:
+        print (x)
+    print ("============================")
 
 fdir = "D:/debug_data/"
 ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
