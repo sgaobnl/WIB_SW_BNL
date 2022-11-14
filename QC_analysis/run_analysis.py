@@ -4,11 +4,13 @@
 # last update: 10/22/2022
 #----------------------------------------------------------------------
 
+# from MON import MON_FE
 # from QC_analysis import QC_analysis
-from ASICDAC import savegains, Gains_CALI1, Gains_CALI2, Gains_CALI3_or_CALI4
+# from ASICDAC import savegains, Gains_CALI1, Gains_CALI2, Gains_CALI3_or_CALI4
 from ASICDAC import get_ENC_CALI
-from ASICDAC import save_peakValues_to_csv
-from ASICDAC import separateCSV_foreachFEMB
+# from ASICDAC import save_peakValues_to_csv
+# from ASICDAC import separateCSV_foreachFEMB
+from ASICDAC import distribution_ENC_Gain
 #
 # for RMS, Pedestal and PWR
 # from ASICDAC import removeFEMB_from_T, all_PWR_Meas_plots
@@ -68,6 +70,7 @@ if __name__ == '__main__':
     # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
 
     # temperature = 'RT' # RT or LN
+<<<<<<< HEAD
     #temperatures = ['LN', 'RT']
     temperatures = ['RT']
     for temperature in temperatures:
@@ -107,3 +110,39 @@ if __name__ == '__main__':
 >>>>>>> 242b1fd4f3b6da0f9e34164040e2fd3d82601d50
         for CALI_number in CALI_numbers:
             get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=fembs_to_exclude)
+=======
+    temperatures = ['LN', 'RT']
+    # for temperature in temperatures:
+    #     # Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+    #     # Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True)
+    #     # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=3)
+    #     # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, CALI_number=4)
+    #     # for cali in [1, 3]:
+    #     #     save_peakValues_to_csv(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature,
+    #     #                         withLogs=True, CALI_number=cali) #<==========TEST FUNCTION
+    #     # savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
+    #     # #
+    #     # separateCSV_foreachFEMB(path_to_csv='../results/LN/', output_path='../results/LN', datanames=['CALI1', 'CALI2', 'CALI3', 'CALI4'])
+    #     #********************************ENC***************************************************************
+    #     # CALI_numbers = [1]#, 2, 3, 4]
+    #     CALI_numbers = [2, 3, 4]
+    #     fembs_to_exclude = [75, 111]
+    #     if temperature == 'RT':
+    #         # CALI_numbers = ['']
+    #         # fembs_to_exclude = ['07', 24, 27, 55, 75]
+    #         fembs_to_exclude = [7, 24, 27, 55, 75, 111]
+    #     for CALI_number in CALI_numbers:
+    #         get_ENC_CALI(input_dir=savedir, temperature=temperature, CALI_number=CALI_number, fembs_to_exclude=fembs_to_exclude)
+    for temperature in temperatures:
+        listgains = ['4_7', '7_8', '14_0', '25_0']
+        larasic_gains = ['{}mVfC'.format(g) for g in listgains]
+        CALI_numbers = [1, 2, 3, 4]
+        for CALI in CALI_numbers:
+            for larasic_gain in larasic_gains:
+                distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI, temperature=temperature, larasic_gain=larasic_gain, fit=True)
+                distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI, temperature=temperature, larasic_gain=larasic_gain, fit=False)
+    
+
+    # mon_fe = MON_FE(input_dir=inputdir, output_dir=savedir, temperature='LN', fembs_to_exclude=[24])
+    # print(mon_fe.femb_dir_list)
+>>>>>>> f62b2c4 (use the dist function from ASICDAC.py)
