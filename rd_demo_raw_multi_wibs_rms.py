@@ -20,6 +20,7 @@ fp ="D:/CRP5A/CRP5A_timing_debugging/Raw_17_11_2022_18_27_47.bin"
 fp ="D:/CRP5A/CRP5A_timing_debugging/Raw_17_11_2022_18_32_40.bin"
 fp ="D:/CRP5A/CRP5A_data/Raw_17_11_2022_19_01_36.bin" #1200mV
 fp ="D:/CRP5A/CRP5A_data/Raw_17_11_2022_19_06_24.bin" #1100mV
+fp ="D:/CRP5A/CRP5A_data/Raw_17_11_2022_19_21_37.bin" #RMS
 
 #Raw_17_11_2022_19_21_37,  chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac ), SG output off
 #Raw_17_11_2022_19_28_22,  chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac ), SG output off
@@ -34,17 +35,20 @@ runi = 0
 print (len(rawdata[0]))
 print (rawdata[runi][0][0])
 
-dec_datas = []
-for wibdata in rawdata[runi]:
-    ip = wibdata[0]
-    print (ip)
-    buf0 = wibdata[1][0]
-    buf1 = wibdata[1][1]
-    trigmode = "HW"
-    buf_end_addr = wibdata[2] 
-    trigger_rec_ticks = wibdata[3]
-    dec_data = wib_spy_dec_syn(buf0, buf1, trigmode, buf_end_addr, trigger_rec_ticks)
-    dec_datas.append(dec_data)
+
+all_dec_datas = []
+for runi in range(len(rawdata)):
+    dec_datas = []
+    for wibdata in rawdata[runi]:
+        ip = wibdata[0]
+        buf0 = wibdata[1][0]
+        buf1 = wibdata[1][1]
+        trigmode = "HW"
+        buf_end_addr = wibdata[2] 
+        trigger_rec_ticks = wibdata[3]
+        dec_data = wib_spy_dec_syn(buf0, buf1, trigmode, buf_end_addr, trigger_rec_ticks)
+        dec_datas.append(dec_data)
+    all_dec_datas.append(dec_datas)
 
 
 #exit()
@@ -79,8 +83,6 @@ for wib_data in dec_datas:
         femb1.append(wib_data[0][i]["FEMB1_3"])
         femb2.append(wib_data[1][i]["FEMB0_2"])
         femb3.append(wib_data[1][i]["FEMB1_3"])
-    print (tmts[0:10])
-
     
     #print (sfs0)
     #print (sfs1)
@@ -102,8 +104,8 @@ for wib_data in dec_datas:
     
     #x = np.arange(20)
     
-    #if False:
-    if True:
+    if False:
+    #if True:
         plt.plot(x, np.array(tmts)-tmts[0], label =f"WIB{wibi} Time Master Timestamp")
         plt.plot(x, np.array(cdts_l0)-cdts_l0[0], label =f"WIB{wibi} Coldata0 Timestamp")
         plt.plot(x, np.array(cdts_l1)-cdts_l1[0], label =f"WIB{wibi} Coldata1 Timestamp")

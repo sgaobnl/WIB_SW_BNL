@@ -36,7 +36,7 @@ else:
     sample_N = 1
 
 fembs = [int(a) for a in sys.argv[1:pos]] 
-ips = ["10.73.137.27", "10.73.137.30"]
+ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 #ips = ["10.73.137.27"]
 
 chk = WIB_CFGS()
@@ -83,6 +83,7 @@ if True:
                 swdac = 0
                 dac = 0
             chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
+            #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
             adac_pls_en = 0 #disable LArASIC interal calibraiton pulser
             cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
         #step 3
@@ -109,7 +110,7 @@ if True:
 #exit()
 
 
-sample_N = 1
+sample_N = 10
 rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x08,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
 
 ####################FEMBs Data taking################################
@@ -186,7 +187,7 @@ rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, 
 pwr_meas = chk.get_sensors()
 
 if save:
-    fdir = "D:/debug_data/"
+    fdir = "D:/CRP5A/CRP5A_data/"
     ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     fp = fdir + "Raw_" + ts  + ".bin"
     with open(fp, 'wb') as fn:
