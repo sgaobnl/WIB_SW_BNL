@@ -179,7 +179,6 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
 
     def femb_i2c_wrchk(self, femb_id, chip_addr, reg_page, reg_addr, wrdata):
         i = 0 
-            if wrdata != rddata:
         self.femb_i2c_wr(femb_id, chip_addr, reg_page, reg_addr, wrdata)
         time.sleep(0.001)
         rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
