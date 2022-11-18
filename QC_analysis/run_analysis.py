@@ -20,11 +20,7 @@ if __name__ == '__main__':
     # savedir = '../results/analysis/minisas'
     # inputdir = '../data'
     inputdir = 'D:/IO-1865-1C/QC/data'
-    savedir = 'D:/IO-1865-1C/QC/analysis/MON_FE'
-    try:
-        os.mkdir(savedir)
-    except:
-        pass
+    savedir = 'D:/IO-1865-1C/QC/analysis/'
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
@@ -106,7 +102,8 @@ if __name__ == '__main__':
     #             distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI, temperature=temperature, larasic_gain=larasic_gain, fit=True)
     #             distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI, temperature=temperature, larasic_gain=larasic_gain, fit=False)
     
-    # output_dir = '../results/analysis/test_MON_FE'
-    mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, temperature='LN', fembs_to_exclude=[7, 24, 27, 55])
-    mon_fe.run_MON_LArASIC()
+    # savedir = '../results/analysis/test_MON_FE'
+    for T in temperatures:
+        mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55])
+        mon_fe.run_MON_LArASIC()
 
