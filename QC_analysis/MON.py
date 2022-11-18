@@ -117,7 +117,7 @@ class MON_LARASIC:
     def get_dist(self, dataname, data=[], output_dir=''):
         mean = np.mean(data)
         std = np.std(data)
-        figname = '_'.join(['hist', dataname])
+        figname = '_'.join(['hist', dataname, self.temperature])
         plt.figure(figsize=(10, 6))
         plt.hist(data, bins=50, label='mean = {:.4f}, std = {:.4f}'.format(mean, std))
         plt.xlabel(dataname + '(mV)', fontsize=12)
