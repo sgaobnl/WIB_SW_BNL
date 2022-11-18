@@ -7,6 +7,7 @@
 from importlib.resources import path
 from tkinter import Listbox
 from QC_analysis import rms
+from Analysis_FEMB_QC import get_gaussPdf
 from utils import *
 
 #----------------------------------------------------------------------------
@@ -524,7 +525,8 @@ def savegains(path_to_dataFolder='', output_dir='', temperature='LN', femb_to_ex
         for csv_filename in csv_to_be_used:
             asic.get_gains(peak_csvname=csv_filename)
 
-#************************get ENC*********************************
+#*********************************************************************************
+#************************get ENC**************************************************
 def select_fembs_report_dir(input_dir='', fembs_to_exclude=[], temperature='LN'):
     selected = []
     for DIR in os.listdir(input_dir):
@@ -579,7 +581,8 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
 
     # seelct rms files without samtec fembs
     ana_rms_files = []
-    rms_input_dir = '/'.join([input_dir, temperature, 'CALI1', 'rms'])
+    # rms_input_dir = '/'.join([input_dir, temperature, 'CALI1', 'rms'])
+    rms_input_dir = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'rms'])
     for rms_file in os.listdir(rms_input_dir):
         femb_ana = rms_file.split('_')[0]
         if femb_ana not in fembs_to_exclude:
@@ -591,6 +594,10 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
 
 
     output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
+    try:
+        os.mkdir(output_enc)
+    except:
+        print('ENC folder already exists...')
     # select gains csv files
     # path_to_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
     path_to_gains = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'gains'])
@@ -613,7 +620,10 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
                 df_enc = pd.merge(ana_gain, ana_rms, on='CH', how='left')
                 df_enc['ENC'] = df_enc.apply(lambda x: x.Gain * x.RMS, axis=1)
                 #
-                figname = '_'.join(['femb{}'.format(femb), '200mVBL', larasicgain, '2_0us'])
+                BL = ((ana_rms_files[0].split('/')[-1]).split('BL_')[0]).split('_')[-1]
+                figname = '_'.join(['femb{}'.format(femb), '{}BL'.format(BL), larasicgain, '2_0us'])
+                if (CALI_number==3) | (CALI_number==4):
+                    figname += '_sgp1'
                 # plot ENC vs CH number
                 # save the plot in png file
                 plt.figure(figsize=(12, 7))
@@ -631,10 +641,112 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
                 plt.savefig('/'.join([output_enc, 'RMS_' + figname + '.jpg']))
                 # save dataframe with enc to csv file
                 df_enc.to_csv('/'.join([output_enc, figname + '.csv']), index=False)
-                print('CALI{}/{} saved'.format(CALI_number, figname + '.csv'))
+                print('CALI{}/ENC/{} saved'.format(CALI_number, figname + '.csv'))
             except:
                 print('error : fem = {}, gain = {}'.format(femb, larasicgain))
             
+def distribution_ENC_Gain(csv_source_dir='', CALI_number=1, temperature='LN', larasic_gain='4_7mVfC', fit=False):
+    '''
+    In this function, the csv files stored in the folder ENC will be used to get
+    the ENC and the Gain.
+        What does this function do ?
+    Basically, concatenating the csv files in the folder CALI{} along the axis=0 (row after row) for each configuration.
+    Then get the columns Gain and ENC and plot an histogram of each of them. These histograms are the distributions
+    of Gain and ENC.
+    '''
+    input_dir = '/'.join([csv_source_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
+    output_dir = '/'.join([input_dir, 'distribution'])
+    try:
+        os.mkdir(output_dir)
+    except:
+        print('A folder named distribution already exists!!')
+    #
+    # listgains = ['4_7', '7_8', '14_0', '25_0']
+    # larasic_gains = ['{}mVfC'.format(g) for g in listgains]
+    #
+    #@ get list of csv files in input_dir
+    list_existing_csv_files = [f for f in os.listdir(input_dir) if '.csv' in f]
+    #
+    #@ select only the csv files corresponding to the larasic_gain
+    list_selected_csv_files = []
+    for f in list_existing_csv_files:
+        f_split = f.split('BL_')[-1]
+        if larasic_gain in f_split:
+            list_selected_csv_files.append(f)
+    #
+    try:
+        #@ concatenate all of the selected csv files -> one_df
+        one_df = pd.DataFrame()
+        for f in list_selected_csv_files:
+            femb = f.split('_')[0]
+            path_to_file = '/'.join([input_dir, f])
+            df = pd.read_csv(path_to_file)
+            df['femb'] = [femb for _ in range(len(df))]
+            one_df = pd.concat([one_df, df], axis=0)
+        #
+        #@ save one_df in output_dir
+        one_df.to_csv('/'.join([output_dir, 'all_gain_rms_enc_CALI{}.csv'.format(CALI_number)]), index=False)
+        #
+        BL = list_selected_csv_files[0].split('_')[1]
+        st = ('_'.join(list_selected_csv_files[0].split('_')[4:])).split('.')[0]
+        figname = '{}_{}_{}'.format(BL, larasic_gain, st)
+        #
+        gain_selected = one_df['Gain']
+        enc_selected = one_df['ENC']
+        #
+        #@ fit with gaussian
+        # gain_x, gain_pdf, enc_x, enc_pdf = pd.Series([]), pd.Series([]), pd.Series([]), pd.Series([])
+        gain_mean, gain_std, enc_mean, enc_std = 0., 0., 0., 0.
+        if fit:
+            gain_selected, gain_mean, gain_std, gain_loc, gain_scale, gain_x, gain_pdf = get_gaussPdf(dataVec=gain_selected, nstd=3, skewed=True)
+            enc_selected, enc_mean, enc_std, enc_loc, enc_scale, enc_x, enc_pdf = get_gaussPdf(dataVec=enc_selected, nstd=3, skewed=True)
+            #@ set plot style: seaborn-white
+            plt.style.use('seaborn-white')
+            #@ plot the distribution of the Gain
+            plt.figure(figsize=(10,10))
+            plt.hist(np.array(gain_selected), bins=50, density=True, label='gain, mean = {:.4f}, std = {:.4f}'.format(gain_mean, gain_std))
+            plt.plot(gain_x, gain_pdf, color='red', label='gaussian fit')
+            plt.xlabel('Gain', fontsize=15)
+            plt.ylabel('#')
+            plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
+            plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
+            plt.title('Gain for {}'.format(figname))
+            plt.legend()
+            plt.savefig('/'.join([output_dir, 'gain_distribution_CALI{}_fitted.png'.format(CALI_number)]))
+            #
+            #@ plot the distribution of the ENC
+            plt.figure(figsize=(10,10))
+            plt.hist(enc_selected, bins=50, density=True, label='ENC, mean = {:.4f}, std = {:.4f}'.format(enc_mean, enc_std))
+            plt.plot(enc_x, enc_pdf, color='red', label='gaussian fit')
+            plt.xlabel('ENC', fontsize=15);plt.ylabel('#')
+            plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
+            plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
+            plt.title('ENC for {}'.format(figname))
+            plt.legend()
+            plt.savefig('/'.join([output_dir, 'enc_distribution_CALI{}_fitted.png'.format(CALI_number)]))
+        else:
+            plt.figure(figsize=(10, 10))
+            plt.hist(gain_selected, bins=50)
+            plt.xlabel('Gain', fontsize=15)
+            plt.ylabel('#')
+            plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
+            plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
+            plt.title('Gain for {}'.format(figname))
+            plt.savefig('/'.join([output_dir, 'gain_distribution_CALI{}.png'.format(CALI_number)]))
+            #
+            plt.figure(figsize=(10,10))
+            plt.hist(enc_selected, bins=50, log=True)
+            plt.xlabel('ENC', fontsize=15);plt.ylabel('#')
+            plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
+            plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
+            plt.title('ENC for {}'.format(figname))
+            plt.savefig('/'.join([output_dir, 'enc_distribution_CALI{}.png'.format(CALI_number)]))        
+        #
+        #@
+        print('Distributions of the gain and enc saved...')
+    except:
+        print('error')
+        pass
 
 #****************************************************************
 #----------------------------------------------------------------
