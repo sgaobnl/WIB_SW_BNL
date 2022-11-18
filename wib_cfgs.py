@@ -31,6 +31,15 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         print (f"Initilize WIB")
         self.wib = llc.test_connection(self.wib)
 
+
+    def wib_i2c_adj(self, n = 50):
+        pass
+        #rdreg = llc.wib_peek(self.wib, 0xA00C0004)
+        #for i in range(n):
+        #    llc.wib_poke(self.wib,0xA00C0004 , rdreg|0x00040000) 
+        #    rdreg = llc.wib_peek(self.wib, 0xA00C0004)
+        #    llc.wib_poke(self.wib,0xA00C0004 , rdreg&0xfffBffff) 
+
     def wib_timing(self, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff):
         if self.wib==1: #Connection failed
             print ("no WIB is found")
@@ -170,17 +179,19 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
 
     def femb_i2c_wrchk(self, femb_id, chip_addr, reg_page, reg_addr, wrdata):
         i = 0 
-        while True:
-            self.femb_i2c_wr(femb_id, chip_addr, reg_page, reg_addr, wrdata)
-            rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
-            i = i + 1
             if wrdata != rddata:
-                print (f"Error, I2C: wrdata {wrdata} != redata {rddata}, retry!")
-                time.sleep(0.01)
-                if i >= 5:
-                    exit()
-            else:
-                break
+        self.femb_i2c_wr(femb_id, chip_addr, reg_page, reg_addr, wrdata)
+        time.sleep(0.001)
+        rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
+        i = i + 1
+        if wrdata != rddata:
+            self.recfg_femb = True
+            print ("Warning, I2C: femb_id=%x, chip_addr=%x, reg_page=%x, reg_addr=%x, wrdata=%x, rddata=%x, retry!"%(femb_id, chip_addr, reg_page, reg_addr, wrdata, rddata))
+            time.sleep(0.01)
+            if i >= 20:
+                exit()
+        else:
+            break
 
     def data_cable_latency(self, femb_id):
         # set WIB_FEEDBACK_CODE registers to B2
@@ -422,6 +433,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         return self.adac_cali_quo
 
     def femb_cfg(self, femb_id, adac_pls_en = False):
+        time.sleep(0.01)
         self.femb_cd_cfg(femb_id)
         self.femb_adc_cfg(femb_id)
         self.femb_fe_cfg(femb_id)
@@ -612,49 +624,66 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             print("Error: currently only support 4 FEMBs per WIB")
             exit()
         for  i in range(num_samples):
-            for ip in wibips:
-                self.wib = WIB(ip)
-
-                rdreg = llc.wib_peek(self.wib, 0xA00C0004)
-                wrreg = (rdreg&0xffffff3f)|0xC0
-                llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
-                wrreg = (rdreg&0xffffff3f)|0x00
-                llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
-                
-                llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
-                rdreg = llc.wib_peek(self.wib, 0xA00C0014)
-                wrreg = (rdreg&0xff00ffff)|(trigger_command<<16)
-                llc.wib_poke(self.wib, 0xA00C0014, wrreg) #program cmd_code_trigger
-
-            while True:
-                spy_full_flgs = False
+            if trigger_command == 0:
                 data_ip = []
                 for ip in wibips:
                     wib_ip = ip
                     self.wib = WIB(ip)
-                    time.sleep(0.2)
-                    rdreg = llc.wib_peek(self.wib, 0xA00C0080)
-                    if rdreg&0x03 == 0x03:
-                        spy_full_flgs = True
-                        buf0_end_addr = llc.wib_peek(self.wib, 0xA00C0094)
-                        buf1_end_addr = llc.wib_peek(self.wib, 0xA00C0098)
-                        if buf0_end_addr == buf1_end_addr:
+                    llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
+                    rdreg = llc.wib_peek(self.wib, 0xA00C0004)
+                    wrreg = (rdreg&0xffffff3f)|0xC0
+                    llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
+                    wrreg = (rdreg&0xffffff3f)|0x00
+                    llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
+                    time.sleep(0.1)
+                    wrreg = (rdreg&0xffffff3f)|0xC0
+                    llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
+                    rawdata = self.wib.acquire_rawdata(buf0, buf1, ignore_failure,trigger_command,trigger_rec_ticks,trigger_timeout_ms)
+                    data_ip.append((ip, rawdata, 0x00000000, trigger_rec_ticks, trigger_command))
+            else:
+                for ip in wibips:
+                    self.wib = WIB(ip)
+
+                    rdreg = llc.wib_peek(self.wib, 0xA00C0004)
+                    wrreg = (rdreg&0xffffff3f)|0xC0
+                    llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
+                    wrreg = (rdreg&0xffffff3f)|0x00
+                    llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
+                    
+                    llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
+                    rdreg = llc.wib_peek(self.wib, 0xA00C0014)
+                    wrreg = (rdreg&0xff00ffff)|(trigger_command<<16)
+                    llc.wib_poke(self.wib, 0xA00C0014, wrreg) #program cmd_code_trigger
+
+                while True:
+                    spy_full_flgs = False
+                    data_ip = []
+                    for ip in wibips:
+                        wib_ip = ip
+                        self.wib = WIB(ip)
+                        time.sleep(0.2)
+                        rdreg = llc.wib_peek(self.wib, 0xA00C0080)
+                        if rdreg&0x03 == 0x03:
                             spy_full_flgs = True
+                            buf0_end_addr = llc.wib_peek(self.wib, 0xA00C0094)
+                            buf1_end_addr = llc.wib_peek(self.wib, 0xA00C0098)
+                            if buf0_end_addr == buf1_end_addr:
+                                spy_full_flgs = True
+                            else:
+                                spy_full_flgs = False
+                            rawdata = self.wib.acquire_rawdata(buf0, buf1, ignore_failure,trigger_command)
+                            data_ip.append((ip, rawdata, buf0_end_addr, trigger_rec_ticks, trigger_command))
+                            #print (ip, len(rawdata), len(rawdata[0]))
                         else:
                             spy_full_flgs = False
-                        rawdata = self.wib.acquire_rawdata(buf0, buf1, ignore_failure,trigger_command)
-                        data_ip.append((ip, rawdata, buf0_end_addr, trigger_rec_ticks, trigger_command))
-                        #print (ip, len(rawdata), len(rawdata[0]))
-                    else:
-                        spy_full_flgs = False
-                        wib_ip = ip
+                            wib_ip = ip
+                            break
+                    if spy_full_flgs:
+                        print ("All WIBs got external trigger for spy buffer")
                         break
-                if spy_full_flgs:
-                    print ("All WIBs got external trigger for spy buffer")
-                    break
-                else:
-                    print ("No external trigger received, Wait a second with WIB IP %s"%wib_ip)
-                    time.sleep(1)
+                    else:
+                        print ("No external trigger received, Wait a second with WIB IP %s"%wib_ip)
+                        time.sleep(1)
 
             data.append(data_ip)
         return data
