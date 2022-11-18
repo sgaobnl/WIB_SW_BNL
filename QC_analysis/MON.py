@@ -14,9 +14,14 @@ class MON_LARASIC:
             output_dir: self.output_dir
     '''
     def __init__(self, input_dir='', output_dir='', temperature='LN', fembs_to_exclude=[]):
+        print('..........init............')
         self.temperature = temperature
         self.data_dir = input_dir
-        self.output_dir = output_dir
+        self.output_dir = '/'.join([output_dir, 'MON_FE'])
+        try:
+            os.mkdir(self.output_dir)
+        except:
+            pass
         self.femb_dir_list = self.list_femb_dirs(fembs_to_exclude=fembs_to_exclude)
     
     def exclude_fembs(self, fembs_to_exclude=[24], fembs_folder_name=''):
@@ -109,42 +114,58 @@ class MON_LARASIC:
         csvname = '_'.join(['mon', dataname, 'femb' + femb_id])
         df.to_csv('/'.join([output_dir, csvname + '.csv']), index=False)
 
+    def get_dist(self, dataname, data=[], output_dir=''):
+        mean = np.mean(data)
+        std = np.std(data)
+        figname = '_'.join(['hist', dataname])
+        plt.figure(figsize=(10, 6))
+        plt.hist(data, bins=50, label='mean = {:.4f}, std = {:.4f}'.format(mean, std))
+        plt.xlabel(dataname + '(mV)', fontsize=12)
+        plt.ylabel('#')
+        plt.legend()
+        plt.savefig('/'.join([output_dir, figname + '.png']))
+        #
+        # save to csv
+        df = pd.DataFrame({dataname: data})
+        df.to_csv('/'.join([output_dir, figname + '.csv']), index=False)
+
     def run_MON_LArASIC(self):
         datanames = ['bandgap', 'temperature', 'BL200', 'BL900']
-        for idir in range(len(self.femb_dir_list)):
-            data = self.read_bin(self.femb_dir_list[idir], bin_filename='LArASIC_mon.bin')
-            #
-            femb_foldername = self.femb_dir_list[idir].split('/')[-2]
-            # new_output_dir = '/'.join([self.output_dir, femb_foldername])
-            # print(new_output_dir)
-            # try:
-            #     os.mkdir(new_output_dir)
-            # except:
-            #     print('Folder already exists')
-            fembs = data[self.get_data_index(dataname='logs')]['femb id']
-            for dataname in datanames:
+        for dataname in datanames:
+            histdata_x = []
+            histdata_y = []
+            for idir in range(len(self.femb_dir_list)):
+                data = self.read_bin(self.femb_dir_list[idir], bin_filename='LArASIC_mon.bin')
+                #
+                # femb_foldername = self.femb_dir_list[idir].split('/')[-2]
+                fembs = data[self.get_data_index(dataname='logs')]['femb id']
+                # for dataname in datanames:
                 MON_data = self.get_MONdata(data_from_bin=data, dataname=dataname)
-                ylabel = dataname
+                ylabel = dataname + '(mV)'
                 xlabel = 'chip#'
                 if 'BL' in dataname:
-                    ylabel = dataname[2:] + 'mVBL'
+                    ylabel = dataname[2:] + 'mVBL (mV)'
                     xlabel = 'ch'
                 for ifemb, femb_id in fembs.items():
                     iifemb = int(ifemb[-1])
                     toytpc = (self.femb_dir_list[idir].split('/')[-2]).split('_')[-1]
-                    femb_folderName = '_'.join(['FEMB', fembs[ifemb], self.temperature, toytpc])
+                    femb_folderName = '_'.join(['FEMB', femb_id, self.temperature, toytpc])
                     new_output_dir = '/'.join([self.output_dir, femb_folderName])
                     try:
                         os.mkdir(new_output_dir)
                     except:
-                        print('Folder already exists.....')
+                        pass
+                        # print('Folder already exists.....')
                     self.plotMon(femb_data_x=MON_data[iifemb][0], femb_data_y=MON_data[iifemb][1],
-                                femb_id=fembs[ifemb], dataname=dataname,
+                                femb_id=femb_id, dataname=dataname,
                                 xlabel=xlabel, ylabel=ylabel, output_dir=new_output_dir)
                     self.saveMon_to_csv(femb_data_x=MON_data[iifemb][0], femb_data_y=MON_data[iifemb][1],
-                                        femb_id=fembs[ifemb], dataname=dataname,
+                                        femb_id=femb_id, dataname=dataname,
                                         output_dir=new_output_dir)
-
+                    histdata_x += MON_data[iifemb][0]
+                    histdata_y += MON_data[iifemb][1]
+            self.get_dist(dataname=dataname, data=histdata_y, output_dir=self.output_dir)
+        print('-------DONE------------')
 
 class MON_ADC:
     def __init__(self, input_dir=''):
