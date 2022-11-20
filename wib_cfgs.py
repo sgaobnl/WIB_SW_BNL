@@ -179,18 +179,18 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
 
     def femb_i2c_wrchk(self, femb_id, chip_addr, reg_page, reg_addr, wrdata):
         i = 0 
-        self.femb_i2c_wr(femb_id, chip_addr, reg_page, reg_addr, wrdata)
-        time.sleep(0.001)
-        rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
-        i = i + 1
-        if wrdata != rddata:
-            self.recfg_femb = True
-            print ("Warning, I2C: femb_id=%x, chip_addr=%x, reg_page=%x, reg_addr=%x, wrdata=%x, rddata=%x, retry!"%(femb_id, chip_addr, reg_page, reg_addr, wrdata, rddata))
-            time.sleep(0.01)
-            if i >= 20:
-                exit()
-        else:
-            break
+        while True:
+            self.femb_i2c_wr(femb_id, chip_addr, reg_page, reg_addr, wrdata)
+            time.sleep(0.001)
+            rddata = self.femb_i2c_rd(femb_id, chip_addr, reg_page, reg_addr)
+            i = i + 1
+            if wrdata != rddata:
+                print ("Warning, I2C: femb_id=%x, chip_addr=%x, reg_page=%x, reg_addr=%x, wrdata=%x, rddata=%x, retry!"%(femb_id, chip_addr, reg_page, reg_addr, wrdata, rddata))
+                time.sleep(0.01)
+                if i >= 20:
+                    exit()
+            else:
+                break
 
     def data_cable_latency(self, femb_id):
         # set WIB_FEEDBACK_CODE registers to B2

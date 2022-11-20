@@ -37,7 +37,6 @@ else:
 
 fembs = [int(a) for a in sys.argv[1:pos]] 
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
-ips = ["10.73.137.27"]
 
 chk = WIB_CFGS()
 
@@ -80,15 +79,14 @@ if True:
                 swdac = 2
                 dac = 0
             else:
-                swdac = 0
-                dac = 0
-            chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
+                swdac = 1
+                dac = 0x20
+            chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
             #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
-            adac_pls_en = 0 #disable LArASIC interal calibraiton pulser
+            adac_pls_en = 1 #disable LArASIC interal calibraiton pulser
             cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
         #step 3
             chk.femb_cfg(femb_id, adac_pls_en )
-            print ("ABC")
             if ext_cali_flg == True:
                 chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
         chk.data_align()
@@ -101,14 +99,6 @@ if True:
     
 time.sleep(0.5)
 
-#for ip in ips:
-#    chk.wib = WIB(ip) 
-#    rdreg = llc.wib_peek(chk.wib, 0xA00C000C)
-#    print (hex(rdreg))
-#    rdreg0 = llc.wib_peek(chk.wib, 0xA00C00A0)
-#    rdreg1 = llc.wib_peek(chk.wib, 0xA00C00A4)
-#    print (hex(rdreg0), hex(rdreg1))
-#exit()
 
 
 sample_N = 10

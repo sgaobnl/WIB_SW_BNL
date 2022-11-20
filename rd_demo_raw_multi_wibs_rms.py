@@ -10,25 +10,56 @@ import struct
 from spymemory_decode import wib_spy_dec_syn
 
 
-fp ="D:/debug_data/Raw_27_09_2022_17_59_32.bin"
-fp ="D:/debug_data/Raw_28_09_2022_10_39_00.bin"
-fp ="D:/debug_data/Raw_29_09_2022_12_37_40.bin"
-fp ="D:/CRP5A/CRP5A_timing_debugging/Raw_17_11_2022_18_15_20.bin"
-fp ="D:/CRP5A/CRP5A_timing_debugging/Raw_17_11_2022_18_20_32.bin"
-fp ="D:/CRP5A/CRP5A_timing_debugging/Raw_17_11_2022_18_24_50.bin"
-fp ="D:/CRP5A/CRP5A_timing_debugging/Raw_17_11_2022_18_27_47.bin"
-fp ="D:/CRP5A/CRP5A_timing_debugging/Raw_17_11_2022_18_32_40.bin"
-fp ="D:/CRP5A/CRP5A_data/Raw_17_11_2022_19_01_36.bin" #1200mV
-fp ="D:/CRP5A/CRP5A_data/Raw_17_11_2022_19_06_24.bin" #1100mV
-fp ="D:/CRP5A/CRP5A_data/Raw_17_11_2022_19_21_37.bin" #RMS
-#fp ="D:/CRP5A/CRP5A_data/Raw_17_11_2022_19_28_22.bin" #RMS
-fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig18_11_2022_06_48_22.bin"
-fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig18_11_2022_06_51_43.bin"
-fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig18_11_2022_08_19_42.bin"
-fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig18_11_2022_10_01_27.bin"
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_13_04.bin" #good,DAC= 0x30, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_19_08.bin" #good,DAC= 0x28, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_21_51.bin" #good,DAC= 0x20, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_26_01.bin" #good,DAC= 0x10, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_27_42.bin" #good,DAC= 0x18, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_30_43.bin" #good,DAC= 0x08, 14, 1, 900mV
 
-#Raw_17_11_2022_19_21_37,  chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac ), SG output off
-#Raw_17_11_2022_19_28_22,  chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac ), SG output off
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_32_36.bin" #good,DAC= 0x08, 14, 1, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_33_49.bin" #good,DAC= 0xl0, 14, 1, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_35_00.bin" #good,DAC= 0xl8, 14, 1, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_35_59.bin" #good,DAC= 0x20, 14, 1, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_36_56.bin" #good,DAC= 0x28, 14, 1, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_37_31.bin" #good,DAC= 0x30, 14, 1, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_40_17.bin" #good,DAC= 0x38, 14, 1, 200mV
+
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_45_03.bin" #good,DAC= 0x38, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_45_57.bin" #good,DAC= 0x30, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_46_44.bin" #good,DAC= 0x28, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_47_35.bin" #good,DAC= 0x20, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_48_32.bin" #good,DAC= 0x18, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_49_21.bin" #good,DAC= 0x10, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_50_25.bin" #good,DAC= 0x08, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_51_53.bin" #good,DAC= 0x04, 14, 2, 200mV
+
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_54_17.bin" #good,DAC= 0x04, 14, 2, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_56_09.bin" #good,DAC= 0x08, 14, 2, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_57_09.bin" #good,DAC= 0x10, 14, 2, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_58_16.bin" #good,DAC= 0x18, 14, 2, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_59_10.bin" #good,DAC= 0x18, 14, 2, 900mV
+
+
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_03_23.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 900mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_06_02.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 900mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_06_45.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 900mV(snc0)
+
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_08_37.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 200mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_09_53.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 200mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_11_10.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 200mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_40_47.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 200mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_43_13.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 0.5(st0=1,st1=0), 200mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_45_10.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 3(st0=0,st1=1), 200mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_45_45.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 2(st0=1,st1=1), 200mV(snc0)
+
+
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_48_23.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 2(st0=1,st1=1), 900mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_49_48.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 0.5(st0=1,st1=0), 900mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_50_33.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 3(st0=0,st1=1), 900mV(snc0)
+
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_48_23.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 2(st0=1,st1=1), 900mV(snc0)
+
 
 with open(fp, 'rb') as fn:
     raw = pickle.load(fn)
@@ -43,7 +74,7 @@ print (rawdata[runi][0][0])
 
 crate_runs = []
 #for runi in range(len(rawdata)):
-for runi in [1]:
+for runi in [0]:
     dec_datas = []
     for wibdata in rawdata[runi]:
         ip = wibdata[0]
@@ -112,16 +143,34 @@ for runi in range(runs):
 print (len(chns_data[0]))
 
 chped = []
+chmax = []
+chmin = []
 chrms = []
 for ch in range(len(chns_data)):
-    chped.append(np.mean(chns_data[ch]))
-    chrms.append(np.std(chns_data[ch]))
+    chmax.append(np.max(chns_data[ch][0:1000]))
+    chped.append(np.mean(chns_data[ch][0:1000]))
+    chmin.append(np.min(chns_data[ch][0:1000]))
+    chrms.append(np.std(chns_data[ch][0:1000]))
 #exit()
+fig = plt.figure(figsize=(10,6))
+plt.rcParams.update({'font.size':12})
+for ch in range(0,128*12,128):
+    x = np.arange(1000)
+    y = chns_data[ch][0:1000]
+    plt.plot(x, y, marker='.',label = "waveform of ch%d"%ch)
+
+plt.legend()
+plt.ylabel ("ADC / bit" )
+plt.show()
+plt.close()
+
 
 x = np.arange(len(chns_data))
 fig = plt.figure(figsize=(10,6))
 plt.rcParams.update({'font.size':12})
-plt.plot(x, chped, marker='.', label = "ped")
+plt.plot(x, chmax, marker='.',color='r', label = "pp")
+plt.plot(x, chped, marker='.',color='b',  label = "ped")
+plt.plot(x, chmin, marker='.',color='g',  label = "np")
 plt.legend()
 plt.title ("Pedestal Distribution")
 plt.xlabel ("CH#")

@@ -73,10 +73,10 @@ for femb_id in fembs:
         swdac = 2
         dac = 0
     else:
-        swdac = 0
-        dac = 0
+        swdac = 1
+        dac = 0x20 
     chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac )
-    adac_pls_en = 0 #disable LArASIC interal calibraiton pulser
+    adac_pls_en = 1 #disable LArASIC interal calibraiton pulser
     cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
 #step 3
     chk.femb_cfg(femb_id, adac_pls_en )
@@ -100,7 +100,7 @@ time.sleep(1)
 rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns list of size 1
 
 if save:
-    fdir = "D:/debug_data/"
+    fdir = "D:/CRP5A/CRP5A_data/"
     ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     fp = fdir + "Raw_" + ts  + ".bin"
     with open(fp, 'wb') as fn:

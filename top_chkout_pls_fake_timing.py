@@ -73,7 +73,7 @@ rawdata = chk.wib_acquire_rawdata(fembs=fembs, num_samples=sample_N) #returns li
 pwr_meas = chk.get_sensors()
 
 if save:
-    fdir = "D:/debug_data/"
+    fdir = "D:/CRP5A/CRP5A_data/"
     ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     fp = fdir + "Raw_" + ts  + ".bin"
     with open(fp, 'wb') as fn:

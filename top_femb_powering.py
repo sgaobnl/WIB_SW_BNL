@@ -25,6 +25,8 @@ if 'on' in sys.argv[3]:
 if 'on' in sys.argv[4]:
     fembs.append(3)
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
+#ips = [ "10.73.137.29", "10.73.137.31"]
+#ips = ["10.73.137.31"]
 chk = WIB_CFGS()
 
 pwr_info = []
