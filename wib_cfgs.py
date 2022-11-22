@@ -272,10 +272,11 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=0, reg_addr=0x20, wrdata=wrdata)
 #        time.sleep(0.01)
         llc.fast_command(self.wib,'act')
-#        time.sleep(0.01)
+        time.sleep(0.001)
 #return to "idle" in case other FEMB runs FC 
         self.femb_i2c_wrchk(femb_id, chip_addr=3, reg_page=0, reg_addr=0x20, wrdata=0)
         self.femb_i2c_wrchk(femb_id, chip_addr=2, reg_page=0, reg_addr=0x20, wrdata=0)
+        time.sleep(0.01)
         
     def data_align(self, fembs=[0, 1, 2,3]):
         self.femb_cd_sync() #sync should be sent before edge

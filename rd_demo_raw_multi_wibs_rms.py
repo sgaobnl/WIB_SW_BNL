@@ -59,8 +59,25 @@ fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_49_48.bin" #bad,DAC= 0x0, 14(s
 fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_50_33.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 3(st0=0,st1=1), 900mV(snc0)
 
 fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_48_23.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 2(st0=1,st1=1), 900mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_06_45.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 900mV(snc0)
+
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_13_04.bin" #good,DAC= 0x30, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_27_42.bin" #good,DAC= 0x18, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_19_26_01.bin" #good,DAC= 0x10, 14, 1, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_57_09.bin" #good,DAC= 0x10, 14, 2, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_11_10.bin" #good,DAC= 0x0, 14(sg0=0,sg1=0), 1(st0=0,st1=0), 200mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_48_23.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 2(st0=1,st1=1), 900mV(snc0)
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_49_21.bin" #good,DAC= 0x10, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_48_32.bin" #good,DAC= 0x18, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_47_35.bin" #good,DAC= 0x20, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_45_57.bin" #good,DAC= 0x30, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_46_44.bin" #good,DAC= 0x28, 14, 2, 200mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_57_09.bin" #good,DAC= 0x10, 14, 2, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_21_58_16.bin" #good,DAC= 0x18, 14, 2, 900mV
+fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig19_11_2022_22_48_23.bin" #bad,DAC= 0x0, 14(sg0=0,sg1=0), 2(st0=1,st1=1), 900mV(snc0)
 
 
+#fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig21_11_2022_17_03_30.bin"
 with open(fp, 'rb') as fn:
     raw = pickle.load(fn)
 
@@ -149,18 +166,22 @@ chrms = []
 for ch in range(len(chns_data)):
     chmax.append(np.max(chns_data[ch][0:1000]))
     chped.append(np.mean(chns_data[ch][0:1000]))
+#    if np.max(chns_data[ch][0:1000]) - np.mean(chns_data[ch][0:1000]) > 5000:
+#        print (ch, hex(ch))
     chmin.append(np.min(chns_data[ch][0:1000]))
     chrms.append(np.std(chns_data[ch][0:1000]))
 #exit()
 fig = plt.figure(figsize=(10,6))
 plt.rcParams.update({'font.size':12})
-for ch in range(0,128*12,128):
+#for ch in range(0,128*12,128):
+for ch in range(3,128,128):
     x = np.arange(1000)
     y = chns_data[ch][0:1000]
     plt.plot(x, y, marker='.',label = "waveform of ch%d"%ch)
 
 plt.legend()
 plt.ylabel ("ADC / bit" )
+plt.grid()
 plt.show()
 plt.close()
 
@@ -175,6 +196,7 @@ plt.legend()
 plt.title ("Pedestal Distribution")
 plt.xlabel ("CH#")
 plt.ylabel ("ADC / bit" )
+plt.grid()
 plt.show()
 plt.close()
 
@@ -185,6 +207,7 @@ plt.legend()
 plt.title ("RMS Distribution")
 plt.xlabel ("CH#")
 plt.ylabel ("ADC / bit" )
+plt.grid()
 plt.show()
 plt.close()
 
