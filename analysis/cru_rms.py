@@ -39,7 +39,11 @@ for i in range(1536):
        xplane[strip-1]=ch_rms[i]
 
 xx=range(1536)
-plt.plot(xx, ch_rms)
+#plt.plot(xx, ch_rms)
 ch_rms_map = np.concatenate((uplane,vplane,xplane))
 plt.plot(xx, ch_rms_map)
+plt.axvline(x=475, color = 'r', linestyle='--')
+plt.axvline(x=951, color = 'r', linestyle='--')
+
 plt.show()
+
