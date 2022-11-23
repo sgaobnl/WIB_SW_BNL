@@ -73,6 +73,10 @@ if True:
                                 [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                                 [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                               ]
+
+            top : FE(15-0), FE(15-0), FE(15-0), FE(15-0)
+        chip_id :  0            3        4          7
+        logic_ch: 31-16     15-0
         
         #LArASIC register configuration
             if ext_cali_flg == True:
