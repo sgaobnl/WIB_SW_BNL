@@ -98,7 +98,8 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 script += fin.read()
         llc.wib_script(self.wib, script )
         print ("Wait 5 seconds")
-        time.sleep(5)
+        if len(fembs) != 0:
+            time.sleep(5)
 
     def get_sensors(self):
         llc.get_sensors(self.wib) #get rid of previous measurement result

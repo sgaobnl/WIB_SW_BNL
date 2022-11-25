@@ -36,7 +36,6 @@ def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff)
     if pll == True:
         print ("PLL clock synchronized with CDR or running independently if CDR clock is missing")
         print ("PLL clock should only be used on test stand when timing master is not available.")
-        print ("Enable fake timing system")
         rdreg = wib_peek(wib, 0xA00c000C)
         #disable fake time stamp
         wib_poke(wib, 0xA00c000C, (rdreg&0xFFFFFFF1))
@@ -45,6 +44,7 @@ def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff)
         wib_poke(wib, 0xA00c001C, 0x00000000)
         #enable fake time stamp
         wib_poke(wib, 0xA00c000C, (rdreg|0x0e))
+        print ("Enable fake timing system")
     else:
         #timing point reset
         addr = 0xA00c0000
