@@ -105,62 +105,41 @@ for fp in fps:
     chmax = []
     chmin = []
     chrms = []
-    for ch in range(3, len(chns_data), 16):
+    for ch in range(len(chns_data)):
         chmax.append(np.max(chns_data[ch][0:1000]))
         chped.append(np.mean(chns_data[ch][0:1000]))
         chmin.append(np.min(chns_data[ch][0:1000]))
         chrms.append(np.std(chns_data[ch][0:1000]))
-        if ch == 3:
-            if np.max(chns_data[ch][0:1000]) - np.mean(chns_data[ch][0:1000]) > 5000:
-                one_pls = True
-            else:
-                one_pls = False
-        else:
-            if (np.max(chns_data[ch][0:1000]) - np.mean(chns_data[ch][0:1000]) > 5000) == one_pls:
-                pass
-            else:
-                print ("Error")
-                exit()
-                #break
-    if one_pls:
-        print (fp + ":>>>>>>>>>>>>>>pls")
-    else:
-        print (fp + ":>>>>>>>>>>>>>>no pls")
-    if pre_pls != one_pls:
-        pre_pls = one_pls
-        print (fp + ":>>>>>>>>>>>>>>Good")
-
-        
 
     #for ch in range(1,128*12,16):
 
-#    fig = plt.figure(figsize=(10,6))
-#    plt.rcParams.update({'font.size':12})
-#    for ch in range(3,128*12,128):
-#        x = np.arange(1000)
-#        y = chns_data[ch][0:1000]
-#        plt.plot(x, y, marker='.',label = "waveform of ch%d"%ch)
-#    
-#    plt.legend()
-#    plt.ylabel ("ADC / bit" )
-#    plt.grid()
-#    plt.show()
-#    plt.close()
-#    
-#    
-#    x = np.arange(len(chns_data))
-#    fig = plt.figure(figsize=(10,6))
-#    plt.rcParams.update({'font.size':12})
-#    plt.plot(x, chmax, marker='.',color='r', label = "pp")
-#    plt.plot(x, chped, marker='.',color='b',  label = "ped")
-#    plt.plot(x, chmin, marker='.',color='g',  label = "np")
-#    plt.legend()
-#    plt.title ("Pedestal Distribution")
-#    plt.xlabel ("CH#")
-#    plt.ylabel ("ADC / bit" )
-#    plt.grid()
-#    plt.show()
-#    plt.close()
+    fig = plt.figure(figsize=(10,6))
+    plt.rcParams.update({'font.size':12})
+    for ch in range(3,128*12,128):
+        x = np.arange(1000)
+        y = chns_data[ch][0:1000]
+        plt.plot(x, y, marker='.',label = "waveform of ch%d"%ch)
+    
+    plt.legend()
+    plt.ylabel ("ADC / bit" )
+    plt.grid()
+    plt.show()
+    plt.close()
+    
+    
+    x = np.arange(len(chns_data))
+    fig = plt.figure(figsize=(10,6))
+    plt.rcParams.update({'font.size':12})
+    plt.plot(x, chmax, marker='.',color='r', label = "pp")
+    plt.plot(x, chped, marker='.',color='b',  label = "ped")
+    plt.plot(x, chmin, marker='.',color='g',  label = "np")
+    plt.legend()
+    plt.title ("Pedestal Distribution")
+    plt.xlabel ("CH#")
+    plt.ylabel ("ADC / bit" )
+    plt.grid()
+    plt.show()
+    plt.close()
 #    
 #    fig = plt.figure(figsize=(10,6))
 #    plt.rcParams.update({'font.size':12})

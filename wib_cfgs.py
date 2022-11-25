@@ -431,7 +431,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             self.femb_fe_cfg(femb_id)
             if adac_pls_en:
                 self.femb_adac_cali(femb_id)
-            link_mask = 0xffff
+            link_mask = llc.wib_peek(self.wib, 0xA00C0008)
             if femb_id == 0:
                 link_mask = link_mask&0xfff0
             if femb_id == 1:

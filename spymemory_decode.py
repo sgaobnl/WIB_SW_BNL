@@ -147,11 +147,7 @@ def spymemory_decode(buf, trigmode="SW", buf_end_addr = 0x0, trigger_rec_ticks=0
         else:
             deoding_start_addr = spy_addr_word  - trigger_rec_ticks
 
-    buf2 = buf + buf
-    print (hex(len(buf)), hex(len(buf2)))
     newbuf = buf[deoding_start_addr*4: deoding_start_addr*4 + trigger_rec_ticks*4]
-    print (hex(len(newbuf)), hex(len(newbuf)//4))
-#    exit()
 
     #implement extract_frames
 #    num_words = int(len(buf) // 4)
