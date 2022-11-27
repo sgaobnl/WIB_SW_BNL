@@ -62,59 +62,6 @@ for i in fembs:
 logs['femb id']=fembNo
 logs['date']=datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
 
-####### Create data save directory #######
-
-datadir = "D:/CRP5A/CHKOUT/data/"
-for key,femb_no in fembNo.items():
-    datadir = datadir + "femb{}_".format(femb_no)
-
-datadir = datadir+"{}_{}".format(env,toytpc)
-
-n=1
-while (os.path.exists(datadir)):
-    if n==1:
-        datadir = datadir + "_R{:03d}".format(n)
-    else:
-        datadir = datadir[:-3] + "{:03d}".format(n)
-    n=n+1
-    if n>20:
-        raise Exception("There are more than 20 folders...")
-
-try:
-    os.makedirs(datadir)
-except OSError:
-    print ("Error to create folder %s"%datadir)
-    sys.exit()
-
-datadir = datadir+"/"
-
-fp = datadir + "logs_env.bin"
-with open(fp, 'wb') as fn:
-     pickle.dump(logs, fn)
-
-reportdir = "D:/CRP5A/CHKOUT/reports/"
-PLOTDIR = {}
-
-for ifemb,femb_no in fembNo.items():
-    plotdir = reportdir + "FEMB{}_{}_{}".format(femb_no, env, toytpc)
-
-    n=1
-    while (os.path.exists(plotdir)):
-        if n==1:
-            plotdir = plotdir + "_R{:03d}".format(n)
-        else:
-            plotdir = plotdir[:-3] + "{:03d}".format(n)
-        n=n+1
-        if n>20:
-            raise Exception("There are more than 20 FEMB{} folders...".format(femb_no))
-    
-    try:
-        os.makedirs(plotdir)
-    except OSError:
-        print ("Error to create folder %s"%plotdir)
-        sys.exit()
-
-    PLOTDIR[ifemb] = plotdir+'/'
 
 t1 = time.time()
 ####### Power and configue FEMBs #######
@@ -122,13 +69,67 @@ t1 = time.time()
 chk = WIB_CFGS()
 
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
-for ip in ips: 
-    chk.wib = WIB(ip) 
+for ipi in range(len(ips)): 
+    ####### Create data save directory #######
+    datadir = "D:/CRP5A/CHKOUT/data/"
+    for key,femb_no in fembNo.items():
+        datadir = datadir + "WIB{}_femb{}_".format(ipi,femb_no)
+    
+    datadir = datadir+"{}_{}".format(env,toytpc)
+    
+    n=1
+    while (os.path.exists(datadir)):
+        if n==1:
+            datadir = datadir + "_R{:03d}".format(n)
+        else:
+            datadir = datadir[:-3] + "{:03d}".format(n)
+        n=n+1
+        if n>20:
+            raise Exception("There are more than 20 folders...")
+    
+    try:
+        os.makedirs(datadir)
+    except OSError:
+        print ("Error to create folder %s"%datadir)
+        sys.exit()
+    
+    datadir = datadir+"/"
+    
+    fp = datadir + "logs_env.bin"
+    with open(fp, 'wb') as fn:
+         pickle.dump(logs, fn)
+    
+    reportdir = "D:/CRP5A/CHKOUT/reports/"
+    PLOTDIR = {}
+    
+    for ifemb,femb_no in fembNo.items():
+        plotdir = reportdir + "WIB{}_FEMB{}_{}_{}".format(ipi, femb_no, env, toytpc)
+    
+        n=1
+        while (os.path.exists(plotdir)):
+            if n==1:
+                plotdir = plotdir + "_R{:03d}".format(n)
+            else:
+                plotdir = plotdir[:-3] + "{:03d}".format(n)
+            n=n+1
+            if n>20:
+                raise Exception("There are more than 20 FEMB{} folders...".format(femb_no))
+        
+        try:
+            os.makedirs(plotdir)
+        except OSError:
+            print ("Error to create folder %s"%plotdir)
+            sys.exit()
+    
+        PLOTDIR[ifemb] = plotdir+'/'
+
+    
+    chk.wib = WIB(ips[ipi]) 
     chk.wib_init()
     chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
     
-    chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
-    chk.femb_powering(fembs)
+#    chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
+#    chk.femb_powering(fembs)
     pwr_meas = chk.get_sensors()
     
     chk.femb_cd_rst()
@@ -199,8 +200,8 @@ for ip in ips:
             pickle.dump( [mon_refs, mon_temps, mon_adcs, logs], fn)
     
     ####### Power off FEMBs #######
-    print("Turning off FEMBs")
-    chk.femb_powering([])
+#    print("Turning off FEMBs")
+#    chk.femb_powering([])
     
     ####### Generate report #######
     qc_tools = QC_tools()

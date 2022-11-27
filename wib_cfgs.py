@@ -1,7 +1,6 @@
 import low_level_commands as llc
 from wib import WIB
 import copy
-
 import sys, time, random
 from fe_asic_reg_mapping import FE_ASIC_REG_MAPPING
 
@@ -271,64 +270,67 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         time.sleep(0.01)
         
     def data_align(self, fembs=[0, 1, 2,3]):
-        self.femb_cd_sync() #sync should be sent before edge
-        time.sleep(0.01)
-        self.femb_cd_edge()
-        time.sleep(0.5)
-        
-        rdaddr = 0xA00C0010
-        rdreg = llc.wib_peek(self.wib, rdaddr)
-        wrvalue = 0x10 #cmd_code_edge = 0x10
-        wrreg = (rdreg & 0xffff00ff) + ((wrvalue&0xff)<<8)
-        llc.wib_poke(self.wib, rdaddr, wrreg) 
-        
-        rdaddr = 0xA00C000C
-        rdreg = llc.wib_peek(self.wib, rdaddr)
-        wrvalue = 0x7fec #cmd_stamp_sync = 0x7fec
-        wrreg = (rdreg & 0x0000ffff) + ((wrvalue&0xffff)<<16)
-        llc.wib_poke(self.wib, rdaddr, wrreg) 
-        
-        rdaddr = 0xA00C000C
-        rdreg = llc.wib_peek(self.wib, rdaddr)
-        wrvalue = 0x1 #cmd_stamp_sync_en = 1
-        wrreg = (rdreg & 0xfffffffb) + ((wrvalue&0x1)<<2)
-        llc.wib_poke(self.wib, rdaddr, wrreg) 
+        tryi = 0
+        while True:
+            self.femb_cd_sync() #sync should be sent before edge
+            time.sleep(0.01)
+            self.femb_cd_edge()
+            time.sleep(0.1)
             
-        for dts_time_delay in  range(0x50, 0x90,1):
-            rdaddr = 0xA00C000C
+            rdaddr = 0xA00C0010
             rdreg = llc.wib_peek(self.wib, rdaddr)
-            wrvalue = dts_time_delay #0x58 #dts_time_delay = 1
+            wrvalue = 0x10 #cmd_code_edge = 0x10
             wrreg = (rdreg & 0xffff00ff) + ((wrvalue&0xff)<<8)
             llc.wib_poke(self.wib, rdaddr, wrreg) 
+            
             rdaddr = 0xA00C000C
             rdreg = llc.wib_peek(self.wib, rdaddr)
-            wrvalue = 0x1 #align_en = 1
-            wrreg = (rdreg & 0xfffffff7) + ((wrvalue&0x1)<<3)
+            wrvalue = 0x7fec #cmd_stamp_sync = 0x7fec
+            wrreg = (rdreg & 0x0000ffff) + ((wrvalue&0xffff)<<16)
             llc.wib_poke(self.wib, rdaddr, wrreg) 
-            time.sleep(0.2)
-            if 0 in fembs:
-                link0to3 = llc.wib_peek(self.wib, 0xA00C00A8)
-            else:
-                link0to3 = 0x0
-            if 1 in fembs:
-                link4to7 = llc.wib_peek(self.wib, 0xA00C00AC)
-            else:
-                link4to7 = 0x0
-            if 2 in fembs:
-                link8tob = llc.wib_peek(self.wib, 0xA00C00B0)
-            else:
-                link8tob = 0x0
-            if 3 in fembs:
-                linkctof = llc.wib_peek(self.wib, 0xA00C00B4)
-            else:
-                linkctof = 0x0
+            
+            rdaddr = 0xA00C000C
+            rdreg = llc.wib_peek(self.wib, rdaddr)
+            wrvalue = 0x1 #cmd_stamp_sync_en = 1
+            wrreg = (rdreg & 0xfffffffb) + ((wrvalue&0x1)<<2)
+            llc.wib_poke(self.wib, rdaddr, wrreg) 
+                
+            for dts_time_delay in  range(0x50, 0x90,1):
+                rdaddr = 0xA00C000C
+                rdreg = llc.wib_peek(self.wib, rdaddr)
+                wrvalue = dts_time_delay #0x58 #dts_time_delay = 1
+                wrreg = (rdreg & 0xffff00ff) + ((wrvalue&0xff)<<8)
+                llc.wib_poke(self.wib, rdaddr, wrreg) 
+                rdaddr = 0xA00C000C
+                rdreg = llc.wib_peek(self.wib, rdaddr)
+                wrvalue = 0x1 #align_en = 1
+                wrreg = (rdreg & 0xfffffff7) + ((wrvalue&0x1)<<3)
+                llc.wib_poke(self.wib, rdaddr, wrreg) 
+                time.sleep(0.1)
+                if 0 in fembs:
+                    link0to3 = llc.wib_peek(self.wib, 0xA00C00A8)
+                else:
+                    link0to3 = 0x0
+                if 1 in fembs:
+                    link4to7 = llc.wib_peek(self.wib, 0xA00C00AC)
+                else:
+                    link4to7 = 0x0
+                if 2 in fembs:
+                    link8tob = llc.wib_peek(self.wib, 0xA00C00B0)
+                else:
+                    link8tob = 0x0
+                if 3 in fembs:
+                    linkctof = llc.wib_peek(self.wib, 0xA00C00B4)
+                else:
+                    linkctof = 0x0
 
-            if ((link0to3 & 0xe0e0e0e0) == 0) and ((link4to7 & 0xe0e0e0e0) == 0)and ((link8tob & 0xe0e0e0e0) == 0) and ((linkctof & 0xe0e0e0e0) == 0):
-                print ("Data is aligned when dts_time_delay = 0x%x"%dts_time_delay )
-                break
-            if dts_time_delay >= 0x8f:
-                print ("Error: data can't be aligned, exit anyway")
-                exit()
+                if ((link0to3 & 0xe0e0e0e0) == 0) and ((link4to7 & 0xe0e0e0e0) == 0)and ((link8tob & 0xe0e0e0e0) == 0) and ((linkctof & 0xe0e0e0e0) == 0):
+                    print ("Data is aligned when dts_time_delay = 0x%x"%dts_time_delay )
+                    return None
+                if dts_time_delay >= 0x8f:
+                    tryi = tryi + 1
+                    if tryi > 5:
+                        input ("Error: data can't be aligned, CNTL+C to exit and check")
 
     def femb_adc_cfg(self, femb_id):
         self.femb_cd_fc_act(femb_id, act_cmd="rst_adcs")
@@ -352,8 +354,23 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x84, wrdata=0x3b)
             if sdc_en == 0:
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x80, wrdata=0x23) #SDC bypassed
-            else:
+            elif sdc_en == 1:
                 self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x80, wrdata=0x62) #SDC on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x8F, wrdata=0x9D) #SDC on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x90, wrdata=0x9D) #SDC on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x91, wrdata=0x9D) #SDC on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x92, wrdata=0x9D) #SDC on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9D, wrdata=0x27) #SDC on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9E, wrdata=0x27) #SDC on
+            else:
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x80, wrdata=0xA1) #DB on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x8F, wrdata=0x9D) #DB on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x90, wrdata=0x9D) #DB on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x91, wrdata=0x9D) #DB on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x92, wrdata=0x9D) #DB on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9D, wrdata=0x27) #DB on
+                self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9E, wrdata=0x27) #DB on
+
             self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x98, wrdata=vrefp)
             self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x99, wrdata=vrefn)
             self.femb_i2c_wrchk(femb_id, chip_addr=c_id, reg_page=1, reg_addr=0x9a, wrdata=vcmo)
@@ -576,6 +593,28 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 print (mon_dict[f"chip{mon_chip}"])
             mon_items.append(mon_dict)
 
+    def wib_adc_mon_chip(self, femb_ids, mon_chip=0, sps=10): 
+        self.wib_mon_switches(dac0_sel=1,dac1_sel=1,dac2_sel=1,dac3_sel=1, mon_vs_pulse_sel=0, inj_cal_pulse=0) 
+        #reset all FEMBs on WIB
+        self.femb_cd_rst()
+        
+        mon_dict = {}
+        mons = ["VBGR", "VCMI", "VCMO", "VREFP", "VREFN", "VSSA"]
+        for mon_i in range(len(mons)):
+            print (f"Monitor ADC {mons[mon_i]}")
+            for femb_id in femb_ids:
+                self.femb_adc_cfg(femb_id)
+                self.femb_adc_mon(femb_id, mon_chip=mon_chip, mon_i=mon_i  )
+                print (f"FEMB{femb_id} is configurated")
+            adcss = []
+            time.sleep(0.5)
+            self.wib_mon_adcs() #get rid of previous result
+            self.wib_mon_adcs() #get rid of previous result
+            for i in range(sps):
+                adcs = self.wib_mon_adcs()
+                adcss.append(adcs)
+            mon_dict[mons[mon_i]] = [self.adcs_paras[mon_chip], adcss]
+        return mon_dict
 
 #    def cfg_a_wib(self, fembs, adac_pls_en=False):
 #        self.femb_cd_rst()
@@ -618,6 +657,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
    
     def wib_acq_raw_extrig(self, wibips, fembs,  num_samples=1, ignore_failure=False, trigger_command=0x08, trigger_rec_ticks=0x3f000, trigger_timeout_ms=0): 
         print (f"Data collection for FEMB {fembs} with trigger operations")
+
         data = []
         buf0 = True if 0 in fembs or 1 in fembs else False
         buf1 = True if 2 in fembs or 3 in fembs else False 
@@ -626,17 +666,32 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             exit()
         for  i in range(num_samples):
             if trigger_command == 0:
+
                 data_ip = []
                 for ip in wibips:
                     wib_ip = ip
                     self.wib = WIB(ip)
+
+                    #now = datetime.now()
+                    #init_ts = int(datetime.timestamp(now) * 1e9)
+                    init_ts = time.time_ns()
+                    init_ts = init_ts//16 #WIB system clock is 62.5MHz
+
+                    llc.wib_poke(self.wib, 0xA00C0018, init_ts&0xffffffff)
+                    llc.wib_poke(self.wib, 0xA00C001c, (init_ts>>32)&0xffffffff)
+                    rdreg = llc.wib_peek(self.wib, 0xA00C000C)
+                    wrreg = rdreg&0xfffffffd
+                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #disable fake timestamp
+                    wrreg = rdreg|0x02
+                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #enable fake timestamp and reload the init value
+
                     llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
                     rdreg = llc.wib_peek(self.wib, 0xA00C0004)
                     wrreg = (rdreg&0xffffff3f)|0xC0
                     llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
                     wrreg = (rdreg&0xffffff3f)|0x00
                     llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
-                    time.sleep(0.1)
+                    time.sleep(0.01)
                     wrreg = (rdreg&0xffffff3f)|0xC0
                     llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
                     rawdata = self.wib.acquire_rawdata(buf0, buf1, ignore_failure,trigger_command,trigger_rec_ticks,trigger_timeout_ms)
@@ -662,7 +717,6 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                     for ip in wibips:
                         wib_ip = ip
                         self.wib = WIB(ip)
-                        time.sleep(0.2)
                         rdreg = llc.wib_peek(self.wib, 0xA00C0080)
                         if rdreg&0x03 == 0x03:
                             spy_full_flgs = True
