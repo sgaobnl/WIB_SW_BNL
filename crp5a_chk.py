@@ -19,14 +19,13 @@ if len(sys.argv) < 2:
 
 save = True
 sample_N = 1
-
 fembs = [int(a) for a in sys.argv[1:5]] 
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 
 chk = WIB_CFGS()
 
 #run#1
-runno = "Run01"
+runno = "RunCHK"
 cfg_paras_rec = []
 adac_pls_en = 1 #enable LArASIC interal calibraiton pulser
 

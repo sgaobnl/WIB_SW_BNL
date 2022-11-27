@@ -46,7 +46,9 @@ runno = "Run12_ADC_DBEN"
 cfg_paras_rec = []
 
 print ("Start...")
-save_dir = "D:/CRP5A/Warm_runs/" + runno + "/"
+root_dir = sys.argv[-1]
+save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
+
 i = 0
 while (True):
     i = i + 1

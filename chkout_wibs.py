@@ -30,6 +30,8 @@ else:
     save = False
     sample_N = 1
 
+root_dir = sys.argv[-1]
+
 fembs = [int(a) for a in sys.argv[1:pos]]
 
 ####### Input test information #######
@@ -71,7 +73,7 @@ chk = WIB_CFGS()
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 for ipi in range(len(ips)): 
     ####### Create data save directory #######
-    datadir = "D:/CRP5A/CHKOUT/data/"
+    datadir = "D:/CRP5A/" + root_dir + "/CHKOUT/data/"
     for key,femb_no in fembNo.items():
         datadir = datadir + "WIB{}_femb{}_".format(ipi,femb_no)
     
@@ -99,7 +101,7 @@ for ipi in range(len(ips)):
     with open(fp, 'wb') as fn:
          pickle.dump(logs, fn)
     
-    reportdir = "D:/CRP5A/CHKOUT/reports/"
+    reportdir = "D:/CRP5A/" + root_dir + "/CHKOUT/reports/"
     PLOTDIR = {}
     
     for ifemb,femb_no in fembNo.items():

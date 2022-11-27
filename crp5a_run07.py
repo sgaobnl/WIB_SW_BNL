@@ -32,48 +32,53 @@ adac_pls_en = 1 #enable LArASIC interal calibraiton pulser
 
 if True:
     for ip in ips:
-        chk.wib = WIB(ip) 
+        while True:
+            chk.wib = WIB(ip) 
     
-        ####################WIB init################################
-        #check if WIB is in position
-        chk.wib_init()
-        ####################FEMBs Configuration################################
-        #step 1
-        #reset all FEMBs on WIB
-        chk.femb_cd_rst()
-        
-        for femb_id in fembs:
-        #step 2
-        #Configur Coldata, ColdADC, and LArASIC parameters. 
-        #Here Coldata uses default setting in the script (not the ASIC default register values)
-        #ColdADC configuraiton
-            chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80, 1-SDC_ON, 2-DB_ON), vrefp, vrefn, vcmo, vcmi, autocali
-                                [0x4, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x5, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x6, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x7, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x8, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x9, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xA, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xB, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                              ]
-        
-        #LArASIC register configuration
-            if ext_cali_flg == True:
-                swdac = 2
-                dac = 0
+            ####################WIB init################################
+            #check if WIB is in position
+            chk.wib_init()
+            ####################FEMBs Configuration################################
+            #step 1
+            #reset all FEMBs on WIB
+            chk.femb_cd_rst()
+            
+            for femb_id in fembs:
+            #step 2
+            #Configur Coldata, ColdADC, and LArASIC parameters. 
+            #Here Coldata uses default setting in the script (not the ASIC default register values)
+            #ColdADC configuraiton
+                chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80, 1-SDC_ON, 2-DB_ON), vrefp, vrefn, vcmo, vcmi, autocali
+                                    [0x4, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x5, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x6, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x7, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x8, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x9, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0xA, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0xB, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                  ]
+            
+            #LArASIC register configuration
+                if ext_cali_flg == True:
+                    swdac = 2
+                    dac = 0
+                else:
+                    swdac = 1
+                    dac = 0x20
+                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac, sdd=0 )
+                #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
+                cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
+            #step 3
+                chk.femb_cfg(femb_id, adac_pls_en )
+                if ext_cali_flg == True:
+                    chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
+            align_flg = chk.data_align()
+            if align_flg:
+                break
             else:
-                swdac = 1
-                dac = 0x20
-            chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac, sdd=0 )
-            #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
-            cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
-        #step 3
-            chk.femb_cfg(femb_id, adac_pls_en )
-            if ext_cali_flg == True:
-                chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
-        chk.data_align()
-        
+                time.sleep(1)   
+
         if ext_cali_flg == True:
             #enable 10MHz output 
             chk.en_ref10MHz(ref_en = True)
@@ -95,7 +100,9 @@ if True:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
 
 if True:
-    save_dir = "D:/CRP5A/Warm_runs/" + runno + "/"
+    root_dir = sys.argv[-1]
+    save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
+
     i = 0
     while (True):
         i = i + 1

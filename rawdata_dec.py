@@ -7,9 +7,11 @@ import matplotlib.pyplot as plt
 import copy
 import os
 import struct
+from tools import Tools
 from spymemory_decode import wib_spy_dec_syn
 
-def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.png"):
+def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.png", rms_flg = False):
+    tl=Tools()
     rawdata = raw[0]
     pwr_meas = raw[1]
     runi = 0
@@ -79,30 +81,96 @@ def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.p
             for fembi in  range(femb_num):
                 for ch in range(128):
                     chns_data[wibi*512 + fembi*128 + ch] += crate_runs[runi][wibi][fembi][ch]
-    
-    chped = []
-    chmax = []
-    chmin = []
-    chrms = []
-    for ch in range(len(chns_data)):
-        chmax.append(np.max(chns_data[ch][0:1000]))
-        chped.append(np.mean(chns_data[ch][0:1000]))
-        chmin.append(np.min(chns_data[ch][0:1000]))
-        chrms.append(np.std(chns_data[ch][0:1000]))
 
+    chrms = np.std(chns_data, axis=(1)) 
+    chped = np.mean(chns_data, axis=(1)) 
+    chmax = np.max(chns_data, axis=(1)) 
+    chmin = np.min(chns_data, axis=(1)) 
+#    chped = []
+#    chmax = []
+#    chmin = []
+#    chrms = []
+#    for ch in range(len(chns_data)):
+#        chmax.append(np.max(chns_data[ch][0:1000]))
+#        chped.append(np.mean(chns_data[ch][0:1000]))
+#        chmin.append(np.min(chns_data[ch][0:1000]))
+#        chrms.append(np.std(chns_data[ch][0:1000]))
+   
+    uplanerms = np.zeros(476)
+    vplanerms = np.zeros(476)
+    xplanerms = np.zeros(584)
+    uplanemax = np.zeros(476)
+    vplanemax = np.zeros(476)
+    xplanemax = np.zeros(584)
+    uplanemin = np.zeros(476)
+    vplanemin = np.zeros(476)
+    xplanemin = np.zeros(584)
+    uplaneped = np.zeros(476)
+    vplaneped = np.zeros(476)
+    xplaneped = np.zeros(584)
+
+    for i in range(wib_num*4*128):
+        nfemb = i//128 + 1
+        nch = i %128
     
-    print (t0_str, hex(tmts[0]))
-    x = np.arange(len(chns_data))
+        dfmap = tl.LoadMap(nfemb)
+        plane,strip = tl.FindStrips(dfmap, nfemb, nch)
+        #print(i, plane, strip)
+    
+        if plane==1:
+           uplanerms[strip-1]=chrms[i]
+           uplaneped[strip-1]=chped[i]
+           uplanemax[strip-1]=chmax[i]
+           uplanemin[strip-1]=chmin[i]
+        if plane==2:
+           vplanerms[strip-1]=chrms[i]
+           vplaneped[strip-1]=chped[i]
+           vplanemax[strip-1]=chmax[i]
+           vplanemin[strip-1]=chmin[i]
+        if plane==3:
+           xplanerms[strip-1]=chrms[i]
+           xplaneped[strip-1]=chped[i]
+           xplanemax[strip-1]=chmax[i]
+           xplanemin[strip-1]=chmin[i]
+
+
+    ch_rms_map = np.concatenate((uplanerms,vplanerms,xplanerms)) 
+    ch_ped_map = np.concatenate((uplaneped,vplaneped,xplaneped)) 
+    ch_max_map = np.concatenate((uplanemax,vplanemax,xplanemax)) 
+    ch_min_map = np.concatenate((uplanemin,vplanemin,xplanemin)) 
+
+    print ("UTC: " + t0_str )
+    x = np.arange(wib_num*4*128)
     fig = plt.figure(figsize=(10,6))
     plt.rcParams.update({'font.size':12})
-    plt.plot(x, chmax, marker='.',color='r', label = "pp")
-    plt.plot(x, chped, marker='.',color='b',  label = "ped")
-    plt.plot(x, chmin, marker='.',color='g',  label = "np")
+    if rms_flg :
+        plt.subplot(211)
+    else:
+        plt.subplot(111)
+    plt.plot(x, ch_max_map, marker='.',color='r', label = "pp")
+    plt.plot(x, ch_ped_map, marker='.',color='b',  label = "ped")
+    plt.plot(x, ch_min_map, marker='.',color='g',  label = "np")
     plt.legend()
-    plt.title ("Pulse Distribution @ " + t0_str)
+    plt.title ("Pulse Distribution @ UTC:" + t0_str)
     plt.xlabel ("CH#")
     plt.ylabel ("ADC / bit" )
+    plt.axvline(x=475, color = 'r', linestyle='--')
+    plt.axvline(x=951, color = 'r', linestyle='--')
     plt.grid()
+
+    if rms_flg :
+        plt.subplot(212)
+        plt.plot(x, ch_rms_map, marker='.',color='r', label = "RMS")
+        plt.legend()
+        plt.title ("RMS Noise Distribution @ UTC:" + t0_str)
+        plt.xlabel ("CH#")
+        plt.ylabel ("ADC / bit" )
+        plt.ylim((0,200))
+        plt.grid()
+        plt.axvline(x=475, color = 'm', linestyle='--')
+        plt.axvline(x=951, color = 'm', linestyle='--')
+
+    plt.tight_layout()
     if plot_show_en:
         plt.show()
     else:

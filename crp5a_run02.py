@@ -96,7 +96,8 @@ if True:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
 
 if True:
-    save_dir = "D:/CRP5A/Warm_runs/" + runno + "/"
+    root_dir = sys.argv[-1]
+    save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
     i = 0
     while (True):
         i = i + 1
@@ -119,7 +120,7 @@ if True:
     with open(fp, 'wb') as fn:
         pickle.dump( rawinfo, fn)
         #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
-    rawdata_dec(raw=rawinfo, runi=0, plot_show_en = False, plot_fn = save_dir + "pulse_response" + ts + ".png")
+    rawdata_dec(raw=rawinfo, runi=0, plot_show_en = False, plot_fn = save_dir + "pulse_response" + ts + ".png", rms_flg=True)
 
 
 print (" Done!")   

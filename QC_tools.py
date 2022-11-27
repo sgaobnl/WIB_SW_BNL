@@ -131,7 +131,7 @@ class QC_tools:
                 avgwf.append(wfdata/npulse)
             else:
                 print("femb {} ch{} doesn't have pulse!".format(nfemb,ich))
-                sys.exit()
+                input ("CNTL + C to restart and try, or push any key to ignore")
 
         return rms,ped,pkp,pkn,onewf,avgwf 
 
