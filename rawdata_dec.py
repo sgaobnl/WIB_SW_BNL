@@ -10,13 +10,12 @@ import struct
 from tools import Tools
 from spymemory_decode import wib_spy_dec_syn
 
-def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.png", rms_flg = False):
+def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.png", rms_flg = False, chdat_flg=False):
     tl=Tools()
     rawdata = raw[0]
     pwr_meas = raw[1]
-    runi = 0
     crate_runs = []
-    for runi in [0]:
+    for runi in range(runs):
         dec_datas = []
         for wibdata in rawdata[runi]:
             ip = wibdata[0]
@@ -68,7 +67,6 @@ def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.p
         crate_runs.append(crate)
     
     chns_data =[]
-    runs = len(crate_runs)
     wib_num = 3
     femb_num = 4
     for wibi in  range(wib_num):
@@ -82,6 +80,8 @@ def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.p
                 for ch in range(128):
                     chns_data[wibi*512 + fembi*128 + ch] += crate_runs[runi][wibi][fembi][ch]
 
+    if chdat_flg:
+        return chns_data
     chrms = np.std(chns_data, axis=(1)) 
     chped = np.mean(chns_data, axis=(1)) 
     chmax = np.max(chns_data, axis=(1)) 
@@ -148,7 +148,8 @@ def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.p
     else:
         plt.subplot(111)
     plt.plot(x, ch_max_map, marker='.',color='r', label = "pp")
-    plt.plot(x, ch_ped_map, marker='.',color='b',  label = "ped")
+    #plt.plot(x, ch_ped_map, marker='.',color='b',  label = "ped")
+    plt.plot(x, chped, marker='.',color='b',  label = "ped")
     plt.plot(x, ch_min_map, marker='.',color='g',  label = "np")
     plt.legend()
     plt.title ("Pulse Distribution @ UTC:" + t0_str)
@@ -176,7 +177,7 @@ def rawdata_dec (raw, runi=0, plot_show_en = False, plot_fn = "./pulse_respons.p
     else:
         plt.savefig(plot_fn)
     plt.close()
-    return chped, chmax, chmin, chrms
+    return ch_ped_map, ch_max_map, ch_min_map, ch_rms_map
     
 #
 #plt.title ("Timestamp in WIB data")

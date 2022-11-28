@@ -93,9 +93,8 @@ class QC_tools:
                 pmax = np.amax(evtdata)
                 pos = np.argmax(evtdata)
 
-                if True:
-                    pos_peaks, _ = find_peaks(evtdata,height=pmax-100) 
-                else:
+                pos_peaks, _ = find_peaks(evtdata,height=pmax-300) 
+                if len(pos_peaks) < 1:
                     pos_peaks = np.arange(0,len(evtdata),500)
 
                 for ipos in pos_peaks:

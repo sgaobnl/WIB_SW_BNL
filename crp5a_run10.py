@@ -77,7 +77,8 @@ if True:
             if align_flg:
                 break
             else:
-                time.sleep(1)
+                chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+
         
         if ext_cali_flg == True:
             #enable 10MHz output 
@@ -90,7 +91,12 @@ if True:
 
     rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
 
-    pwr_meas = chk.get_sensors()
+    pwr_meas = []
+    for ip in ips:
+        chk.wib = WIB(ip) 
+        pwr = chk.get_sensors()
+        pwr_meas.append([ip, pwr])
+
 
     if adac_pls_en:
         for ip in ips:
@@ -127,7 +133,7 @@ if True:
         pickle.dump( rawinfo, fn)
         #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
 
-    chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runi=0, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
+    chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
 
     for ch in range(len(chped)):
         if (chped[ch] < 2000) and ((chmax[ch]-chped[ch]) > 4000):

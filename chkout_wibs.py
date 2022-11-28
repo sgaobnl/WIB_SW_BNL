@@ -37,29 +37,34 @@ fembs = [int(a) for a in sys.argv[1:pos]]
 ####### Input test information #######
 
 logs={}
-tester=input("please input your name:  ")
+#tester=input("please input your name:  ")
+tester="SG"
 logs['tester']=tester
 
-env_cs = input("Test is performed at cold(LN2) (Y/N)? : ")
+env_cs = "n" #input("Test is performed at cold(LN2) (Y/N)? : ")
 if ("Y" in env_cs) or ("y" in env_cs):
     env = "LN"
 else:
     env = "RT"
+env = "NA"
 logs['env']=env
 
-ToyTPC_en = input("ToyTPC at FE inputs (Y/N) : ")
+#ToyTPC_en = input("ToyTPC at FE inputs (Y/N) : ")
+ToyTPC_en = "n"
 if ("Y" in ToyTPC_en) or ("y" in ToyTPC_en):
     toytpc = "150pF"
 else:
     toytpc = "0pF"
 logs['toytpc']=toytpc
 
-note = input("A short note (<200 letters):")
+#note = input("A short note (<200 letters):")
+note = "CRP5A"
 logs['note']=note
 
 fembNo={}
 for i in fembs:
-    fembNo['femb{}'.format(i)]=input("FEMB{} ID: ".format(i))
+#    fembNo['femb{}'.format(i)]=input("FEMB{} ID: ".format(i))
+    fembNo['femb{}'.format(i)]=i
 
 logs['femb id']=fembNo
 logs['date']=datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
@@ -128,7 +133,7 @@ for ipi in range(len(ips)):
     
     chk.wib = WIB(ips[ipi]) 
     chk.wib_init()
-    chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+#    chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
     
 #    chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
 #    chk.femb_powering(fembs)
@@ -159,7 +164,7 @@ for ipi in range(len(ips)):
         cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
         chk.femb_cfg(femb_id, adac_pls_en )
     
-    chk.data_align(fembs)
+#    chk.data_align(fembs)
     time.sleep(0.1)
     
     ####### Take data #######

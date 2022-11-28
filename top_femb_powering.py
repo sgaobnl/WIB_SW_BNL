@@ -7,13 +7,16 @@ import numpy as np
 import pickle
 import copy
 import time, datetime, random, statistics
+import os
 
 print ("Powering FEMB")
 print ("help: python chkout_powering on on on on") 
 
-if len(sys.argv) !=5 :
-    print('Please specify 4 FEMBs power operation (on or off)')
-    exit()    
+#if len(sys.argv) !=5 :
+#    print('Please specify 4 FEMBs power operation (on or off)')
+#    exit()    
+root_dir = sys.argv[-1]
+save_dir = "D:/CRP5A/" + root_dir + "/FEMB_Powering/"
 
 fembs = []
 if 'on' in sys.argv[1]:
@@ -54,7 +57,16 @@ for ip in ips:
     
     pwr_info.append([ip, pwr_meas])
 
-fdir = "D:/debug_data/"
+fdir = save_dir
+if (os.path.exists(fdir)):
+    pass
+else:
+    try:
+        os.makedirs(fdir)
+    except OSError:
+        print ("Error to create folder %s"%fd_new)
+        input ("hit any button and then 'Enter' to exit")
+        sys.exit()    
 ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
 fp = fdir + "Power_" + ts  + ".bin"
 with open(fp, 'wb') as fn:

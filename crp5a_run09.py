@@ -107,7 +107,12 @@ for dac in range(0,64,4):
     
         rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
     
-        pwr_meas = chk.get_sensors()
+        pwr_meas = []
+        for ip in ips:
+            chk.wib = WIB(ip) 
+            pwr = chk.get_sensors()
+            pwr_meas.append([ip, pwr])
+
     
         if adac_pls_en:
             for ip in ips:
@@ -123,7 +128,7 @@ for dac in range(0,64,4):
         with open(fp, 'wb') as fn:
             pickle.dump( rawinfo, fn)
             #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
-        rawdata_dec(raw=rawinfo, runi=0, plot_show_en = False, plot_fn = save_dir + "pulse_respons" + ts + ".png")
+        rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons" + ts + ".png")
 
 
 print (" Done!")   

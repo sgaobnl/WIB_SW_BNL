@@ -97,8 +97,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 script += fin.read()
         llc.wib_script(self.wib, script )
         print ("Wait 5 seconds")
-        if len(fembs) != 0:
-            time.sleep(5)
+        time.sleep(5)
 
     def get_sensors(self):
         llc.get_sensors(self.wib) #get rid of previous measurement result
@@ -272,9 +271,9 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
     def data_align(self, fembs=[0, 1, 2,3]):
         print ("Data aligning...")
         self.femb_cd_sync() #sync should be sent before edge
-        time.sleep(0.01)
+        time.sleep(0.05)
         self.femb_cd_edge()
-        time.sleep(0.1)
+        time.sleep(0.2)
         
         rdaddr = 0xA00C0010
         rdreg = llc.wib_peek(self.wib, rdaddr)
@@ -294,18 +293,8 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         wrreg = (rdreg & 0xfffffffb) + ((wrvalue&0x1)<<2)
         llc.wib_poke(self.wib, rdaddr, wrreg) 
                 
-        for dts_time_delay in  range(0x48, 0x90,1):
-            rdaddr = 0xA00C000C
-            rdreg = llc.wib_peek(self.wib, rdaddr)
-            wrvalue = dts_time_delay #0x58 #dts_time_delay = 1
-            wrreg = (rdreg & 0xffff00ff) + ((wrvalue&0xff)<<8)
-            llc.wib_poke(self.wib, rdaddr, wrreg) 
-            rdaddr = 0xA00C000C
-            rdreg = llc.wib_peek(self.wib, rdaddr)
-            wrvalue = 0x1 #align_en = 1
-            wrreg = (rdreg & 0xfffffff7) + ((wrvalue&0x1)<<3)
-            llc.wib_poke(self.wib, rdaddr, wrreg) 
-            time.sleep(0.2)
+        for dts_time_delay in  range(0x50, 0x90,1):
+            time.sleep(0.1)
             if 0 in fembs:
                 link0to3 = llc.wib_peek(self.wib, 0xA00C00A8)
             else:
@@ -329,6 +318,17 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
             if dts_time_delay >= 0x8f:
                 print ("Error: data can't be aligned, Retry...")
                 return False
+
+            rdaddr = 0xA00C000C
+            rdreg = llc.wib_peek(self.wib, rdaddr)
+            wrvalue = dts_time_delay #0x58 #dts_time_delay = 1
+            wrreg = (rdreg & 0xffff00ff) + ((wrvalue&0xff)<<8)
+            llc.wib_poke(self.wib, rdaddr, wrreg) 
+            rdaddr = 0xA00C000C
+            rdreg = llc.wib_peek(self.wib, rdaddr)
+            wrvalue = 0x1 #align_en = 1
+            wrreg = (rdreg & 0xfffffff7) + ((wrvalue&0x1)<<3)
+            llc.wib_poke(self.wib, rdaddr, wrreg) 
 
     def femb_adc_cfg(self, femb_id):
         self.femb_cd_fc_act(femb_id, act_cmd="rst_adcs")
