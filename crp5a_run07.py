@@ -136,7 +136,7 @@ if True:
     chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
 
     for ch in range(len(chped)):
-        if (chped[ch] < 2000) and ((chmax[ch]-chped[ch]) > 4000):
+        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
             pass
         else:
             input ("Error, check the plot and CNTL+C to exit")
