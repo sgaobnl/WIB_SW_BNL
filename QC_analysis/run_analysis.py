@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------
 # Author: Rado
 # email: radofana@gmail.com
-# last update: 10/22/2022
+# last update: 11/28/2022
 #----------------------------------------------------------------------
 
 import os
@@ -17,10 +17,10 @@ from MON import MON_LARASIC
 # from ASICDAC import removeFEMB_from_T, all_PWR_Meas_plots
 if __name__ == '__main__':
     #------------------------------------------------------
-    # savedir = '../results/analysis/minisas'
-    # inputdir = '../data'
-    inputdir = 'D:/IO-1865-1C/QC/data'
-    savedir = 'D:/IO-1865-1C/QC/analysis/'
+    savedir = '../results/analysis/minisas'
+    inputdir = '../data'
+    # inputdir = 'D:/IO-1865-1C/QC/data'
+    # savedir = 'D:/IO-1865-1C/QC/analysis/'
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
@@ -105,5 +105,7 @@ if __name__ == '__main__':
     # savedir = '../results/analysis/test_MON_FE'
     for T in temperatures:
         mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55])
-        mon_fe.run_MON_LArASIC()
+        # mon_fe.run_MON_LArASIC()
+        mon_fe.run_MON_LArASIC_DAC()
+        break
 
