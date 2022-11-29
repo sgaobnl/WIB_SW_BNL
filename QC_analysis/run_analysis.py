@@ -5,7 +5,7 @@
 #----------------------------------------------------------------------
 
 import os
-from MON import MON_LARASIC
+from MON import MON_LARASIC, MON_ColdADC
 # from QC_analysis import QC_analysis
 # from ASICDAC import savegains, Gains_CALI1, Gains_CALI2, Gains_CALI3_or_CALI4
 # from ASICDAC import get_ENC_CALI
@@ -104,8 +104,9 @@ if __name__ == '__main__':
     
     # savedir = '../results/analysis/test_MON_FE'
     for T in temperatures:
-        mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55])
+        # mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55])
         # mon_fe.run_MON_LArASIC()
-        mon_fe.run_MON_LArASIC_DAC()
-        break
+        # mon_fe.run_MON_LArASIC_DAC()
+        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55])
+        mon_adc.run_MON_ColdADC()
 
