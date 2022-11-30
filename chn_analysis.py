@@ -66,13 +66,56 @@ with open(fp, 'rb') as fn:
 tl=Tools()
 
 while True:
-    try:
-        chn = int(input("CH#(-1 to exit) = "))
-    except :
-        continue
-    if chn == -1:
+    strch =  input("CH/PX/PU/PV#(EX to exit) : ")
+    if "EX" in strch:
         exit()
+    elif "CH" in strch:
+        chn = int(strch[2:])
 
+    elif "PX" in strch:
+        pxch = int(strch[2:])
+        find_flg = False
+        for fembi in range(1,13,1):
+            dfmap = tl.LoadMap(fembi)
+            for chi in range(128):
+                plane,strip = tl.FindStrips(dfmap, fembi, chi)
+                if (plane == 3) and (strip == pxch):
+                    chn = (fembi-1)*128 + chi
+                    find_flg = True
+                    break
+            if find_flg:
+                break
+
+    elif "PU" in strch:
+        puch = int(strch[2:])
+        find_flg = False
+        for fembi in range(1,13,1):
+            dfmap = tl.LoadMap(fembi)
+            for chi in range(128):
+                plane,strip = tl.FindStrips(dfmap, fembi, chi)
+                if (plane == 1) and (strip == puch):
+                    chn = (fembi-1)*128 + chi
+                    find_flg = True
+                    break
+            if find_flg:
+                break
+
+    elif "PV" in strch:
+        pvch = int(strch[2:])
+        find_flg = False
+        for fembi in range(1,13,1):
+            dfmap = tl.LoadMap(fembi)
+            for chi in range(128):
+                plane,strip = tl.FindStrips(dfmap, fembi, chi)
+                if (plane == 2) and (strip == pvch):
+                    chn = (fembi-1)*128 + chi
+                    find_flg = True
+                    break
+            if find_flg:
+                break
+    else:
+        continue
+    
     wibi = chn//512
     fembi = chn//128 + 1
     chi = chn%128
@@ -86,6 +129,7 @@ while True:
         pl = "X"
     print ("Waveform @ WIB%dFEMB%dCH%d, %s plane # %d"%(wibi, (fembi%4-1), chi, pl, strip ))
 
+
     chrms = []
     for chx in range(12*128):
         chrms.append(np.std(rawdata[chx][0:1000]))
@@ -97,9 +141,9 @@ while True:
     chninfo = noise_a_chn(chnrmsdata, chnno=chn, fft_en = True, fft_s=2000, fft_avg_cycle=50)
     
     import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(6,10))
+    fig = plt.figure(figsize=(10,8))
     plt.rcParams.update({'font.size':12})
-    plt.subplot(411)
+    plt.subplot(221)
     xlen = 200
     x = (np.arange(xlen))*512/1000.0
     plt.plot(x, chninfo[3][0:xlen], marker='.',color='r', label = "%d"%chn)
@@ -109,7 +153,7 @@ while True:
     plt.ylabel ("ADC / bit" )
     plt.grid()
     
-    plt.subplot(412)
+    plt.subplot(222)
     xlen = 20000
     if xlen > len(chninfo[3]):
         xlen = len(chninfo[3])
@@ -121,7 +165,7 @@ while True:
     plt.ylabel ("ADC / bit" )
     plt.grid()
     
-    plt.subplot(413)
+    plt.subplot(223)
     plt.plot(chninfo[4], chninfo[5], marker='.',color='r', label = "%d"%chn)
     plt.legend()
     plt.title ("FFT @ WIB%dFEMB%dCH%d, %s plane # %d"%(wibi, (fembi%4-1), chi, pl, strip ))
@@ -129,12 +173,71 @@ while True:
     plt.ylabel (" / dB" )
     plt.grid()
 
-    plt.subplot(414)
+    #chrms =  np.std(rawdata, axis=(1)) 
+    #chped = np.mean(rawdata, axis=(1)) 
+    #chmax =  np.max(rawdata, axis=(1)) 
+    #chmin =  np.min(rawdata, axis=(1)) 
+
+    chped = []
+    chmax = []
+    chmin = []
+    chrms = []
+    for ch in range(len(rawdata)):
+        chmax.append(np.max(rawdata[ch][0:10000]))
+        chped.append(np.mean(rawdata[ch][0:10000]))
+        chmin.append(np.min(rawdata[ch][0:10000]))
+        chrms.append(np.std(rawdata[ch][0:10000]))
+
+
+    uplanerms = np.zeros(476)
+    vplanerms = np.zeros(476)
+    xplanerms = np.zeros(584)
+    uplanemax = np.zeros(476)
+    vplanemax = np.zeros(476)
+    xplanemax = np.zeros(584)
+    uplanemin = np.zeros(476)
+    vplanemin = np.zeros(476)
+    xplanemin = np.zeros(584)
+    uplaneped = np.zeros(476)
+    vplaneped = np.zeros(476)
+    xplaneped = np.zeros(584)
+
+    for i in range(3*4*128):
+        nfemb = i//128 + 1
+        nch = i %128
+    
+        dfmap = tl.LoadMap(nfemb)
+        plane,strip = tl.FindStrips(dfmap, nfemb, nch)
+        #print(i, plane, strip)
+    
+        if plane==1:
+           uplanerms[strip-1]=chrms[i]
+           uplaneped[strip-1]=chped[i]
+           uplanemax[strip-1]=chmax[i]
+           uplanemin[strip-1]=chmin[i]
+        if plane==2:
+           vplanerms[strip-1]=chrms[i]
+           vplaneped[strip-1]=chped[i]
+           vplanemax[strip-1]=chmax[i]
+           vplanemin[strip-1]=chmin[i]
+        if plane==3:
+           xplanerms[strip-1]=chrms[i]
+           xplaneped[strip-1]=chped[i]
+           xplanemax[strip-1]=chmax[i]
+           xplanemin[strip-1]=chmin[i]
+
+    ch_rms_map = np.concatenate((uplanerms,vplanerms,xplanerms)) 
+    ch_ped_map = np.concatenate((uplaneped,vplaneped,xplaneped)) 
+    ch_max_map = np.concatenate((uplanemax,vplanemax,xplanemax)) 
+    ch_min_map = np.concatenate((uplanemin,vplanemin,xplanemin)) 
+
+    plt.subplot(224)
     x = np.arange(12*128)
-    plt.plot(x, chrms, marker='.',color='r', label = "RMS")
+    plt.plot(x, ch_rms_map, marker='.',color='r', label = "RMS")
     plt.legend()
     plt.title("RMS noise distribution")
     plt.xlabel ("CH# ")
+    plt.ylim((0,100))
     plt.ylabel ("ADC / bit" )
     plt.grid()
 

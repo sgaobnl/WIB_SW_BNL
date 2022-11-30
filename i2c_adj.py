@@ -1,15 +1,17 @@
 from wib_cfgs import WIB_CFGS
 from wib import WIB
+import time
+import sys
+import time, datetime, random, statistics
+
 
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 chk = WIB_CFGS()
-localclk_cs = (int(sys.argv[1]) == 0)
+n = int(sys.argv[1])
 
 pwr_info = []
 for ip in ips:
     chk.wib = WIB(ip)
-    chk.wib_init()
-    chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
-
+    chk.wib_i2c_adj(n=n)
 print ("Done")
 

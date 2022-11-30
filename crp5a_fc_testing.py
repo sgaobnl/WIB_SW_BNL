@@ -9,6 +9,7 @@ import time, datetime, random, statistics
 from wib import WIB
 import os
 from rawdata_dec import rawdata_dec 
+
 localclk_cs = False
 ext_cali_flg = False
 
@@ -26,7 +27,6 @@ ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 chk = WIB_CFGS()
 
 #run#1
-runno = "Run01"
 cfg_paras_rec = []
 adac_pls_en = 1 #enable LArASIC interal calibraiton pulser
 
@@ -96,48 +96,91 @@ if True:
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
 
-
     if adac_pls_en:
         for ip in ips:
             chk.wib = WIB(ip) 
-        
             for femb_id in fembs:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
 
 if True:
     root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
-
-    i = 0
-    while (True):
-        i = i + 1
-        fd_new = save_dir[:-1]+"_R{:03d}/".format(i)
-        if (os.path.exists(fd_new)):
-            pass
-        else:
-            try:
-                os.makedirs(fd_new)
-            except OSError:
-                print ("Error to create folder %s"%fd_new)
-                input ("hit any button and then 'Enter' to exit")
-                sys.exit()    
-            save_dir = fd_new
-            break
+    save_dir = "D:/CRP5A/" + root_dir + "/" 
+    if (os.path.exists(save_dir)):
+        pass
+    else:
+        try:
+            os.makedirs(save_dir)
+        except:
+            exit()
 
 
     ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    fp = save_dir + "Raw_SW_Trig" + ts  + ".bin"
     rawinfo =  [rawdata, pwr_meas, cfg_paras_rec]
-    with open(fp, 'wb') as fn:
-        pickle.dump( rawinfo, fn)
-        #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
+    fp = save_dir + "Raw_SW_Trig" + ts  + ".png"
 
-    chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
+    chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = fp)
 
     for ch in range(len(chped)):
         if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
             pass
         else:
             input ("Error, check the plot and CNTL+C to exit")
+logs = []
 
-    print ("Done!")
+for i in range(1000):
+    for ip in ips:
+        chk.wib = WIB(ip) 
+        for femb_id in fembs:
+            chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+    time.sleep(2)
+
+    rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
+    rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
+
+    for ip in ips:
+        chk.wib = WIB(ip) 
+        for femb_id in fembs:
+            chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+    time.sleep(10)
+
+    ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+    rawinfo =  [rawdata, pwr_meas, cfg_paras_rec]
+    fp = save_dir + "Raw_SW_Trig" + ts  + ".png"
+
+    chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = fp, femb_plt_sq=True)
+
+    badchns = []
+    for ch in range(len(chped)):
+        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
+            pass
+        else:
+            badchns.append([ch, chped[ch], chmax[ch]-chped[ch]])
+    if len(badchns) > 0 :
+        logs.append(["Fast command error at " + fp, badchns])
+        for ip in ips:
+            chk.wib = WIB(ip) 
+            for femb_id in fembs:
+                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+        time.sleep(10)
+
+
+    print(logs)
+
+
+
+#    i = 0
+#    while (True):
+#        i = i + 1
+#        fd_new = save_dir[:-1]+"_R{:03d}/".format(i)
+#        if (os.path.exists(fd_new)):
+#            pass
+#        else:
+#            try:
+#                os.makedirs(fd_new)
+#            except OSError:
+#                print ("Error to create folder %s"%fd_new)
+#                input ("hit any button and then 'Enter' to exit")
+#                sys.exit()    
+#            save_dir = fd_new
+#            break
+

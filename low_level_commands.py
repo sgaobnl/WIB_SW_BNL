@@ -24,16 +24,17 @@ def test_connection(wib, tries=10):
     print("Failed")
     return 1
     
-def system_clock_select(wib, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff): #select correct timing source with peek/poke
+def system_clock_select(wib, localclk_cs=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff): #select correct timing source with peek/poke
     #See WIB_firmware.docx table 4.9.1 ts_clk_sel
-    # 0[pll=False]  = CDR recovered clock(default)
-    # 1[pll=True]   = PLL clock synchronized with CDR or running independently if CDR clock is 
+    # 0[localclk_cs=False]  = CDR recovered clock(default)
+    # 1[localclk_cs=True]   = PLL clock synchronized with CDR or running independently if CDR clock is 
     # missing. PLL clock should only be used on test stand when timing master 
     # is not available.            
-    reg_read = wib_peek(wib, 0xA00C0004)
-    val = (reg_read&0xFFFEFFFF) | (int(pll) << 16)
-    wib_poke(wib, 0xA00C0004, val)    
-    if pll == True:
+    if localclk_cs == True:
+        reg_read = wib_peek(wib, 0xA00C0004)
+        val = (reg_read&0xFFFEFFFF) | (1 << 16)
+        wib_poke(wib, 0xA00C0004, val)    
+
         print ("PLL clock synchronized with CDR or running independently if CDR clock is missing")
         print ("PLL clock should only be used on test stand when timing master is not available.")
         rdreg = wib_peek(wib, 0xA00c000C)

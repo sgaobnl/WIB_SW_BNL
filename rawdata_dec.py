@@ -10,7 +10,7 @@ import struct
 from tools import Tools
 from spymemory_decode import wib_spy_dec_syn
 
-def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.png", rms_flg = False, chdat_flg=False):
+def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.png", rms_flg = False, chdat_flg=False, femb_plt_sq = False):
     tl=Tools()
     rawdata = raw[0]
     pwr_meas = raw[1]
@@ -82,19 +82,19 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
 
     if chdat_flg:
         return chns_data
-    chrms = np.std(chns_data, axis=(1)) 
-    chped = np.mean(chns_data, axis=(1)) 
-    chmax = np.max(chns_data, axis=(1)) 
-    chmin = np.min(chns_data, axis=(1)) 
-#    chped = []
-#    chmax = []
-#    chmin = []
-#    chrms = []
-#    for ch in range(len(chns_data)):
-#        chmax.append(np.max(chns_data[ch][0:1000]))
-#        chped.append(np.mean(chns_data[ch][0:1000]))
-#        chmin.append(np.min(chns_data[ch][0:1000]))
-#        chrms.append(np.std(chns_data[ch][0:1000]))
+#    chrms = np.std(chns_data, axis=(1)) 
+#    chped = np.mean(chns_data, axis=(1)) 
+#    chmax = np.max(chns_data, axis=(1)) 
+#    chmin = np.min(chns_data, axis=(1)) 
+    chped = []
+    chmax = []
+    chmin = []
+    chrms = []
+    for ch in range(len(chns_data)):
+        chmax.append(np.max(chns_data[ch][0:1000]))
+        chped.append(np.mean(chns_data[ch][0:1000]))
+        chmin.append(np.min(chns_data[ch][0:1000]))
+        chrms.append(np.std(chns_data[ch][0:1000]))
    
     uplanerms = np.zeros(476)
     vplanerms = np.zeros(476)
@@ -147,10 +147,15 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
         plt.subplot(211)
     else:
         plt.subplot(111)
-    plt.plot(x, ch_max_map, marker='.',color='r', label = "pp")
-    #plt.plot(x, ch_ped_map, marker='.',color='b',  label = "ped")
-    plt.plot(x, chped, marker='.',color='b',  label = "ped")
-    plt.plot(x, ch_min_map, marker='.',color='g',  label = "np")
+    if femb_plt_sq:
+        plt.plot(x, chmax, marker='.',color='r', label = "pp")
+        plt.plot(x, chped, marker='.',color='b',  label = "ped")
+        plt.plot(x, chmin, marker='.',color='g',  label = "np")
+    else:
+        plt.plot(x, ch_max_map, marker='.',color='r', label = "pp")
+        plt.plot(x, ch_ped_map, marker='.',color='b',  label = "ped")
+        plt.plot(x, ch_min_map, marker='.',color='g',  label = "np")
+
     plt.legend()
     plt.title ("Pulse Distribution @ UTC:" + t0_str)
     plt.xlabel ("CH#")

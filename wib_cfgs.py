@@ -33,14 +33,16 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         rdreg = llc.wib_peek(self.wib, 0xA00C0004)
         for i in range(n):
             llc.wib_poke(self.wib,0xA00C0004 , rdreg|0x00040000) 
+            time.sleep(0.001)
             rdreg = llc.wib_peek(self.wib, 0xA00C0004)
             llc.wib_poke(self.wib,0xA00C0004 , rdreg&0xfffBffff) 
+            time.sleep(0.001)
 
-    def wib_timing(self, pll=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff):
+    def wib_timing(self, localclk_cs=False, fp1_ptc0_sel=0, cmd_stamp_sync = 0x7fff):
         if self.wib==1: #Connection failed
             print ("no WIB is found")
             sys.exit() 
-        llc.system_clock_select(self.wib, pll, fp1_ptc0_sel, cmd_stamp_sync)    
+        llc.system_clock_select(self.wib, localclk_cs, fp1_ptc0_sel, cmd_stamp_sync)    
 
     def femb_vol_set(self, vfe=3.0, vcd=3.0, vadc=3.5):
         llc.power_config(self.wib, v1 = vfe, v2=vcd, v3=vadc)
@@ -670,18 +672,18 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                     wib_ip = ip
                     self.wib = WIB(ip)
 
-                    #now = datetime.now()
-                    #init_ts = int(datetime.timestamp(now) * 1e9)
-                    init_ts = time.time_ns()
-                    init_ts = init_ts//16 #WIB system clock is 62.5MHz
-
-                    llc.wib_poke(self.wib, 0xA00C0018, init_ts&0xffffffff)
-                    llc.wib_poke(self.wib, 0xA00C001c, (init_ts>>32)&0xffffffff)
-                    rdreg = llc.wib_peek(self.wib, 0xA00C000C)
-                    wrreg = rdreg&0xfffffffd
-                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #disable fake timestamp
-                    wrreg = rdreg|0x02
-                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #enable fake timestamp and reload the init value
+#                    #now = datetime.now()
+#                    #init_ts = int(datetime.timestamp(now) * 1e9)
+#                    init_ts = time.time_ns()
+#                    init_ts = init_ts//16 #WIB system clock is 62.5MHz
+#
+#                    llc.wib_poke(self.wib, 0xA00C0018, init_ts&0xffffffff)
+#                    llc.wib_poke(self.wib, 0xA00C001c, (init_ts>>32)&0xffffffff)
+#                    rdreg = llc.wib_peek(self.wib, 0xA00C000C)
+#                    wrreg = rdreg&0xfffffffd
+#                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #disable fake timestamp
+#                    wrreg = rdreg|0x02
+#                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #enable fake timestamp and reload the init value
 
                     llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
                     rdreg = llc.wib_peek(self.wib, 0xA00C0004)

@@ -34,9 +34,9 @@ pwr_info = []
 for ip in ips:
     chk.wib = WIB(ip)
     
-    chk.wib_init()
+#    chk.wib_init()
 #    chk.wib_i2c_adj(n=500)
-    chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+#    chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
     
     ####################FEMBs powering################################
     #set FEMB voltages

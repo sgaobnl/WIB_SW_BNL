@@ -9,8 +9,9 @@ import time, datetime, random, statistics
 from wib import WIB
 import os
 from rawdata_dec import rawdata_dec 
-localclk_cs = False
-ext_cali_flg = False
+
+ext_cali_flg = True
+localclk_cs=False
 
 if len(sys.argv) < 2:
     print('Please specify at least one FEMB # to test')
@@ -19,22 +20,22 @@ if len(sys.argv) < 2:
 
 save = True
 sample_N = 1
-
 fembs = [int(a) for a in sys.argv[1:5]] 
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 
 chk = WIB_CFGS()
 
 #run#1
-runno = "Run01"
+runno = "Run_EXTCALI"
 cfg_paras_rec = []
-adac_pls_en = 1 #enable LArASIC interal calibraiton pulser
+adac_pls_en = 0 #enable LArASIC interal calibraiton pulser
 
 if True:
     for ip in ips:
         while True:
             chk.wib = WIB(ip) 
-    
+            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+
             ####################WIB init################################
             #check if WIB is in position
             #chk.wib_init()
@@ -66,8 +67,7 @@ if True:
                 else:
                     swdac = 1
                     dac = 0x20
-                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
-                #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
+                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac )
                 cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
             #step 3
                 chk.femb_cfg(femb_id, adac_pls_en )
@@ -96,13 +96,35 @@ if True:
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
 
-
     if adac_pls_en:
         for ip in ips:
             chk.wib = WIB(ip) 
         
             for femb_id in fembs:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+
+mon_paras = []
+if False: # FE monitoring 
+    for ip in ips:
+        chk.wib = WIB(ip) 
+    
+        sps = 3
+        chips = 1
+        if True:
+            print ("monitor bandgap reference")
+            mon_refs = {}
+            for mon_chip in range(chips):
+                adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=2, mon_chip=mon_chip, sps=sps)
+                mon_refs[f"chip{mon_chip}_bandgap"] = adcrst
+            mon_paras.append([ip,mon_refs])
+        
+        if True:
+            print ("monitor temperature")
+            mon_temps = {}
+            for mon_chip in range(chips):
+                adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=1, mon_chip=mon_chip, sps=sps)
+                mon_temps[f"chip{mon_chip}_temper"] = adcrst
+            mon_paras.append([ip,mon_temps])
 
 if True:
     root_dir = sys.argv[-1]
@@ -127,7 +149,7 @@ if True:
 
     ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     fp = save_dir + "Raw_SW_Trig" + ts  + ".bin"
-    rawinfo =  [rawdata, pwr_meas, cfg_paras_rec]
+    rawinfo =  [rawdata, pwr_meas, cfg_paras_rec, mon_paras]
     with open(fp, 'wb') as fn:
         pickle.dump( rawinfo, fn)
         #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
@@ -135,9 +157,10 @@ if True:
     chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
 
     for ch in range(len(chped)):
-        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
+        if (chped[ch] < 2500) and ((chmax[ch]-chped[ch]) > 4000):
             pass
         else:
+            print (ch, chped[ch],chmax[ch], chmin[ch])
             input ("Error, check the plot and CNTL+C to exit")
 
     print ("Done!")

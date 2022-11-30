@@ -132,11 +132,7 @@ for ipi in range(len(ips)):
 
     
     chk.wib = WIB(ips[ipi]) 
-    chk.wib_init()
-#    chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
     
-#    chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
-#    chk.femb_powering(fembs)
     pwr_meas = chk.get_sensors()
     
     chk.femb_cd_rst()

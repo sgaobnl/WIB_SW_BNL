@@ -10,6 +10,7 @@ from wib import WIB
 import os
 from rawdata_dec import rawdata_dec 
 
+localclk_cs = False
 ext_cali_flg = False
 
 if len(sys.argv) < 2:
@@ -37,7 +38,7 @@ if True:
     
             ####################WIB init################################
             #check if WIB is in position
-            chk.wib_init()
+            #chk.wib_init()
             ####################FEMBs Configuration################################
             #step 1
             #reset all FEMBs on WIB
@@ -77,7 +78,7 @@ if True:
             if align_flg:
                 break
             else:
-                chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
         
         if ext_cali_flg == True:

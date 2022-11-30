@@ -11,6 +11,7 @@ import os
 from rawdata_dec import rawdata_dec 
 
 ext_cali_flg = False
+localclk_cs=False
 
 if len(sys.argv) < 2:
     print('Please specify at least one FEMB # to test')
@@ -33,10 +34,12 @@ if True:
     for ip in ips:
         while True:
             chk.wib = WIB(ip) 
+            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+
     
             ####################WIB init################################
             #check if WIB is in position
-            chk.wib_init()
+            #chk.wib_init()
             ####################FEMBs Configuration################################
             #step 1
             #reset all FEMBs on WIB
@@ -76,7 +79,7 @@ if True:
             if align_flg:
                 break
             else:
-                chk.wib_timing(pll=True, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
                 #chk.femb_powering([])
                 #hk.femb_powering(fembs)
 
@@ -105,8 +108,8 @@ if True:
             for femb_id in fembs:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
 
-if True: # FE monitoring 
-    mon_paras = []
+mon_paras = []
+if False: # FE monitoring 
     for ip in ips:
         chk.wib = WIB(ip) 
     

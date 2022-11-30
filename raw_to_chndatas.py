@@ -8,8 +8,7 @@ import os
 from rawdata_dec import rawdata_dec 
 
 fp = sys.argv[1] 
-chn = int(sys.argv[2] )
-runs = int(sys.argv[3])
+runs = int(sys.argv[2])
 
 with open(fp, 'rb') as fn:
     rawinfo = pickle.load(fn)
