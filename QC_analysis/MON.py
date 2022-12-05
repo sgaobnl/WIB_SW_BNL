@@ -242,6 +242,10 @@ class MON_LARASIC:
             slope, y0 = np.polyfit(x_init, y_init, 1)
         return index, x[index], y[index]
 
+    def checkLinearity(self, x=[], y=[], lowdac=0, updac=30, indexOfMax=0, indexOfMin=-1, err=0.001):
+        index, maxDAC, fDAC = self.__checkLinearity(x=x, y=y, lowdac=lowdac, updac=updac, indexOfMax=indexOfMax, indexOfMin=indexOfMin, err=err)
+        return index, maxDAC, fDAC
+
     def run_MON_LArASIC_DAC(self):
         '''
             This function runs the script for monitoring LArASIC_DAC.
@@ -257,6 +261,7 @@ class MON_LARASIC:
         datanames = ['dac_sgp1', 'dac_14mVfC']
         for dataname in datanames:
             maxLinearDAC_list = []
+            list_slope = []
             for idir in range(len(self.femb_dir_list)):
                 data = self.read_bin(self.femb_dir_list[idir], bin_filename='LArASIC_mon_DAC.bin')
                 fembs = data[self.__get_data_index(dataname='dac_logs')]['femb id']
@@ -289,16 +294,19 @@ class MON_LARASIC:
 
                     tmpchipNumber = []
                     maxLinearDAC = []
+                    tmp_list_slope = []
                     for ichip in range(8):
                         lin = self.__checkLinearity(x=femb_df['dac'], y=femb_df['chip{}'.format(ichip)], lowdac=0, updac=30)
                         slope, y0 = np.polyfit(femb_df['dac'][:lin[0]+1], femb_df['chip{}'.format(ichip)][:lin[0]+1], 1)
                         tmpchipNumber.append(ichip)
                         maxLinearDAC.append(lin[1])
+                        tmp_list_slope.append(slope)
                         print(lin)
                         print(slope)
                     maxLinearDAC_list += maxLinearDAC
+                    list_slope += tmp_list_slope
                     chipNumber = ['chip{}'.format(ichip) for ichip in tmpchipNumber]
-                    maxLinearDAC_df = pd.DataFrame({'chip': chipNumber, 'maxDAC': maxLinearDAC})
+                    maxLinearDAC_df = pd.DataFrame({'chip': chipNumber, 'maxDAC': maxLinearDAC, 'slope': tmp_list_slope})
                     
                     # save df in csv file
                     toytpc = (self.femb_dir_list[idir].split('/')[-2]).split('_')[-1]
@@ -317,14 +325,25 @@ class MON_LARASIC:
                     plt.legend()
                     plt.savefig('/'.join([new_output_dir, figname + '.png']))
                     plt.close()
+            # maxDAC
             meanDAC = np.mean(maxLinearDAC_list)
             plt.figure(figsize=(10, 7))
-            plt.hist(maxLinearDAC_list, label='mean = {}'.format(meanDAC))
+            plt.hist(maxLinearDAC_list, label='mean = {:.4f}'.format(meanDAC))
             plt.xlabel('max linear DAC')
             plt.ylabel('#')
             plt.title(dataname)
             plt.legend()
             plt.savefig('/'.join([self.output_dir, 'distribution_maxLinearDAC_{}_{}.png'.format(dataname, self.temperature)]))
+            plt.close()
+            # slope
+            mean_slope = np.mean(list_slope)
+            plt.figure(figsize=(10, 7))
+            plt.hist(list_slope, label='mean = {:.4f}'.format(mean_slope))
+            plt.xlabel('slope')
+            plt.ylabel('#')
+            plt.title(dataname)
+            plt.legend()
+            plt.savefig('/'.join([self.output_dir, 'distribution_slope_{}_{}.png'.format(dataname, self.temperature)]))
             plt.close()
 
 class MON_ColdADC(MON_LARASIC):
@@ -333,8 +352,9 @@ class MON_ColdADC(MON_LARASIC):
     '''
     def __init__(self, input_dir='', output_dir='', temperature='LN', fembs_to_exclude=[]):
         MON_LARASIC.__init__(self, input_dir=input_dir, output_dir=output_dir, output_dirname='MON_ADC',
-                            temperature=temperature, fembs_to_exclude=fembs_to_exclude)
+                            temperature=temperature, fembs_to_exclude=[])
         self.mons = ['VCMI', 'VCMO', 'VREFP', 'VREFN']
+        self.fembs_to_exclude = fembs_to_exclude
 
     def __output_dir(self, toytpc='150pF', femb_id=''):
         femb_folderName = '_'.join(['FEMB', femb_id, self.temperature, toytpc])
@@ -412,7 +432,7 @@ class MON_ColdADC(MON_LARASIC):
                 return i, x[i], y[i]
             rmse0 = rmse
 
-    def __plot_MonColdADC(self, mon_dataname='VCMI', femb_id='', toytpc='150pF'):
+    def __plot_MonColdADC(self, mon_dataname='VCMI', femb_id='', toytpc='150pF', n_rmse=3):
         df, csv_dir = self.__read_csv(mon_dataname=mon_dataname, femb_id=femb_id, toytpc=toytpc)
         plt.figure(figsize=(10, 7))
         for ichip in range(8):
@@ -420,7 +440,8 @@ class MON_ColdADC(MON_LARASIC):
             plt.plot(tmp_df['DAC'], tmp_df['MON'], marker='.', markersize='5.5', label=f'chip{ichip}')
 
             # check linearity
-            lin = self.__checkLinearity(x=tmp_df['DAC'], y=tmp_df['MON'], lowdac=0, updac=100)
+            lin = self.__checkLinearity(x=tmp_df['DAC'], y=tmp_df['MON'], lowdac=0, updac=100, var_rmse=n_rmse)
+            # lin = self.checkLinearity(x=tmp_df['DAC'], y=tmp_df['MON'], lowdac=0, updac=100, indexOfMax=-1, indexOfMin=0, err=0.001)
             slope, y0 = np.polyfit(tmp_df['DAC'][:lin[0]+1], tmp_df['MON'][:lin[0]+1], 1)
             y = np.array(tmp_df['DAC']) * slope + y0
             MON_0 = list(tmp_df['MON'])[0]
@@ -433,50 +454,74 @@ class MON_ColdADC(MON_LARASIC):
         plt.savefig('/'.join([csv_dir, mon_dataname + '.png']))
         plt.close()
 
-    def run_MON_ColdADC(self, read_bin=True):
-        femb_list = []
-        chips_list = []
-        maxLinearDAC = []
-        slope_list = []
+    def __get_relevant_info(self, mon_dataname='', femb_id='', toytpc='150pF', n_rmse=3):
+        femb_list=[]
+        chips_list=[]
+        maxLinearDAC=[]
+        slope_list=[]
+        self.__plot_MonColdADC(mon_dataname=mon_dataname, femb_id=femb_id, toytpc=toytpc, n_rmse=n_rmse)
+        df, _ = self.__read_csv(mon_dataname=mon_dataname, femb_id=femb_id, toytpc=toytpc)
+        for ichip in range(8):
+            tmp_df = df[df['CHIP'] == f'chip{ichip}']
+            lin = self.__checkLinearity(x=tmp_df['DAC'], y=tmp_df['MON'], lowdac=0, updac=100, var_rmse=n_rmse)
+            slope, _ = np.polyfit(tmp_df['DAC'][:lin[0]+1], tmp_df['MON'][:lin[0]+1], 1)
+            # print(lin)
+
+            femb_list.append(femb_id)
+            chips_list.append(f'chip{ichip}')
+            maxLinearDAC.append(lin[1])
+            slope_list.append(slope)
+        return femb_list, chips_list, maxLinearDAC, slope_list
+
+    def __save_data_from_bin(self, bin_filename='LArASIC_ColdADC_mon.bin'):
+        for femb_folder in self.femb_dir_list:
+            raw = self.read_bin(bin_dir=femb_folder, bin_filename=bin_filename)
+            fembs, toytpc = self.__get_MONADC_data(data_from_bin=raw) # save data in csv file
+
+    def run_MON_ColdADC(self, read_bin=True, n_rmse=5):
+        if read_bin:
+            self.__save_data_from_bin()
+
         for mon in self.mons:
             out_df = pd.DataFrame()
-            if read_bin:
-                for femb_folder in self.femb_dir_list:
-                    raw = self.read_bin(bin_dir=femb_folder, bin_filename='LArASIC_ColdADC_mon.bin')
-                    fembs, toytpc = self.__get_MONADC_data(data_from_bin=raw)
-                    for ifemb, femb_id in fembs.items():
-                    
-                        self.__plot_MonColdADC(mon_dataname=mon, femb_id=femb_id, toytpc=toytpc)
-                        df, _ = self.__read_csv(mon_dataname=mon, femb_id=femb_id, toytpc=toytpc)
-                        for ichip in range(8):
-                            tmp_df = df[df['CHIP'] == f'chip{ichip}']
-                            lin = self.__checkLinearity(x=tmp_df['DAC'], y=tmp_df['MON'], lowdac=0, updac=100)
-                            slope, _ = np.polyfit(tmp_df['DAC'][:lin[0]+1], tmp_df['MON'][:lin[0]+1], 1)
-                            print(lin)
+            femb_list = []
+            chips_list = []
+            maxLinearDAC = []
+            slope_list = []
 
-                            femb_list.append(femb_id)
-                            chips_list.append(f'chip{ichip}')
-                            maxLinearDAC.append(lin[1])
-                            slope_list.append(slope)
-                out_df = pd.DataFrame({'femb': femb_list, 'chip': chips_list, 'maxDAC': maxLinearDAC, 'slope': slope_list})
-                out_df.to_csv('/'.join([self.output_dir, 'maxLinearDAC_{}_{}.csv'.format(mon, self.temperature)]), index=False)
-            else:
-                out_df = pd.read_csv('/'.join([self.output_dir, 'maxLinearDAC_{}_{}.csv'.format(mon, self.temperature)]))
+            print(self.output_dir)
+            tmp_files_in_dir = os.listdir(self.output_dir)
+            list_femb_dir = []
+            for element in tmp_files_in_dir:
+                if os.path.isdir('/'.join([self.output_dir, element])) & (self.temperature in element):
+                    list_femb_dir.append(element)
+            fembs_and_toytpc = [(element.split('_')[1], element.split('_')[-1]) for element in list_femb_dir]
+            for femb_toytpc in fembs_and_toytpc:
+                if int(femb_toytpc[0]) not in self.fembs_to_exclude:
+                    tmp_fembs, tmp_chips, tmp_maxDAC, tmp_slopes = self.__get_relevant_info(mon_dataname=mon, femb_id=femb_toytpc[0], toytpc=femb_toytpc[1], n_rmse=n_rmse)
+                    femb_list += tmp_fembs
+                    chips_list += tmp_chips
+                    maxLinearDAC += tmp_maxDAC
+                    slope_list += tmp_slopes
+            out_df = pd.DataFrame({'femb': femb_list, 'chip': chips_list, 'maxDAC': maxLinearDAC, 'slope': slope_list})
+            out_df.to_csv('/'.join([self.output_dir, 'maxLinearDAC_{}_{}.csv'.format(mon, self.temperature)]), index=False)
             # slope
             plt.figure(figsize=(10, 7))
             meanSlope = np.mean(out_df['slope'])
-            plt.hist(out_df['slope'], bins=50, label='mean slope = {}'.format(meanSlope))
+            plt.hist(out_df['slope'], bins=50, label='mean slope = {:.4f}'.format(meanSlope))
             plt.xlabel('slope')
             plt.ylabel('#')
             plt.title('slope {}'.format(mon))
+            plt.legend()
             plt.savefig('/'.join([self.output_dir, 'distribution_slope_{}_{}.png'.format(mon, self.temperature)]))
             plt.close()
             # max linear DAC
             plt.figure(figsize=(10, 7))
             meanMaxDAC = np.mean(out_df['maxDAC'])
-            plt.hist(out_df['maxDAC'], bins=100, label='mean DAC = {}'.format(meanMaxDAC))
+            plt.hist(out_df['maxDAC'], bins=100, label='mean DAC = {:.4f}'.format(meanMaxDAC))
             plt.xlabel('max linear DAC')
             plt.ylabel('#')
             plt.title(mon)
+            plt.legend()
             plt.savefig('/'.join([self.output_dir, 'distribution_maxLinearDAC_{}_{}.png'.format(mon, self.temperature)]))
             plt.close()
