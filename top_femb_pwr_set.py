@@ -27,6 +27,11 @@ if 'on' in sys.argv[3]:
     fembs.append(2)
 if 'on' in sys.argv[4]:
     fembs.append(3)
+
+vfe = float(sys.argv[5])
+vcd = float(sys.argv[6])
+vadc = float(sys.argv[7])
+
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 chk = WIB_CFGS()
 
@@ -44,7 +49,7 @@ for ip in ips:
     
     ####################FEMBs powering################################
     #set FEMB voltages
-    chk.femb_vol_set(vfe=3.0, vcd=3.0, vadc=3.5)
+    chk.femb_vol_set(vfe=vfe, vcd=vcd, vadc=vadc)
     #chk.femb_vol_set(vfe=3.5, vcd=3.5, vadc=3.5)
     #chk.femb_vol_set(vfe=4.0, vcd=4.0, vadc=4.0)
     

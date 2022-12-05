@@ -50,13 +50,17 @@ cfg_paras_rec = []
 print ("Start...")
 if True:
     for ip in ips:
+#        if ip == "10.73.137.27":
+#            fembs=[0,1,3]
+#        else:
+#            fembs=[0,1,2,3]
         chk.wib = WIB(ip) 
     
         ####################WIB init################################
         #check if WIB is in position
         #chk.wib_init()
         ####################FEMBs Configuration################################
-        #chk.femb_cd_rst()
+        chk.femb_cd_rst()
         
         for femb_id in fembs:
         #step 2
@@ -77,10 +81,12 @@ if True:
             chk.set_fe_board(sts=sts, snc=snc,sg0=sg0, sg1=sg1, st0=st0, st1=st1, sdf=sdf, slk0=slk0, slk1=slk1, swdac=swdac, dac=dac, sgp=sgp, sdd=1 )
             cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
         #step 3
-            chk.femb_fe_cfg(femb_id)
-            if adac_pls_en :
-                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+            chk.femb_cfg(femb_id, adac_pls_en )
+            #chk.femb_fe_cfg(femb_id)
+            #if adac_pls_en :
+            #    chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
             print (ip, "FEs on FEMB%d are configured"%femb_id)
+
         
 if True:
     time.sleep(0.1)
@@ -89,6 +95,10 @@ if True:
 
     pwr_meas = []
     for ip in ips:
+#        if ip == "10.73.137.27":
+#            fembs=[0,1,3]
+#        else:
+#            fembs=[0,1,2,3]
         chk.wib = WIB(ip) 
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
@@ -96,6 +106,10 @@ if True:
 
     if adac_pls_en:
         for ip in ips:
+#            if ip == "10.73.137.27":
+#                fembs=[0,1,3]
+#            else:
+#                fembs=[0,1,2,3]            
             chk.wib = WIB(ip) 
             for femb_id in fembs:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01

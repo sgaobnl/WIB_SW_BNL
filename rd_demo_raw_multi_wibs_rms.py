@@ -14,16 +14,19 @@ from spymemory_decode import wib_spy_dec_syn
 #fp ="D:/CRP5A/CRP5A_data/Raw_SW_Trig21_11_2022_17_03_30.bin"
 #fp ="D:/CRP5A/FC_data/Raw_SW_Trig25_11_2022_02_01_33.bin"
 
-runpath = "D:/CRP5A/FC_data/"
-fps = []
-for root, dirs, files in os.walk(runpath):
-    break
-for fn in files:
-    fps.append (runpath + fn)
-#exit()
+#runpath = "D:/CRP5A/FC_data/"
+#fps = []
+#for root, dirs, files in os.walk(runpath):
+#    break
+#for fn in files:
+#    fps.append (runpath + fn)
+##exit()
+
+fp = sys.argv[1]
 
 pre_pls = False
-for fp in fps:
+#for fp in fps:
+for fp in [fp]:
     print (fp)
     with open(fp, 'rb') as fn:
         raw = pickle.load(fn)
@@ -110,43 +113,43 @@ for fp in fps:
         chped.append(np.mean(chns_data[ch][0:1000]))
         chmin.append(np.min(chns_data[ch][0:1000]))
         chrms.append(np.std(chns_data[ch][0:1000]))
-        if ch == 3:
-            if np.max(chns_data[ch][0:1000]) - np.mean(chns_data[ch][0:1000]) > 5000:
-                one_pls = True
-            else:
-                one_pls = False
-        else:
-            if (np.max(chns_data[ch][0:1000]) - np.mean(chns_data[ch][0:1000]) > 5000) == one_pls:
-                pass
-            else:
-                print ("Error")
-                exit()
-                #break
-    if one_pls:
-        print (fp + ":>>>>>>>>>>>>>>pls")
-    else:
-        print (fp + ":>>>>>>>>>>>>>>no pls")
-    if pre_pls != one_pls:
-        pre_pls = one_pls
-        print (fp + ":>>>>>>>>>>>>>>Good")
-
+#        if ch == 3:
+#            if np.max(chns_data[ch][0:1000]) - np.mean(chns_data[ch][0:1000]) > 5000:
+#                one_pls = True
+#            else:
+#                one_pls = False
+#        else:
+#            if (np.max(chns_data[ch][0:1000]) - np.mean(chns_data[ch][0:1000]) > 5000) == one_pls:
+#                pass
+#            else:
+#                print ("Error")
+#                exit()
+#                #break
+#    if one_pls:
+#        print (fp + ":>>>>>>>>>>>>>>pls")
+#    else:
+#        print (fp + ":>>>>>>>>>>>>>>no pls")
+#    if pre_pls != one_pls:
+#        pre_pls = one_pls
+#        print (fp + ":>>>>>>>>>>>>>>Good")
+#
         
 
     #for ch in range(1,128*12,16):
 
-#    fig = plt.figure(figsize=(10,6))
-#    plt.rcParams.update({'font.size':12})
-#    for ch in range(3,128*12,128):
-#        x = np.arange(1000)
-#        y = chns_data[ch][0:1000]
-#        plt.plot(x, y, marker='.',label = "waveform of ch%d"%ch)
-#    
-#    plt.legend()
-#    plt.ylabel ("ADC / bit" )
-#    plt.grid()
-#    plt.show()
-#    plt.close()
-#    
+    fig = plt.figure(figsize=(10,6))
+    plt.rcParams.update({'font.size':12})
+    for ch in range(3,128*12,128):
+        x = np.arange(1000)
+        y = chns_data[ch][0:1000]
+        plt.plot(x, y, marker='.',label = "waveform of ch%d"%ch)
+    
+    plt.legend()
+    plt.ylabel ("ADC / bit" )
+    plt.grid()
+    plt.show()
+    plt.close()
+    
 #    
 #    x = np.arange(len(chns_data))
 #    fig = plt.figure(figsize=(10,6))

@@ -258,7 +258,19 @@ def dc2dc(s,idx): #for use in get_sensors
 #    if not wib.send_command(req,rep,print_gui=print):
 #        print(rep.contents.decode('utf8'))   
 
+def fast_command_idle(wib,  print_flg=False): #use: fast_command(wib,'reset')
+    #ref: wib_buttons6.py: WIBFast.fast_command    
+    for i in range(50):
+        cmd = 'idle'
+        fast_cmds = { 'reset':1, 'act':2, 'sync':4, 'edge':8, 'idle':16, 'edge_act':32 }
+        req = wibpb.CDFastCmd()
+        req.cmd = fast_cmds[cmd]
+        rep = wibpb.Empty()
+        wib.send_command(req,rep,print_gui=print)
+
 def fast_command(wib, cmd, print_flg=False): #use: fast_command(wib,'reset')
+    fast_command_idle(wib)
+
     #ref: wib_buttons6.py: WIBFast.fast_command    
     fast_cmds = { 'reset':1, 'act':2, 'sync':4, 'edge':8, 'idle':16, 'edge_act':32 }
     req = wibpb.CDFastCmd()
@@ -269,6 +281,7 @@ def fast_command(wib, cmd, print_flg=False): #use: fast_command(wib,'reset')
         print(f"Fast command {req.cmd} sent")    
     if "reset" in cmd:
         time.sleep(1)
+
 
 def cdpeek(wib,femb_id, chip_addr, reg_page, reg_addr, print_flg=False):
     req = wibpb.CDPeek()

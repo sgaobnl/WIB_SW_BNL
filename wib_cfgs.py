@@ -423,9 +423,10 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 break
             else:
                 print ("LArASIC readback status is {}, {} diffrent from 0xFF".format(sts_cd1, sts_cd2))
-                if i > 10:
+                if i > 1:
                     print ("exit anyway")
-                    exit()
+                    break
+                    #exit()
                 else:
                     time.sleep(0.1)
             i = i + 1
@@ -464,9 +465,10 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                 print ("Reconfigure due to i2c error!")
                 self.i2cerror = False
                 refi += 1
-                if refi > 5:
+                if refi > 1:
                     print ("I2C failed! exit anyway")
-                    exit()
+                    break
+                    #exit()
             else:
                 print (f"FEMB{femb_id} is configurated")
                 break
@@ -663,7 +665,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         buf1 = True if 2 in fembs or 3 in fembs else False 
         if (buf0 == False) or (buf1 == False):
             print("Error: currently only support 4 FEMBs per WIB")
-            exit()
+            #exit()
         for  i in range(num_samples):
             if trigger_command == 0:
 
@@ -672,18 +674,29 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                     wib_ip = ip
                     self.wib = WIB(ip)
 
-#                    #now = datetime.now()
-#                    #init_ts = int(datetime.timestamp(now) * 1e9)
-#                    init_ts = time.time_ns()
-#                    init_ts = init_ts//16 #WIB system clock is 62.5MHz
-#
-#                    llc.wib_poke(self.wib, 0xA00C0018, init_ts&0xffffffff)
-#                    llc.wib_poke(self.wib, 0xA00C001c, (init_ts>>32)&0xffffffff)
-#                    rdreg = llc.wib_peek(self.wib, 0xA00C000C)
-#                    wrreg = rdreg&0xfffffffd
-#                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #disable fake timestamp
-#                    wrreg = rdreg|0x02
-#                    llc.wib_poke(self.wib, 0xA00C000C, wrreg) #enable fake timestamp and reload the init value
+                    while True:
+                        rdreg = llc.wib_peek(self.wib, 0xA00C0004)
+                        clk_cs0 = (rdreg>>16)&0x01
+                        rdreg = llc.wib_peek(self.wib, 0xA00C0004)
+                        clk_cs1 = (rdreg>>16)&0x01
+                        if clk_cs0 == clk_cs1:
+                            clk_cs= clk_cs0
+                            break
+
+                    if clk_cs ==1:
+                        now = datetime.now()
+                        init_ts = int(datetime.timestamp(now) * 1e9)
+                        init_ts = time.time_ns()
+                        #init_ts = 0
+                        init_ts = init_ts//16 #WIB system clock is 62.5MHz
+
+                        llc.wib_poke(self.wib, 0xA00C0018, init_ts&0xffffffff)
+                        llc.wib_poke(self.wib, 0xA00C001c, (init_ts>>32)&0xffffffff)
+                        rdreg = llc.wib_peek(self.wib, 0xA00C000C)
+                        wrreg = rdreg&0xfffffffd
+                        llc.wib_poke(self.wib, 0xA00C000C, wrreg) #disable fake timestamp
+                        wrreg = rdreg|0x02
+                        llc.wib_poke(self.wib, 0xA00C000C, wrreg) #enable fake timestamp and reload the init value
 
                     llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
                     rdreg = llc.wib_peek(self.wib, 0xA00C0004)
@@ -709,7 +722,10 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                     llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
                     rdreg = llc.wib_peek(self.wib, 0xA00C0014)
                     wrreg = (rdreg&0xff00ffff)|(trigger_command<<16)
-                    llc.wib_poke(self.wib, 0xA00C0014, wrreg) #program cmd_code_trigger
+                    llc.wib_poke(self.wib, 0xA00C0014, wrreg) #program cmd_code_trigger and enable it
+                    rdreg = llc.wib_peek(self.wib, 0xA00C0014)
+                    wrreg = rdreg|0x40000000
+                    llc.wib_poke(self.wib, 0xA00C0014, wrreg) #program cmd_code_trigger and enable it
 
                 while True:
                     spy_full_flgs = False

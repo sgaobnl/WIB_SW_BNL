@@ -10,12 +10,14 @@ import struct
 from tools import Tools
 from spymemory_decode import wib_spy_dec_syn
 
-def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.png", rms_flg = False, chdat_flg=False, femb_plt_sq = False):
+def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.png", rms_flg = False, chdat_flg=False, femb_plt_sq = False, ts_flg = False):
+        
     tl=Tools()
     rawdata = raw[0]
     pwr_meas = raw[1]
     crate_runs = []
     for runi in range(runs):
+        print ("RUN%03d"%runi)
         dec_datas = []
         for wibdata in rawdata[runi]:
             ip = wibdata[0]
@@ -58,7 +60,7 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
             femb2 = list(zip(*femb2))
             femb3 = list(zip(*femb3))
             
-            wibs = [femb0, femb1, femb2, femb3]
+            wibs = [femb0, femb1, femb2, femb3, tmts]
             crate.append(wibs)
             
             T0 = tmts[0]*512
@@ -67,21 +69,26 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
         crate_runs.append(crate)
     
     chns_data =[]
+    tmts_wibs =[]
     wib_num = 3
     femb_num = 4
     for wibi in  range(wib_num):
+        tmts_wibs.append([])
         for fembi in  range(femb_num):
             for ch in range(128):
                 chns_data.append([])
     
     for runi in range(runs):
         for wibi in  range(wib_num):
+            tmts_wibs[wibi] += crate_runs[runi][wibi][4]
             for fembi in  range(femb_num):
                 for ch in range(128):
                     chns_data[wibi*512 + fembi*128 + ch] += crate_runs[runi][wibi][fembi][ch]
-
     if chdat_flg:
-        return chns_data
+        if ts_flg:
+            return [chns_data, tmts_wibs]
+        else:
+            return chns_data
 #    chrms = np.std(chns_data, axis=(1)) 
 #    chped = np.mean(chns_data, axis=(1)) 
 #    chmax = np.max(chns_data, axis=(1)) 
@@ -91,10 +98,18 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
     chmin = []
     chrms = []
     for ch in range(len(chns_data)):
-        chmax.append(np.max(chns_data[ch][0:1000]))
-        chped.append(np.mean(chns_data[ch][0:1000]))
-        chmin.append(np.min(chns_data[ch][0:1000]))
-        chrms.append(np.std(chns_data[ch][0:1000]))
+        if ch == 0:
+            print (len((chns_data[ch])))
+        chn_max = np.max(chns_data[ch])
+        chn_max_pos = np.where(chns_data[ch] == chn_max)[0][0]
+        chmax.append(np.max(chns_data[ch]))
+        chped.append(np.mean(chns_data[ch]))
+        chmin.append(np.min(chns_data[ch]))
+        if (chn_max_pos > 100) and (chn_max_pos < len(chns_data[ch])-100):
+            chdata = chns_data[ch][0:chn_max_pos-50] + chns_data[ch][chn_max_pos+200:] 
+        else:
+            chdata = chns_data[ch][200:-200] 
+        chrms.append(np.std(chdata))
    
     uplanerms = np.zeros(476)
     vplanerms = np.zeros(476)
@@ -141,10 +156,10 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
 
     print ("UTC: " + t0_str )
     x = np.arange(wib_num*4*128)
-    fig = plt.figure(figsize=(10,6))
+    fig = plt.figure(figsize=(14,8))
     plt.rcParams.update({'font.size':12})
     if rms_flg :
-        plt.subplot(211)
+        plt.subplot(221)
     else:
         plt.subplot(111)
     if femb_plt_sq:
@@ -165,16 +180,50 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
     plt.grid()
 
     if rms_flg :
-        plt.subplot(212)
+        plt.subplot(222)
         plt.plot(x, ch_rms_map, marker='.',color='r', label = "RMS")
         plt.legend()
         plt.title ("RMS Noise Distribution @ UTC:" + t0_str)
-        plt.xlabel ("CH#")
-        plt.ylabel ("ADC / bit" )
-        plt.ylim((0,200))
+        plt.xlabel ("CH# (According to CRP mapping)")
+        plt.ylabel ("ADC RMS Noise / bit" )
+        plt.ylim((0,50))
         plt.grid()
         plt.axvline(x=475, color = 'm', linestyle='--')
         plt.axvline(x=951, color = 'm', linestyle='--')
+
+    if rms_flg :
+        plt.subplot(223)
+        plt.plot(x, np.array(ch_rms_map)*39, marker='.',color='r', label = "RMS")
+        plt.legend()
+        plt.title ("ENC Distribution @ UTC:" + t0_str)
+        plt.xlabel ("CH# (According to CRP mapping)")
+        plt.ylabel ("ENC / e-" )
+        plt.ylim((0,2000))
+        plt.grid()
+        plt.axvline(x=475, color = 'm', linestyle='--')
+        plt.axvline(x=951, color = 'm', linestyle='--')
+
+    if rms_flg :
+        plt.subplot(224)
+        wavelen = len(chns_data[1300])
+        x = np.arange(wavelen)
+        plt.plot(x, chns_data[1300][0:wavelen], marker='.',color='r', label = "CH1300")
+        plt.legend()
+        plt.title ("Waveform of CH1300")
+        plt.xlabel ("samples #")
+        plt.ylabel ("ADC / bit" )
+        plt.grid()
+
+        #plt.subplot(224)
+        #plt.plot(x, chrms, marker='.',color='r', label = "RMS")
+        #plt.legend()
+        #plt.title ("RMS Noise Distribution @ UTC:" + t0_str)
+        #plt.xlabel ("CH# (According to FEMB mapping)")
+        #plt.ylabel ("ADC RMS Noise / bit" )
+        #plt.ylim((0,50))
+        #plt.grid()
+        #for x in range(0, 128*12, 128):
+        #    plt.axvline(x=x, color = 'm', linestyle='--')
 
     plt.tight_layout()
     if plot_show_en:

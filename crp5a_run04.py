@@ -35,6 +35,10 @@ localclk_cs = False
 if True:
     for ip in ips:
         while True:
+#            if ip == "10.73.137.27":
+#                fembs=[0,1,3]
+#            else:
+#                fembs=[0,1,2,3]
             chk.wib = WIB(ip) 
     
             ####################WIB init################################
@@ -68,7 +72,7 @@ if True:
                 else:
                     swdac = 1
                     dac = 0x20
-                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac, sdd=1 )
+                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac, sdd=1 )
                 #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
                 cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
             #step 3
@@ -95,6 +99,10 @@ if True:
 
     pwr_meas = []
     for ip in ips:
+#        if ip == "10.73.137.27":
+#            fembs=[0,1,3]
+#        else:
+#            fembs=[0,1,2,3]
         chk.wib = WIB(ip) 
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
@@ -102,6 +110,10 @@ if True:
 
     if adac_pls_en:
         for ip in ips:
+#            if ip == "10.73.137.27":
+#                fembs=[0,1,3]
+#            else:
+#                fembs=[0,1,2,3]
             chk.wib = WIB(ip) 
         
             for femb_id in fembs:
@@ -135,11 +147,11 @@ if True:
         #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
 
     chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
-
-    for ch in range(len(chped)):
-        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
-            pass
-        else:
-            input ("Error, check the plot and CNTL+C to exit")
+#
+#    for ch in range(len(chped)):
+#        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
+#            pass
+#        else:
+#            print ("Error, check the plot and CNTL+C to exit")
 
     print ("Done!")

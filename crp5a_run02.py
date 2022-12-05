@@ -50,13 +50,17 @@ cfg_paras_rec = []
 print ("Start...")
 if True:
     for ip in ips:
+#        if ip == "10.73.137.27":
+#            fembs=[0,1,3]
+#        else:
+#            fembs=[0,1,2,3]
         chk.wib = WIB(ip) 
     
         ####################WIB init################################
         #check if WIB is in position
         #chk.wib_init()
         ####################FEMBs Configuration################################
-        #chk.femb_cd_rst()
+        chk.femb_cd_rst()
         
         for femb_id in fembs:
         #step 2
@@ -77,55 +81,71 @@ if True:
             chk.set_fe_board(sts=sts, snc=snc,sg0=sg0, sg1=sg1, st0=st0, st1=st1, sdf=sdf, slk0=slk0, slk1=slk1, swdac=swdac, dac=dac, sgp=sgp )
             cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
         #step 3
-            chk.femb_fe_cfg(femb_id)
-            if adac_pls_en :
-                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+            #chk.femb_fe_cfg(femb_id)
+            chk.femb_cfg(femb_id, adac_pls_en )
+#            if adac_pls_en :
+#                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
             print (ip, "FEs on FEMB%d are configured"%femb_id)
         
-if True:
-    time.sleep(0.1)
+time.sleep(2)
 
-    rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
-
-    pwr_meas = []
-    for ip in ips:
-        chk.wib = WIB(ip) 
-        pwr = chk.get_sensors()
-        pwr_meas.append([ip, pwr])
-
-
-    if adac_pls_en:
+for tryx in range(1):
+    if True:
+        time.sleep(0.1)
+    
+        rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
+    
+        pwr_meas = []
         for ip in ips:
+#            if ip == "10.73.137.27":
+#                fembs=[0,1,3]
+#            else:
+#                fembs=[0,1,2,3]
             chk.wib = WIB(ip) 
-            for femb_id in fembs:
-                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
-
-if True:
-    root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
-    i = 0
-    while (True):
-        i = i + 1
-        fd_new = save_dir[:-1]+"_R{:03d}/".format(i)
-        if (os.path.exists(fd_new)):
-            pass
-        else:
-            try:
-                os.makedirs(fd_new)
-            except OSError:
-                print ("Error to create folder %s"%fd_new)
-                input ("hit any button and then 'Enter' to exit")
-                sys.exit()    
-            save_dir = fd_new
-            break
-
-    ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
-    fp = save_dir + "Raw_SW_Trig" + ts  + ".bin"
-    rawinfo =  [rawdata, pwr_meas, cfg_paras_rec, set_paras]
-    with open(fp, 'wb') as fn:
-        pickle.dump( rawinfo, fn)
-        #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
-    rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_response" + ts + ".png", rms_flg=True)
+            pwr = chk.get_sensors()
+            pwr_meas.append([ip, pwr])
+    
+    
+        if adac_pls_en:
+        #if tryx == 0:
+            for ip in ips:
+#                if ip == "10.73.137.27":
+#                    fembs=[0,1,3]
+#                else:
+#                    fembs=[0,1,2,3]
+                chk.wib = WIB(ip) 
+                for femb_id in fembs:
+                    chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+            time.sleep(2)
+    
+    if True:
+        root_dir = sys.argv[-1]
+        save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
+        i = 0
+        while (True):
+                i = i + 1
+                fd_new = save_dir[:-1]+"_R{:03d}/".format(i)
+                if (os.path.exists(fd_new)):
+                    if tryx == 1:
+                        save_dir = fd_try1
+                        break
+                else:
+                    try:
+                        os.makedirs(fd_new)
+                    except OSError:
+                        print ("Error to create folder %s"%fd_new)
+                        input ("hit any button and then 'Enter' to exit")
+                        sys.exit()    
+                    save_dir = fd_new
+                    break
+    
+        ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
+        fp = save_dir + "Raw_SW_Trig" + ts  + ".bin"
+        rawinfo =  [rawdata, pwr_meas, cfg_paras_rec, set_paras]
+        with open(fp, 'wb') as fn:
+            pickle.dump( rawinfo, fn)
+            #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
+        rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_response" + ts + ".png", rms_flg=True)
 
 
 print (" Done!")   

@@ -44,7 +44,7 @@ set_paras = [sts, snc, sg0, sg1, st0, st1, sdf, slk0, slk1]
 print (f"sts={sts},snc={snc},sg0={sg0}, sg1={sg1}, st0={st0}, st1={st1}, sdf={sdf}, slk0={slk0}, slk1={slk1}, swdac={swdac}, dac={dac}, sgp={sgp}") 
 
 #run#1
-runno = "Run08_ADC_SDCEN"
+runno = "Run02TRIG"
 cfg_paras_rec = []
 
 print ("Start...")
@@ -68,40 +68,40 @@ if True:
         #Here Coldata uses default setting in the script (not the ASIC default register values)
         #ColdADC configuraiton
             chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
-                                [0x4, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x5, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x6, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x7, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x8, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0x9, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xA, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
-                                [0xB, 0x08, 0, 1, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                               ]
         
-            chk.set_fe_board(sts=sts, snc=snc,sg0=sg0, sg1=sg1, st0=st0, st1=st1, sdf=sdf, slk0=slk0, slk1=slk1, swdac=swdac, dac=dac, sgp=sgp, sdd=0 )
+            chk.set_fe_board(sts=sts, snc=snc,sg0=sg0, sg1=sg1, st0=st0, st1=st1, sdf=sdf, slk0=slk0, slk1=slk1, swdac=swdac, dac=dac, sgp=sgp )
             cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
         #step 3
+#            chk.femb_fe_cfg(femb_id)
             chk.femb_cfg(femb_id, adac_pls_en )
-            #chk.femb_fe_cfg(femb_id)
-            #if adac_pls_en :
-            #    chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
+#            if adac_pls_en :
+#                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
             print (ip, "FEs on FEMB%d are configured"%femb_id)
-
         
 if True:
     time.sleep(0.1)
 
-    rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
+    rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x08,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
 
     pwr_meas = []
     for ip in ips:
 #        if ip == "10.73.137.27":
 #            fembs=[0,1,3]
 #        else:
-#            fembs=[0,1,2,3]
+#            fembs=[0,1,2,3]        
         chk.wib = WIB(ip) 
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
+
 
     if adac_pls_en:
         for ip in ips:

@@ -120,11 +120,11 @@ if True:
 
     chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = fp)
 
-    for ch in range(len(chped)):
-        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
-            pass
-        else:
-            input ("Error, check the plot and CNTL+C to exit")
+#    for ch in range(len(chped)):
+#        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
+#            pass
+#        else:
+#            input ("Error, check the plot and CNTL+C to exit")
 logs = []
 
 for i in range(1000):

@@ -127,7 +127,8 @@ def deframe(words): #based on WIB-DAQ_Format_2021-12-01_daq_hdr.xlsx
     frame_dict["Contex_code"] = (words[117]>>24)&0xff
 
     if frame_dict["TMTS_low5"] != frame_dict["FEMB_CDTS_low5"]:
-        print ("Warning, fast command 'edge' and 'sync' are missing for Coldata chips")
+        #print ("Warning, fast command 'edge' and 'sync' are missing for Coldata chips")
+        pass
 
     return frame_dict
 
@@ -200,9 +201,9 @@ def spymemory_decode(buf, trigmode="SW", buf_end_addr = 0x0, trigger_rec_ticks=0
     return ordered_frames
 
 def wib_spy_dec_syn(buf0, buf1, trigmode="SW", buf_end_addr=0x0,  trigger_rec_ticks=0x3f000): #synchronize samples in two spy buffers
-    print ("Decoding BUF0")
+    #print ("Decoding BUF0")
     frames0 = spymemory_decode(buf=buf0, buf_end_addr=buf_end_addr, trigger_rec_ticks=trigger_rec_ticks)
-    print ("Decoding BUF1")
+    #print ("Decoding BUF1")
     frames1 = spymemory_decode(buf=buf1, buf_end_addr=buf_end_addr, trigger_rec_ticks=trigger_rec_ticks)
     flen = len(frames0)
     len1 = len(frames1)

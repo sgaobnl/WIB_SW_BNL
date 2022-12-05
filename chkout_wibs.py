@@ -78,6 +78,10 @@ chk = WIB_CFGS()
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 for ipi in range(len(ips)): 
     ####### Create data save directory #######
+#    if ips[ipi] == "10.73.137.27":
+#        fembs=[0,1,3]
+#    else:
+#        fembs=[0,1,2,3]
     datadir = "D:/CRP5A/" + root_dir + "/CHKOUT/data/"
     for key,femb_no in fembNo.items():
         datadir = datadir + "WIB{}_femb{}_".format(ipi,femb_no)

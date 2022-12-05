@@ -9,7 +9,6 @@ import time, datetime, random, statistics
 from wib import WIB
 import os
 from rawdata_dec import rawdata_dec 
-
 localclk_cs = False
 ext_cali_flg = False
 
@@ -19,31 +18,35 @@ if len(sys.argv) < 2:
     exit()    
 
 save = True
-sample_N = 1
+sample_N = 10
 
 fembs = [int(a) for a in sys.argv[1:5]] 
-ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
+
+
+ips = [ "10.73.137.27","10.73.137.29", "10.73.137.31"]
 
 chk = WIB_CFGS()
 
 #run#1
-runno = "Run10_ADC_DBEN"
+runno = "Run01TRIG"
 cfg_paras_rec = []
+
 adac_pls_en = 1 #enable LArASIC interal calibraiton pulser
 
 if True:
     for ip in ips:
-#        if ip == "10.73.137.27":
-#            fembs=[0,1,3]
-#        else:
-#            fembs=[0,1,2,3]
         while True:
             chk.wib = WIB(ip) 
+#            if ip == "10.73.137.27":
+#                fembs=[0,1,3]
+#            else:
+#                fembs=[0,1,2,3]
     
             ####################WIB init################################
             #check if WIB is in position
-            #chk.wib_init()
+            chk.wib_init()
             ####################FEMBs Configuration################################
+            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
             #step 1
             #reset all FEMBs on WIB
             chk.femb_cd_rst()
@@ -53,25 +56,25 @@ if True:
             #Configur Coldata, ColdADC, and LArASIC parameters. 
             #Here Coldata uses default setting in the script (not the ASIC default register values)
             #ColdADC configuraiton
-                chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80, 1-SDC_ON, 2-DB_ON), vrefp, vrefn, vcmo, vcmi, autocali
-                                    [0x4, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x5, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x6, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x7, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x8, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0x9, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0xA, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
-                                    [0xB, 0x08, 0, 2, 0xDF, 0x33, 0x89, 0x67, 1],
+                chk.adcs_paras = [ # c_id, data_fmt(0x89), diff_en(0x84), sdc_en(0x80), vrefp, vrefn, vcmo, vcmi, autocali
+                                    [0x4, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x5, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x6, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x7, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x8, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0x9, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0xA, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
+                                    [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                                   ]
             
-            #LArASIC register configuration
+            #LArASIC register configuratiou
                 if ext_cali_flg == True:
                     swdac = 2
                     dac = 0
                 else:
                     swdac = 1
                     dac = 0x20
-                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac, sdd=1 )
+                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac )
                 #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
                 cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
             #step 3
@@ -79,12 +82,12 @@ if True:
                 if ext_cali_flg == True:
                     chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
             align_flg = chk.data_align()
+            break
             if align_flg:
                 break
             else:
                 chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
-        
         if ext_cali_flg == True:
             #enable 10MHz output 
             chk.en_ref10MHz(ref_en = True)
@@ -94,7 +97,7 @@ if True:
 if True:
     time.sleep(0.5)
 
-    rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
+    rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x08,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
 
     pwr_meas = []
     for ip in ips:
@@ -105,7 +108,6 @@ if True:
         chk.wib = WIB(ip) 
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
-
 
     if adac_pls_en:
         for ip in ips:
@@ -147,11 +149,11 @@ if True:
         #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
 
     chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
-#
+
 #    for ch in range(len(chped)):
 #        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
 #            pass
 #        else:
-#            print ("Error, check the plot and CNTL+C to exit")
+#            input ("Error, check the plot and CNTL+C to exit")
 
     print ("Done!")

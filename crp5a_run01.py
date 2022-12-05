@@ -21,19 +21,24 @@ save = True
 sample_N = 1
 
 fembs = [int(a) for a in sys.argv[1:5]] 
-ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 
+ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 chk = WIB_CFGS()
 
 #run#1
 runno = "Run01"
 cfg_paras_rec = []
+
 adac_pls_en = 1 #enable LArASIC interal calibraiton pulser
 
 if True:
     for ip in ips:
         while True:
             chk.wib = WIB(ip) 
+#            if ip == "10.73.137.27":
+#                fembs=[0,1,3]
+#            else:
+#                fembs=[0,1,2,3]
     
             ####################WIB init################################
             #check if WIB is in position
@@ -66,7 +71,7 @@ if True:
                 else:
                     swdac = 1
                     dac = 0x20
-                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
+                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac )
                 #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
                 cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
             #step 3
@@ -74,6 +79,7 @@ if True:
                 if ext_cali_flg == True:
                     chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
             align_flg = chk.data_align()
+            break
             if align_flg:
                 break
             else:
@@ -95,7 +101,6 @@ if True:
         chk.wib = WIB(ip) 
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
-
 
     if adac_pls_en:
         for ip in ips:
@@ -133,11 +138,12 @@ if True:
         #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
 
     chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
-
-    for ch in range(len(chped)):
-        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
-            pass
-        else:
-            input ("Error, check the plot and CNTL+C to exit")
+#
+#    for ch in range(len(chped)):
+#        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):
+#            pass
+#        else:
+#            print ("Error, check the plot and CNTL+C to exit")
+#            #input ("Error, check the plot and CNTL+C to exit")
 
     print ("Done!")
