@@ -17,8 +17,8 @@ from MON import MON_LARASIC, MON_ColdADC
 # from ASICDAC import removeFEMB_from_T, all_PWR_Meas_plots
 if __name__ == '__main__':
     #------------------------------------------------------
-    #savedir = '../results/analysis/minisas'
-    #inputdir = '../data'
+    # savedir = '../results/analysis/minisas/from_DATA'
+    # inputdir = '../data'
     inputdir = 'D:/IO-1865-1C/QC/data'
     savedir = 'D:/IO-1865-1C/QC/analysis/'
     #------------------------------------------------------
@@ -107,6 +107,6 @@ if __name__ == '__main__':
         mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, output_dirname='MON_FE', temperature=T, fembs_to_exclude=[7, 24, 27, 55])
         mon_fe.run_MON_LArASIC()
         mon_fe.run_MON_LArASIC_DAC()
-        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55])
-        mon_adc.run_MON_ColdADC()
+        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55, 75])
+        mon_adc.run_MON_ColdADC(read_bin=True, n_rmse=1)
 
