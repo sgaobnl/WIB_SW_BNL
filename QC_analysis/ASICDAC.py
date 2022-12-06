@@ -562,18 +562,18 @@ def read_gain_ana(list_path_to_file=[], femb_id='101', gain_larasic='14_0mVfC'):
             df = pd.read_csv(f)
             return df
 
-def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[75], sgp1=False):
+def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[75], sgp1=False):
     # to get results faster, let's hard code some part
     # list samtec fembs to exclude
-    samtec_fembs = []
-    samtec_reports = []
-    for femb in fembs_to_exclude:
-        if femb < 10:
-            samtec_fembs.append('femb0{}'.format(femb))
-            samtec_reports.append('FEMB0{}'.format(femb))
-        else:
-            samtec_fembs.append('femb{}'.format(femb))
-            samtec_reports.append('FEMB{}'.format(femb))
+    # samtec_fembs = []
+    # samtec_reports = []
+    # for femb in fembs_to_exclude:
+    #     if femb < 10:
+    #         samtec_fembs.append('femb0{}'.format(femb))
+    #         samtec_reports.append('FEMB0{}'.format(femb))
+    #     else:
+    #         samtec_fembs.append('femb{}'.format(femb))
+    #         samtec_reports.append('FEMB{}'.format(femb))
     
     # list larasic gains
     listgains = ['4_7', '7_8', '14_0', '25_0']
@@ -589,9 +589,24 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
             ana_rms_files.append('/'.join([rms_input_dir, rms_file]))
     
     # get fembs list from report
-    report_dir = '../results/reports'
-    list_fembs = get_fembID_list(input_dir=report_dir, fembs_to_exclude=samtec_reports)
-
+    # report_dir = '../results/reports'
+    # list_fembs = get_fembID_list(input_dir=report_dir, fembs_to_exclude=samtec_reports)
+    tmp_fembs_to_exclude = []
+    for femb in fembs_to_exclude:
+        if femb<10:
+            tmp_fembs_to_exclude.append('femb0{}'.format(femb))
+        else:
+            tmp_fembs_to_exclude.append('femb{}'.format(femb))
+    all_fembs = []
+    for femb_folder in os.listdir(datadir):
+        if 'femb' in femb_folder:
+            folder_name_split = femb_folder.split('_')[:-2]
+            for femb in folder_name_split:
+                all_fembs.append(femb)
+    list_fembs = []
+    for femb in all_fembs:
+        if femb not in tmp_fembs_to_exclude:
+            list_fembs.append(femb)
 
     output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
     try:
@@ -605,7 +620,7 @@ def get_ENC_CALI(input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude
     for csvfile in os.listdir(path_to_gains):
         if '.csv' in csvfile:
             femb = csvfile.split('_')[1]
-            if femb not in samtec_fembs:
+            if femb not in tmp_fembs_to_exclude:
                 selected_gains_csv.append('/'.join([path_to_gains, csvfile]))
     
     # get enc for each femb and larasic gains
