@@ -16,19 +16,20 @@ from MON import MON_LARASIC, MON_ColdADC
 # for RMS, Pedestal and PWR
 # from ASICDAC import removeFEMB_from_T, all_PWR_Meas_plots
 
-def run_MON_FE_MON_ADC(inputdir, savedir, temperatures, ):
+def run_MON_FE_MON_ADC(inputdir, savedir, temperatures, fembs_to_exclude=[]):
     for T in temperatures:
-        mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, output_dirname='MON_FE', temperature=T, fembs_to_exclude=[7, 24, 27, 55, 75])
+        mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, output_dirname='MON_FE', temperature=T, fembs_to_exclude=fembs_to_exclude)
         mon_fe.run_MON_LArASIC()
         mon_fe.run_MON_LArASIC_DAC()
-        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55, 75])
+        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=fembs_to_exclude)
         mon_adc.run_MON_ColdADC(read_bin=True, n_rmse=1)
+
 if __name__ == '__main__':
     #------------------------------------------------------
-    savedir = '../results/analysis/minisas'
-    inputdir = '../data'
-    # inputdir = 'D:/IO-1865-1C/QC/data'
-    # savedir = 'D:/IO-1865-1C/QC/analysis/'
+    # savedir = '../results/analysis/minisas'
+    # inputdir = '../data'
+    inputdir = 'D:/IO-1865-1C/QC/data'
+    savedir = 'D:/IO-1865-1C/QC/analysis/'
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
@@ -111,4 +112,4 @@ if __name__ == '__main__':
     
     # savedir = '../results/analysis/test_MON_FE'
     
-
+    run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[7, 24, 27, 55, 75])
