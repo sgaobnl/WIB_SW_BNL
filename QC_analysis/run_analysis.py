@@ -15,6 +15,14 @@ from MON import MON_LARASIC, MON_ColdADC
 #
 # for RMS, Pedestal and PWR
 # from ASICDAC import removeFEMB_from_T, all_PWR_Meas_plots
+
+def run_MON_FE_MON_ADC(inputdir, savedir, temperatures, ):
+    for T in temperatures:
+        mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, output_dirname='MON_FE', temperature=T, fembs_to_exclude=[7, 24, 27, 55, 75])
+        mon_fe.run_MON_LArASIC()
+        mon_fe.run_MON_LArASIC_DAC()
+        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55, 75])
+        mon_adc.run_MON_ColdADC(read_bin=True, n_rmse=1)
 if __name__ == '__main__':
     #------------------------------------------------------
     savedir = '../results/analysis/minisas'
@@ -102,10 +110,5 @@ if __name__ == '__main__':
     #             distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI, temperature=temperature, larasic_gain=larasic_gain, fit=False)
     
     # savedir = '../results/analysis/test_MON_FE'
-    for T in temperatures:
-        mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, output_dirname='MON_FE', temperature=T, fembs_to_exclude=[7, 24, 27, 55, 75])
-        mon_fe.run_MON_LArASIC()
-        mon_fe.run_MON_LArASIC_DAC()
-        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=[7, 24, 27, 55, 75])
-        mon_adc.run_MON_ColdADC(read_bin=True, n_rmse=1)
+    
 
