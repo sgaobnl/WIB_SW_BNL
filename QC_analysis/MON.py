@@ -28,7 +28,7 @@ class MON_LARASIC:
         # self.femb_dir_list = self.list_femb_dirs(fembs_to_exclude=fembs_to_exclude)
         self.fembs_to_exclude = fembs_to_exclude
         self.femb_dir_list = ['/'.join([self.data_dir, femb_folder, self.output_dirname]) for femb_folder in os.listdir(self.data_dir)
-                                if 'femb' in femb_folder]
+                                if ('femb' in femb_folder) & (self.temperature in femb_folder)]
     
     def exclude_fembs(self, fembs_to_exclude=[24], fembs_folder_name=''):
         '''
@@ -306,8 +306,8 @@ class MON_LARASIC:
                             tmpchipNumber.append(ichip)
                             maxLinearDAC.append(lin[1])
                             tmp_list_slope.append(slope)
-                            print(lin)
-                            print(slope)
+                            # print(lin)
+                            # print(slope)
                         maxLinearDAC_list += maxLinearDAC
                         list_slope += tmp_list_slope
                         chipNumber = ['chip{}'.format(ichip) for ichip in tmpchipNumber]
@@ -342,8 +342,9 @@ class MON_LARASIC:
             plt.close()
             # slope
             mean_slope = np.mean(list_slope)
+            std_slope = np.std(list_slope)
             plt.figure(figsize=(10, 7))
-            plt.hist(list_slope, label='mean = {:.4f}'.format(mean_slope))
+            plt.hist(list_slope, label='mean = {:.4f}\n std = {:.4f}'.format(mean_slope, std_slope))
             plt.xlabel('slope')
             plt.ylabel('#')
             plt.title(dataname)
