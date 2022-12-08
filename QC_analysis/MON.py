@@ -333,7 +333,7 @@ class MON_LARASIC:
             # maxDAC
             meanDAC = np.mean(maxLinearDAC_list)
             plt.figure(figsize=(10, 7))
-            plt.hist(maxLinearDAC_list, label='mean = {:.4f}'.format(meanDAC))
+            plt.hist(maxLinearDAC_list, label='mean = {:.4f}'.format(meanDAC), bins=50)
             plt.xlabel('max linear DAC')
             plt.ylabel('#')
             plt.title(dataname)
@@ -344,7 +344,7 @@ class MON_LARASIC:
             mean_slope = np.mean(list_slope)
             std_slope = np.std(list_slope)
             plt.figure(figsize=(10, 7))
-            plt.hist(list_slope, label='mean = {:.4f}\n std = {:.4f}'.format(mean_slope, std_slope))
+            plt.hist(list_slope, label='mean = {:.4f}\n std = {:.4f}'.format(mean_slope, std_slope), bins=50)
             plt.xlabel('slope')
             plt.ylabel('#')
             plt.title(dataname)
@@ -514,7 +514,8 @@ class MON_ColdADC(MON_LARASIC):
             # slope
             plt.figure(figsize=(10, 7))
             meanSlope = np.mean(out_df['slope'])
-            plt.hist(out_df['slope'], bins=50, label='mean slope = {:.4f}'.format(meanSlope))
+            stdSlope = np.std(out_df['slope'])
+            plt.hist(out_df['slope'], bins=50, label='mean slope = {:.4f}\n std slope = {:.4f}'.format(meanSlope, stdSlope))
             plt.xlabel('slope')
             plt.ylabel('#')
             plt.title('slope {}'.format(mon))
