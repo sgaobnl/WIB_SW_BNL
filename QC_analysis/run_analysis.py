@@ -18,6 +18,24 @@ from ASICDAC import distribution_ENC_Gain
 from QC_analysis import QC_analysis, save_allInfo_PWR_tocsv, plot_PWR_Consumption, all_PWR_Meas_plots, save_allInfo_PWRCycle_tocsv, plot_PWR_Cycle
 import Analysis_FEMB_QC
 
+def get_input_output_dirs(where='local'):
+    inputdir = ''
+    savedir = ''
+    if where=='local':
+        #***************if running locally********************
+        savedir = '../results/analysis/test'
+        inputdir = '../data'
+    elif where=='hothstor':
+        #****************if running on hothstor***************
+        savedir = 'UP_analysis'
+        inputdir = '/dsk/3/tmp/FEMB_QC/IO-1865-1D/QC/data'
+    elif where=='1-216':
+        #****************if running in lab 1-216**************
+        inputdir = 'D:/IO-1865-1C/QC/data'
+        savedir = 'D:/IO-1865-1C/QC/analysis/'
+        #*****************************************************
+    return inputdir, savedir
+
 def run_PWR_Meas(inputdir, savedir):
     # ------------------------------------------------------
     measured_info = ['P_meas', 'V_meas', 'I_meas']
@@ -133,10 +151,7 @@ def run_MON_FE_MON_ADC(inputdir, savedir, temperatures, fembs_to_exclude=[]):
 
 if __name__ == '__main__':
     #------------------------------------------------------
-    savedir = '../results/analysis/test'
-    inputdir = '../data'
-    # inputdir = 'D:/IO-1865-1C/QC/data'
-    # savedir = 'D:/IO-1865-1C/QC/analysis/'
+    inputdir, savedir = get_input_output_dirs(where='hothstor')
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
