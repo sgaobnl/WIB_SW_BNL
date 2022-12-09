@@ -6,19 +6,23 @@
 
 import os
 from MON import MON_LARASIC, MON_ColdADC
-# from QC_analysis import QC_analysis
 from ASICDAC import savegains, Gains_CALI1, Gains_CALI2, Gains_CALI3_or_CALI4
 from ASICDAC import get_ENC_CALI
-# from ASICDAC import save_peakValues_to_csv
 from ASICDAC import separateCSV_foreachFEMB
 from ASICDAC import distribution_ENC_Gain
-#
-# for RMS, Pedestal and PWR
-# from ASICDAC import all_PWR_Meas_plots
 from QC_analysis import QC_analysis, save_allInfo_PWR_tocsv, plot_PWR_Consumption, all_PWR_Meas_plots, save_allInfo_PWRCycle_tocsv, plot_PWR_Cycle
 import Analysis_FEMB_QC
 
-def get_input_output_dirs(where='local'):
+def get_input_output_dirs(where='local', folderName=''):
+    '''
+        This function is used to select the input and output folder by providing the location
+        where we want to run the script.
+        Options available:
+            - local: the input data (*.bin) should be in a folder named "../data"
+            - hothstor
+            - 1-216 (the lab)
+            For hothstor and the lab, we need to provide the name of the data folder
+    '''
     inputdir = ''
     savedir = ''
     if where=='local':
@@ -27,12 +31,12 @@ def get_input_output_dirs(where='local'):
         inputdir = '../data'
     elif where=='hothstor':
         #****************if running on hothstor***************
-        savedir = 'UP_analysis'
-        inputdir = '/dsk/3/tmp/FEMB_QC/IO-1865-1D/QC/data'
+        savedir = '/dsk/3/tmp/FEMB_QC/{}/QC/analysis'.format(folderName)
+        inputdir = '/dsk/3/tmp/FEMB_QC/{}/QC/data'.format(folderName)
     elif where=='1-216':
         #****************if running in lab 1-216**************
-        inputdir = 'D:/IO-1865-1C/QC/data'
-        savedir = 'D:/IO-1865-1C/QC/analysis/'
+        inputdir = 'D:/{}/QC/data'.format(folderName)
+        savedir = 'D:/{}/QC/analysis/'.format(folderName)
         #*****************************************************
     # try to create the saving folder
     try:
@@ -156,7 +160,9 @@ def run_MON_FE_MON_ADC(inputdir, savedir, temperatures, fembs_to_exclude=[]):
 
 if __name__ == '__main__':
     #------------------------------------------------------
-    inputdir, savedir = get_input_output_dirs(where='hothstor')
+    # lab 1-216: IO-1865-1C (old fembs)
+    # hothstor: IO-1865-1D (new fembs)
+    inputdir, savedir = get_input_output_dirs(where='hothstor', folderName='IO-1865-1D')
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
