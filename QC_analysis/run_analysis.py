@@ -34,6 +34,11 @@ def get_input_output_dirs(where='local'):
         inputdir = 'D:/IO-1865-1C/QC/data'
         savedir = 'D:/IO-1865-1C/QC/analysis/'
         #*****************************************************
+    # try to create the saving folder
+    try:
+        os.mkdir(savedir)
+    except OSError:
+        print(OSError)
     return inputdir, savedir
 
 def run_PWR_Meas(inputdir, savedir):
