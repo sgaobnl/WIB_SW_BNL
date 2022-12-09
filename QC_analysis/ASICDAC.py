@@ -562,7 +562,7 @@ def read_gain_ana(list_path_to_file=[], femb_id='101', gain_larasic='14_0mVfC'):
             df = pd.read_csv(f)
             return df
 
-def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[75], sgp1=False):
+def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[], sgp1=False):
     # to get results faster, let's hard code some part
     # list samtec fembs to exclude
     # samtec_fembs = []
@@ -588,9 +588,7 @@ def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, femb
         if femb_ana not in fembs_to_exclude:
             ana_rms_files.append('/'.join([rms_input_dir, rms_file]))
     
-    # get fembs list from report
-    # report_dir = '../results/reports'
-    # list_fembs = get_fembID_list(input_dir=report_dir, fembs_to_exclude=samtec_reports)
+    # get fembs list
     tmp_fembs_to_exclude = []
     for femb in fembs_to_exclude:
         if femb<10:
@@ -606,7 +604,7 @@ def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, femb
     list_fembs = []
     for femb in all_fembs:
         if femb not in tmp_fembs_to_exclude:
-            list_fembs.append(femb)
+            list_fembs.append(femb.split('femb')[-1])
 
     output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
     try:
