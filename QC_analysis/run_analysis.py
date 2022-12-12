@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------
 # Author: Rado
 # email: radofana@gmail.com
-# last update: 11/28/2022
+# last update: 12/12/2022
 #----------------------------------------------------------------------
 
 import os
@@ -31,7 +31,8 @@ def get_input_output_dirs(where='local', folderName=''):
         inputdir = '../data'
     elif where=='hothstor':
         #****************if running on hothstor***************
-        savedir = '/dsk/3/tmp/FEMB_QC/{}/QC/analysis'.format(folderName)
+        # savedir = '/dsk/3/tmp/FEMB_QC/{}/QC/analysis'.format(folderName)
+        savedir = "/home/rrazakami/workspace/QC_analysis"
         inputdir = '/dsk/3/tmp/FEMB_QC/{}/QC/data'.format(folderName)
     elif where=='1-216':
         #****************if running in lab 1-216**************
@@ -117,7 +118,7 @@ def run_PWR_Cycle(inputdir, savedir):
     temperatures = ['LN', 'RT']
     dataname_list = ['Bias5V', 'LArASIC', 'ColdDATA', 'ColdADC']
     ## -----------------save PWR_Cycle to csv files-------
-    save_allInfo_PWRCycle_tocsv(data_input_dir='../data', output_dir='../data/analysis', temperature_list=temperatures, dataname_list=dataname_list)
+    save_allInfo_PWRCycle_tocsv(data_input_dir=inputdir, output_dir=savedir, temperature_list=temperatures, dataname_list=dataname_list)
     #
     # try to plot PWRCycle
     for m_param in measured_info:
@@ -244,8 +245,8 @@ if __name__ == '__main__':
     #             distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI, temperature=temperature, larasic_gain=larasic_gain, fit=False)
     
     # savedir = '../results/analysis/test_MON_FE'
-    run_PWR_Meas(inputdir=inputdir, savedir=savedir)
-    run_RMS_Pedestal(inputdir=inputdir, savedir=savedir, femb_to_exclude=[])
-    run_ASICDAC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[])
-    run_PWR_Cycle(inputdir=inputdir, savedir=savedir)
+    # run_PWR_Meas(inputdir=inputdir, savedir=savedir)
+    # run_RMS_Pedestal(inputdir=inputdir, savedir=savedir, femb_to_exclude=[])
+    # run_ASICDAC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[])
+    # run_PWR_Cycle(inputdir=inputdir, savedir=savedir)
     run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[])
