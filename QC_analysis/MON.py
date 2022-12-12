@@ -1,7 +1,7 @@
 '''
     Author: Rado
     email: radofana@gmail.com, rrazakami@bnl.gov
-    last update: 11/28/2022
+    last update: 12/12/2022
 '''
 from utils import *
 import re
@@ -313,6 +313,13 @@ class MON_LARASIC:
                         chipNumber = ['chip{}'.format(ichip) for ichip in tmpchipNumber]
                         maxLinearDAC_df = pd.DataFrame({'chip': chipNumber, 'maxDAC': maxLinearDAC, 'slope': tmp_list_slope})
                         
+                        # check if min(maxLinearDAC) == max(maxLinearDAC) ----- For a quick check ----------
+                        __endName = ''
+                        if np.min(maxLinearDAC) != np.max(maxLinearDAC):
+                            __endName = '_{}_'.format(np.min(maxLinearDAC))
+                        else:
+                            __endName = '_{}_'.format(np.max(maxLinearDAC))
+                        #-----------------------------------------------------------------------------------
                         # save df in csv file
                         toytpc = (self.femb_dir_list[idir].split('/')[-2]).split('_')[-1]
                         femb_folderName = '_'.join(['FEMB', femb_id, self.temperature, toytpc])
@@ -328,7 +335,7 @@ class MON_LARASIC:
                         plt.xlabel('DAC')
                         plt.title(figname)
                         plt.legend()
-                        plt.savefig('/'.join([new_output_dir, figname + '.png']))
+                        plt.savefig('/'.join([new_output_dir, figname + __endName + '.png']))
                         plt.close()
             # maxDAC
             meanDAC = np.mean(maxLinearDAC_list)
