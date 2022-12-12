@@ -125,7 +125,7 @@ class QC_analysis:
                 # data decoding <-- same as in QC_tools
                 qc = QC_tools()
                 pldata = qc.data_decode(rawdata)
-                pldata = np.array(pldata)
+                pldata = np.array(pldata, dtype=object)
                 # print(len(pldata[0]))
                 nevent = len(pldata)
                 if nevent>100:
@@ -298,7 +298,11 @@ class QC_analysis:
         final_df['toytpc'] = pd.Series(all_toytpc) # add the list of toytpc
         #
         pwrs = ['_'.join(p.split('_')[:-1]) for p in pwr_test_types]
-        csv_name = dataname+ '_' + '_'.join(pwrs) + '.csv'
+        csv_name = ''
+        if self.particularDataFolderName=='PWR_Cycle':
+            csv_name = dataname+ '_' + '_'.join(pwrs) + '.csv'
+        else:
+            csv_name = dataname + '.csv' # I changed this line
         #
         final_df.to_csv('/'.join([self.output_analysis_dir, csv_name]), index=False)
     
@@ -477,7 +481,7 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], 
     df_DIFF = pd.DataFrame()
     #----------> PWR_Meas <------------
     if power=='PWR_Meas':
-        FEMB_ID = pd.Series()
+        FEMB_ID = pd.Series([], dtype=object)
         for data_csvname in all_data_types:
             path_to_csv = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
             df = pd.read_csv(path_to_csv)
@@ -507,8 +511,8 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], 
 
     #--> PWR_Cycle <------
     elif power=='PWR_Cycle':
-        FEMB_ID_se = pd.Series()
-        FEMB_ID_sdf = pd.Series()
+        FEMB_ID_se = pd.Series([], dtype=object)
+        FEMB_ID_sdf = pd.Series([], dtype=object)
         for part_dataname in all_data_types:
             print('/'.join([csv_source_dir, temperature, 'PWR_Cycle']))
             csvnames = [filename for filename in os.listdir('/'.join([csv_source_dir, temperature, 'PWR_Cycle'])) if part_dataname in filename]
