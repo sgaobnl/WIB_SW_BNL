@@ -163,7 +163,8 @@ if __name__ == '__main__':
     #------------------------------------------------------
     # lab 1-216: IO-1865-1C (old fembs)
     # hothstor: IO-1865-1D (new fembs)
-    inputdir, savedir = get_input_output_dirs(where='hothstor', folderName='IO-1865-1D')
+    # inputdir, savedir = get_input_output_dirs(where='hothstor', folderName='IO-1865-1D')
+    inputdir, savedir = get_input_output_dirs(where='1-216', folderName='IO-1865-1C')
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
