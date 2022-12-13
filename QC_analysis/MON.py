@@ -250,114 +250,213 @@ class MON_LARASIC:
         index, maxDAC, fDAC = self.__checkLinearity(x=x, y=y, lowdac=lowdac, updac=updac, indexOfMax=indexOfMax, indexOfMin=indexOfMin, err=err)
         return index, maxDAC, fDAC
 
-    def run_MON_LArASIC_DAC(self):
-        '''
-            This function runs the script for monitoring LArASIC_DAC.
-            How it works ?
-                - select the data name from ['dac_sgp1', 'dac_14mVfC'],
-                - select the femb dir folder,
-                - get the monitoring data from LArASIC_mon_DAC.bin,
-                - for each femb
-                    * plot the monitoring value in function of the DAC for each chip --> png,
-                    * save the monitoring values of the DAC for all chips in a dataframe femb_df --> csv,
-                    * check linearity for each chip and save the max DAC and chip number in a dataframe --> csv.
-        '''
+    def __plot_maxDAC_slope(self, list_slope, maxLinearDAC_list, dataname):
+        # maxDAC
+        meanDAC = np.mean(maxLinearDAC_list)
+        plt.figure(figsize=(10, 7))
+        plt.hist(maxLinearDAC_list, label='mean = {:.4f}'.format(meanDAC), bins=50)
+        plt.xlabel('max linear DAC')
+        plt.ylabel('#')
+        plt.title(dataname)
+        plt.legend()
+        plt.savefig('/'.join([self.output_dir, 'distribution_maxLinearDAC_{}_{}.png'.format(dataname, self.temperature)]))
+        plt.close()
+        # slope
+        mean_slope = np.mean(list_slope)
+        std_slope = np.std(list_slope)
+        plt.figure(figsize=(10, 7))
+        plt.hist(list_slope, label='mean = {:.4f}\n std = {:.4f}'.format(mean_slope, std_slope), bins=50)
+        plt.xlabel('slope')
+        plt.ylabel('#')
+        plt.title(dataname)
+        plt.legend()
+        plt.savefig('/'.join([self.output_dir, 'distribution_slope_{}_{}.png'.format(dataname, self.temperature)]))
+        plt.close()
+
+    def __get_fembdf_larasicDAC_fromBin(self, dataname=''):
+        for idir in range(len(self.femb_dir_list)):
+            data = self.read_bin(self.femb_dir_list[idir], bin_filename='LArASIC_mon_DAC.bin')
+            fembs = data[self.__get_data_index(dataname='dac_logs')]['femb id']
+            MON_data = self.__get_MONdata(data_from_bin=data, dataname=dataname)
+            for ifemb, femb_id in fembs.items():
+                if int(femb_id) not in self.fembs_to_exclude:
+                    iifemb = int(ifemb[-1])
+                    x = MON_data[iifemb][0]
+                    y = MON_data[iifemb][1]
+                    xx = [re.findall(r'[0-9]+', s) for s in x] # find numbers in x
+                    # get the data for all chips
+                    femb_df = pd.DataFrame() # <-- save the data here
+                    index_lin = []
+                    # plt.figure(figsize=(10, 7))
+                    for ichip in range(8):
+                        chip = []
+                        chip_dac = []
+                        chip_y = []
+                        for ixx in range(len(xx)):
+                            if xx[ixx][1] == str(ichip):
+                                chip_dac.append(int(xx[ixx][0]))
+                                chip_y.append(y[ixx])
+                                chip.append(ichip)
+                        # if ichip==4:
+                        # plt.plot(chip_dac, chip_y, label='chip{}'.format(ichip)) #, marker='.', markersize='5.7')
+                        chip_df = pd.DataFrame({'dac': chip_dac, 'chip{}'.format(ichip): chip_y})
+                        if ichip==0:
+                            femb_df = pd.concat([femb_df, chip_df], axis=0)
+                        else:
+                            femb_df = femb_df.merge(chip_df, on='dac', how='inner')
+
+                    # save df in csv file
+                    toytpc = (self.femb_dir_list[idir].split('/')[-2]).split('_')[-1]
+                    femb_folderName = '_'.join(['FEMB', femb_id, self.temperature, toytpc])
+                    new_output_dir = '/'.join([self.output_dir, femb_folderName])
+                    try:
+                        os.mkdir(new_output_dir)
+                    except:
+                        pass
+                    figname = '_'.join(['LArASIC', dataname])
+                    femb_df.to_csv('/'.join([new_output_dir, figname + '.csv']), index=False)
+
+    def __checkLinearity_larasic_dac(self, dataname=''):
+        figname = '_'.join(['LArASIC', dataname])
+        maxLinearDAC_list = []
+        list_slope = []
+        for femb_dir in os.listdir(self.output_dir):
+            femb_id = ''
+            if (os.path.isdir('/'.join([self.output_dir, femb_dir]))) & (self.temperature in femb_dir):
+                femb_id = femb_dir.split('_')[1]
+                if int(femb_id) not in self.fembs_to_exclude:
+                    femb_df = pd.read_csv('/'.join([self.output_dir, femb_dir, figname + '.csv']))
+                    tmpchipNumber = []
+                    maxLinearDAC = []
+                    tmp_list_slope = []
+                    # produce plot
+                    plt.figure(figsize=(10, 7))
+                    for ichip in range(8):
+                        plt.plot(femb_df['dac'], femb_df['chip{}'.format(ichip)], label='chip{}'.format(ichip)) #, marker='.', markersize='5.7')
+                        #-----------
+                        lin = self.__checkLinearity(x=femb_df['dac'], y=femb_df['chip{}'.format(ichip)], lowdac=0, updac=30)
+                        slope, y0 = np.polyfit(femb_df['dac'][:lin[0]+1], femb_df['chip{}'.format(ichip)][:lin[0]+1], 1)
+                        tmpchipNumber.append(ichip)
+                        maxLinearDAC.append(lin[1])
+                        tmp_list_slope.append(slope)
+                    maxLinearDAC_list += maxLinearDAC
+                    list_slope += tmp_list_slope
+                    chipNumber = ['chip{}'.format(ichip) for ichip in tmpchipNumber]
+                    maxLinearDAC_df = pd.DataFrame({'chip': chipNumber, 'maxDAC': maxLinearDAC, 'slope': tmp_list_slope})                        
+                    # check if min(maxLinearDAC) == max(maxLinearDAC) ----- For a quick check ----------
+                    # for ichip in range(8):
+                    #     if maxLinearDAC[ichip] == np.min(maxLinearDAC):
+                    #         plt.plot(femb_df['dac'], femb_df['chip{}'.format(ichip)], label='chip{}'.format(ichip)) #, marker='.', markersize='5.7')
+                    __endName = ''
+                    if np.min(maxLinearDAC) != np.max(maxLinearDAC):
+                        __endName = '_{}_'.format(np.min(maxLinearDAC))
+                    else:
+                        __endName = '_{}_'.format(np.max(maxLinearDAC))
+                    
+                    maxLinearDAC_name = '_'.join([figname, 'maxDAC'])
+                    maxLinearDAC_df.to_csv('/'.join([self.output_dir, femb_dir, maxLinearDAC_name + '.csv']), index=False)
+                    plt.xlabel('DAC')
+                    plt.title(figname)
+                    plt.legend()
+                    plt.savefig('/'.join([self.output_dir, femb_dir, figname + __endName + '.png']))
+                    plt.close()
+        return list_slope, maxLinearDAC_list
+
+    def run_MON_LArASIC_DAC(self, read_bin=False):
         datanames = ['dac_sgp1', 'dac_14mVfC']
         for dataname in datanames:
-            maxLinearDAC_list = []
-            list_slope = []
-            for idir in range(len(self.femb_dir_list)):
-                data = self.read_bin(self.femb_dir_list[idir], bin_filename='LArASIC_mon_DAC.bin')
-                fembs = data[self.__get_data_index(dataname='dac_logs')]['femb id']
-                MON_data = self.__get_MONdata(data_from_bin=data, dataname=dataname)
-                for ifemb, femb_id in fembs.items():
-                    if int(femb_id) not in self.fembs_to_exclude:
-                        iifemb = int(ifemb[-1])
-                        x = MON_data[iifemb][0]
-                        y = MON_data[iifemb][1]
-                        xx = [re.findall(r'[0-9]+', s) for s in x] # find numbers in x
-                        # get the data for all chips
-                        femb_df = pd.DataFrame() # <-- save the data here
-                        index_lin = []
-                        plt.figure(figsize=(10, 7))
-                        for ichip in range(8):
-                            chip = []
-                            chip_dac = []
-                            chip_y = []
-                            for ixx in range(len(xx)):
-                                if xx[ixx][1] == str(ichip):
-                                    chip_dac.append(int(xx[ixx][0]))
-                                    chip_y.append(y[ixx])
-                                    chip.append(ichip)
-                            # if ichip==4:
-                            plt.plot(chip_dac, chip_y, label='chip{}'.format(ichip)) #, marker='.', markersize='5.7')
-                            chip_df = pd.DataFrame({'dac': chip_dac, 'chip{}'.format(ichip): chip_y})
-                            if ichip==0:
-                                femb_df = pd.concat([femb_df, chip_df], axis=0)
-                            else:
-                                femb_df = femb_df.merge(chip_df, on='dac', how='inner')
+            if read_bin:
+                self.__get_fembdf_larasicDAC_fromBin(dataname=dataname)
+            list_slope, maxLinearDAC_list = self.__checkLinearity_larasic_dac(dataname=dataname)
+            self.__plot_maxDAC_slope(list_slope=list_slope, maxLinearDAC_list=maxLinearDAC_list, dataname=dataname)
+    # def run_MON_LArASIC_DAC(self):
+    #     '''
+    #         This function runs the script for monitoring LArASIC_DAC.
+    #         How it works ?
+    #             - select the data name from ['dac_sgp1', 'dac_14mVfC'],
+    #             - select the femb dir folder,
+    #             - get the monitoring data from LArASIC_mon_DAC.bin,
+    #             - for each femb
+    #                 * plot the monitoring value in function of the DAC for each chip --> png,
+    #                 * save the monitoring values of the DAC for all chips in a dataframe femb_df --> csv,
+    #                 * check linearity for each chip and save the max DAC and chip number in a dataframe --> csv.
+    #     '''
+    #     datanames = ['dac_sgp1', 'dac_14mVfC']
+    #     for dataname in datanames:
+    #         maxLinearDAC_list = []
+    #         list_slope = []
+    #         for idir in range(len(self.femb_dir_list)):
+    #             data = self.read_bin(self.femb_dir_list[idir], bin_filename='LArASIC_mon_DAC.bin')
+    #             fembs = data[self.__get_data_index(dataname='dac_logs')]['femb id']
+    #             MON_data = self.__get_MONdata(data_from_bin=data, dataname=dataname)
+    #             for ifemb, femb_id in fembs.items():
+    #                 if int(femb_id) not in self.fembs_to_exclude:
+    #                     iifemb = int(ifemb[-1])
+    #                     x = MON_data[iifemb][0]
+    #                     y = MON_data[iifemb][1]
+    #                     xx = [re.findall(r'[0-9]+', s) for s in x] # find numbers in x
+    #                     # get the data for all chips
+    #                     femb_df = pd.DataFrame() # <-- save the data here
+    #                     index_lin = []
+    #                     plt.figure(figsize=(10, 7))
+    #                     for ichip in range(8):
+    #                         chip = []
+    #                         chip_dac = []
+    #                         chip_y = []
+    #                         for ixx in range(len(xx)):
+    #                             if xx[ixx][1] == str(ichip):
+    #                                 chip_dac.append(int(xx[ixx][0]))
+    #                                 chip_y.append(y[ixx])
+    #                                 chip.append(ichip)
+    #                         # if ichip==4:
+    #                         plt.plot(chip_dac, chip_y, label='chip{}'.format(ichip)) #, marker='.', markersize='5.7')
+    #                         chip_df = pd.DataFrame({'dac': chip_dac, 'chip{}'.format(ichip): chip_y})
+    #                         if ichip==0:
+    #                             femb_df = pd.concat([femb_df, chip_df], axis=0)
+    #                         else:
+    #                             femb_df = femb_df.merge(chip_df, on='dac', how='inner')
 
-                        tmpchipNumber = []
-                        maxLinearDAC = []
-                        tmp_list_slope = []
-                        for ichip in range(8):
-                            lin = self.__checkLinearity(x=femb_df['dac'], y=femb_df['chip{}'.format(ichip)], lowdac=0, updac=30)
-                            slope, y0 = np.polyfit(femb_df['dac'][:lin[0]+1], femb_df['chip{}'.format(ichip)][:lin[0]+1], 1)
-                            tmpchipNumber.append(ichip)
-                            maxLinearDAC.append(lin[1])
-                            tmp_list_slope.append(slope)
-                            # print(lin)
-                            # print(slope)
-                        maxLinearDAC_list += maxLinearDAC
-                        list_slope += tmp_list_slope
-                        chipNumber = ['chip{}'.format(ichip) for ichip in tmpchipNumber]
-                        maxLinearDAC_df = pd.DataFrame({'chip': chipNumber, 'maxDAC': maxLinearDAC, 'slope': tmp_list_slope})
+    #                     tmpchipNumber = []
+    #                     maxLinearDAC = []
+    #                     tmp_list_slope = []
+    #                     for ichip in range(8):
+    #                         lin = self.__checkLinearity(x=femb_df['dac'], y=femb_df['chip{}'.format(ichip)], lowdac=0, updac=30)
+    #                         slope, y0 = np.polyfit(femb_df['dac'][:lin[0]+1], femb_df['chip{}'.format(ichip)][:lin[0]+1], 1)
+    #                         tmpchipNumber.append(ichip)
+    #                         maxLinearDAC.append(lin[1])
+    #                         tmp_list_slope.append(slope)
+    #                         # print(lin)
+    #                         # print(slope)
+    #                     maxLinearDAC_list += maxLinearDAC
+    #                     list_slope += tmp_list_slope
+    #                     chipNumber = ['chip{}'.format(ichip) for ichip in tmpchipNumber]
+    #                     maxLinearDAC_df = pd.DataFrame({'chip': chipNumber, 'maxDAC': maxLinearDAC, 'slope': tmp_list_slope})
                         
-                        # check if min(maxLinearDAC) == max(maxLinearDAC) ----- For a quick check ----------
-                        __endName = ''
-                        if np.min(maxLinearDAC) != np.max(maxLinearDAC):
-                            __endName = '_{}_'.format(np.min(maxLinearDAC))
-                        else:
-                            __endName = '_{}_'.format(np.max(maxLinearDAC))
-                        #-----------------------------------------------------------------------------------
-                        # save df in csv file
-                        toytpc = (self.femb_dir_list[idir].split('/')[-2]).split('_')[-1]
-                        femb_folderName = '_'.join(['FEMB', femb_id, self.temperature, toytpc])
-                        new_output_dir = '/'.join([self.output_dir, femb_folderName])
-                        try:
-                            os.mkdir(new_output_dir)
-                        except:
-                            pass
-                        figname = '_'.join(['LArASIC', dataname])
-                        femb_df.to_csv('/'.join([new_output_dir, figname + '.csv']), index=False)
-                        maxLinearDAC_name = '_'.join([figname, 'maxDAC'])
-                        maxLinearDAC_df.to_csv('/'.join([new_output_dir, maxLinearDAC_name + '.csv']), index=False)
-                        plt.xlabel('DAC')
-                        plt.title(figname)
-                        plt.legend()
-                        plt.savefig('/'.join([new_output_dir, figname + __endName + '.png']))
-                        plt.close()
-            # maxDAC
-            meanDAC = np.mean(maxLinearDAC_list)
-            plt.figure(figsize=(10, 7))
-            plt.hist(maxLinearDAC_list, label='mean = {:.4f}'.format(meanDAC), bins=50)
-            plt.xlabel('max linear DAC')
-            plt.ylabel('#')
-            plt.title(dataname)
-            plt.legend()
-            plt.savefig('/'.join([self.output_dir, 'distribution_maxLinearDAC_{}_{}.png'.format(dataname, self.temperature)]))
-            plt.close()
-            # slope
-            mean_slope = np.mean(list_slope)
-            std_slope = np.std(list_slope)
-            plt.figure(figsize=(10, 7))
-            plt.hist(list_slope, label='mean = {:.4f}\n std = {:.4f}'.format(mean_slope, std_slope), bins=50)
-            plt.xlabel('slope')
-            plt.ylabel('#')
-            plt.title(dataname)
-            plt.legend()
-            plt.savefig('/'.join([self.output_dir, 'distribution_slope_{}_{}.png'.format(dataname, self.temperature)]))
-            plt.close()
+    #                     # check if min(maxLinearDAC) == max(maxLinearDAC) ----- For a quick check ----------
+    #                     __endName = ''
+    #                     if np.min(maxLinearDAC) != np.max(maxLinearDAC):
+    #                         __endName = '_{}_'.format(np.min(maxLinearDAC))
+    #                     else:
+    #                         __endName = '_{}_'.format(np.max(maxLinearDAC))
+    #                     #-----------------------------------------------------------------------------------
+    #                     # save df in csv file
+    #                     toytpc = (self.femb_dir_list[idir].split('/')[-2]).split('_')[-1]
+    #                     femb_folderName = '_'.join(['FEMB', femb_id, self.temperature, toytpc])
+    #                     new_output_dir = '/'.join([self.output_dir, femb_folderName])
+    #                     try:
+    #                         os.mkdir(new_output_dir)
+    #                     except:
+    #                         pass
+    #                     figname = '_'.join(['LArASIC', dataname])
+    #                     femb_df.to_csv('/'.join([new_output_dir, figname + '.csv']), index=False)
+    #                     maxLinearDAC_name = '_'.join([figname, 'maxDAC'])
+    #                     maxLinearDAC_df.to_csv('/'.join([new_output_dir, maxLinearDAC_name + '.csv']), index=False)
+    #                     plt.xlabel('DAC')
+    #                     plt.title(figname)
+    #                     plt.legend()
+    #                     plt.savefig('/'.join([new_output_dir, figname + __endName + '.png']))
+    #                     plt.close()
+    #         self.__plot_maxDAC_slope(list_slope=list_slope, maxLinearDAC_list=maxLinearDAC_list, dataname=dataname)
 
 class MON_ColdADC(MON_LARASIC):
     '''
