@@ -27,7 +27,7 @@ def get_input_output_dirs(where='local', folderName=''):
     savedir = ''
     if where=='local':
         #***************if running locally********************
-        savedir = '../results/analysis/test'
+        savedir = '../results/analysis/minisas'
         inputdir = '../data'
     elif where=='hothstor':
         #****************if running on hothstor***************
@@ -154,17 +154,18 @@ def run_ASICDAC(inputdir, savedir, temperatures, fembs_to_exclude=[]):
 def run_MON_FE_MON_ADC(inputdir, savedir, temperatures, fembs_to_exclude=[]):
     for T in temperatures:
         mon_fe = MON_LARASIC(input_dir=inputdir, output_dir=savedir, output_dirname='MON_FE', temperature=T, fembs_to_exclude=fembs_to_exclude)
-        mon_fe.run_MON_LArASIC()
-        mon_fe.run_MON_LArASIC_DAC()
-        mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=fembs_to_exclude)
-        mon_adc.run_MON_ColdADC(read_bin=True, n_rmse=1)
+        #mon_fe.run_MON_LArASIC()
+        mon_fe.run_MON_LArASIC_DAC(read_bin=False)
+        #mon_adc = MON_ColdADC(input_dir=inputdir, output_dir=savedir, temperature=T, fembs_to_exclude=fembs_to_exclude)
+        #mon_adc.run_MON_ColdADC(read_bin=True, n_rmse=1)
 
 if __name__ == '__main__':
     #------------------------------------------------------
     # lab 1-216: IO-1865-1C (old fembs)
     # hothstor: IO-1865-1D (new fembs)
     # inputdir, savedir = get_input_output_dirs(where='hothstor', folderName='IO-1865-1D')
-    inputdir, savedir = get_input_output_dirs(where='1-216', folderName='IO-1865-1C')
+    # inputdir, savedir = get_input_output_dirs(where='1-216', folderName='IO-1865-1C')
+    inputdir, savedir = get_input_output_dirs(where='local', folderName='')
     #------------------------------------------------------
     # measured_info = ['P_meas', 'V_meas', 'I_meas']
     #temperatures = ['LN', 'RT']
@@ -250,4 +251,4 @@ if __name__ == '__main__':
     # run_RMS_Pedestal(inputdir=inputdir, savedir=savedir, femb_to_exclude=[])
     # run_ASICDAC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[])
     # run_PWR_Cycle(inputdir=inputdir, savedir=savedir)
-    run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[])
+    run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[111])
