@@ -66,14 +66,14 @@ for fbin in files:
         f_flg = True
         for runi in range(len(tmts_t0_sets)):
             ni = tmts_t0_sets[runi]%period
-            for x in range(tmts_t0_sets[runi]+500-ni, tmts_t0_sete[runi]-500, 500):
+            for x in range(tmts_t0_sets[runi]+period-ni, tmts_t0_sete[runi]-period, period):
                 post = np.where(tmts_t0 == x)[0][0]
                 if f_flg:
                     f_flg = False
-                    tdata = np.array(rawdata[ch][post:post+500]) 
+                    tdata = np.array(rawdata[ch][post:post+period]) 
                     cnti = 1
                 else:
-                    tdata = tdata + np.array(rawdata[ch][post:post+500]) 
+                    tdata = tdata + np.array(rawdata[ch][post:post+period]) 
                     cnti += 1
         tdata = tdata/cnti
         avgs.append(tdata)

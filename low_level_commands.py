@@ -46,6 +46,7 @@ def system_clock_select(wib, localclk_cs=False, fp1_ptc0_sel=0, cmd_stamp_sync =
         #enable fake time stamp
         wib_poke(wib, 0xA00c000C, (rdreg|0x0e))
         print ("Enable fake timing system")
+
     else:
         #timing point reset
         addr = 0xA00c0000
@@ -83,6 +84,12 @@ def system_clock_select(wib, localclk_cs=False, fp1_ptc0_sel=0, cmd_stamp_sync =
         time.sleep(0.1)
         rdreg = wib_peek(wib, 0xA00c000C)
         print ("WIB Reg addr 0xA00c000C, value = 0x%x"%rdreg)
+
+
+    rdreg = wib_peek(wib, 0xA00c000C)
+    wib_poke(wib, 0xA00c000C, (rdreg&0xFFFFFFFB))
+    print ("disable time stame sync")
+
 
     #set edge_to_act_delay
     rdreg = wib_peek(wib, 0xA0030004)

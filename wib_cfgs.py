@@ -105,6 +105,15 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
         llc.get_sensors(self.wib) #get rid of previous measurement result
         return llc.get_sensors(self.wib)
 
+    def fake_data(self, en = False):
+        rdreg = llc.wib_peek(self.wib, 0xA00C0020)
+        if en:
+            llc.wib_poke(self.wib, 0xA00C0020, rdreg|0x01)
+            print ("Fake data stream from WIB is enabled")
+        else:
+            llc.wib_poke(self.wib, 0xA00C0020, rdreg&0x00)
+            print ("Fake data stream from WIB is disabled")
+
     def en_ref10MHz(self, ref_en = False):
         if ref_en:
             llc.wib_poke(self.wib, 0xff5e00c4, 0x1033200)
@@ -720,8 +729,9 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                     llc.wib_poke(self.wib, 0xA00C0004, wrreg) #reset spy buffer
                     
                     llc.wib_poke(self.wib, 0xA00C0024, trigger_rec_ticks) #spy rec time
+
                     rdreg = llc.wib_peek(self.wib, 0xA00C0014)
-                    wrreg = (rdreg&0xff00ffff)|(trigger_command<<16)
+                    wrreg = (rdreg&0x0000ffff)|(trigger_command<<16)
                     llc.wib_poke(self.wib, 0xA00C0014, wrreg) #program cmd_code_trigger and enable it
                     rdreg = llc.wib_peek(self.wib, 0xA00C0014)
                     wrreg = rdreg|0x40000000

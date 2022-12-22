@@ -18,7 +18,7 @@ if len(sys.argv) < 2:
     exit()    
 
 save = True
-sample_N = 1
+sample_N = 20
 
 fembs = [int(a) for a in sys.argv[1:5]] 
 
@@ -43,6 +43,7 @@ if True:
             ####################WIB init################################
             #check if WIB is in position
             #chk.wib_init()
+            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
             ####################FEMBs Configuration################################
             #step 1
             #reset all FEMBs on WIB
@@ -70,8 +71,8 @@ if True:
                     dac = 0
                 else:
                     swdac = 1
-                    dac = 0x20
-                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac )
+                    dac = 0x30
+                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac, slk0=0, slk1=0 )
                 #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
                 cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
             #step 3
@@ -111,7 +112,7 @@ if True:
 
 if True:
     root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
+    save_dir = "D:/CRP5A_3rd/" + root_dir + "/" + runno + "/"
 
     i = 0
     while (True):

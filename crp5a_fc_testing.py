@@ -86,6 +86,10 @@ if True:
             chk.wib_mon_switches(dac0_sel=0,dac1_sel=0,dac2_sel=0,dac3_sel=0, mon_vs_pulse_sel=1, inj_cal_pulse=0) 
     
 if True:
+    for ip in ips:
+        chk.wib = WIB(ip) 
+        chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+
     time.sleep(0.5)
 
     rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
@@ -104,7 +108,7 @@ if True:
 
 if True:
     root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A/" + root_dir + "/" 
+    save_dir = "D:/CRP5A_FC/" + root_dir + "/" 
     if (os.path.exists(save_dir)):
         pass
     else:
@@ -127,12 +131,12 @@ if True:
 #            input ("Error, check the plot and CNTL+C to exit")
 logs = []
 
-for i in range(1000):
+for i in range(400):
     for ip in ips:
         chk.wib = WIB(ip) 
         for femb_id in fembs:
             chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
-    time.sleep(2)
+    time.sleep(0.1)
 
     rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
     rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
@@ -141,7 +145,6 @@ for i in range(1000):
         chk.wib = WIB(ip) 
         for femb_id in fembs:
             chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
-    time.sleep(10)
 
     ts = datetime.datetime.now().strftime("%d_%m_%Y_%H_%M_%S")
     rawinfo =  [rawdata, pwr_meas, cfg_paras_rec]
@@ -155,16 +158,15 @@ for i in range(1000):
             pass
         else:
             badchns.append([ch, chped[ch], chmax[ch]-chped[ch]])
-    if len(badchns) > 0 :
+    if len(badchns) > 20 :
         logs.append(["Fast command error at " + fp, badchns])
-        for ip in ips:
-            chk.wib = WIB(ip) 
-            for femb_id in fembs:
-                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
-        time.sleep(10)
+#        for ip in ips:
+#            chk.wib = WIB(ip) 
+#            for femb_id in fembs:
+#                chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
 
 
-    print(logs)
+    print(i, logs)
 
 
 

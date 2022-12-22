@@ -58,7 +58,7 @@ else:
 logs['toytpc']=toytpc
 
 #note = input("A short note (<200 letters):")
-note = "CRP5A"
+note = "CRP5A_3rd"
 logs['note']=note
 
 fembNo={}
@@ -82,7 +82,7 @@ for ipi in range(len(ips)):
 #        fembs=[0,1,3]
 #    else:
 #        fembs=[0,1,2,3]
-    datadir = "D:/CRP5A/" + root_dir + "/CHKOUT/data/"
+    datadir = "D:/CRP5A_3rd/" + root_dir + "/CHKOUT/data/"
     for key,femb_no in fembNo.items():
         datadir = datadir + "WIB{}_femb{}_".format(ipi,femb_no)
     
@@ -110,7 +110,7 @@ for ipi in range(len(ips)):
     with open(fp, 'wb') as fn:
          pickle.dump(logs, fn)
     
-    reportdir = "D:/CRP5A/" + root_dir + "/CHKOUT/reports/"
+    reportdir = "D:/CRP5A_3rd/" + root_dir + "/CHKOUT/reports/"
     PLOTDIR = {}
     
     for ifemb,femb_no in fembNo.items():

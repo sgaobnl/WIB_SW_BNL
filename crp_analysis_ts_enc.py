@@ -109,27 +109,34 @@ for i in range(3*4*128):
     #print(i, plane, strip)
 
     if plane==1:
-       uplanerms[strip-1]=chrms[i]
-       uplaneenc[strip-1]=chenc[i]
-       uplanegain[strip-1]=chgain[i]
-       uplaneped[strip-1]=chped[i]
-       uplanemax[strip-1]=chmax[i]
-       uplanemin[strip-1]=chmin[i]
+        if (strip-1) in [54, 55, 324, 325, 326, 327, 328, 329, 330]:
+            print ("U%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
+        uplanerms[strip-1]=chrms[i]
+        uplaneenc[strip-1]=chenc[i]
+        uplanegain[strip-1]=chgain[i]
+        uplaneped[strip-1]=chped[i]
+        uplanemax[strip-1]=chmax[i]
+        uplanemin[strip-1]=chmin[i]
     if plane==2:
-       vplanerms[strip-1]=chrms[i]
-       vplaneenc[strip-1]=chenc[i]
-       vplanegain[strip-1]=chgain[i]
-       vplaneped[strip-1]=chped[i]
-       vplanemax[strip-1]=chmax[i]
-       vplanemin[strip-1]=chmin[i]
+        if (strip-1) in [524-476,525-476, 530-476]:
+            print ("V%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
+        vplanerms[strip-1]=chrms[i]
+        vplaneenc[strip-1]=chenc[i]
+        vplanegain[strip-1]=chgain[i]
+        vplaneped[strip-1]=chped[i]
+        vplanemax[strip-1]=chmax[i]
+        vplanemin[strip-1]=chmin[i]
     if plane==3:
-       xplanerms[strip-1]=chrms[i]
-       xplanegain[strip-1]=chgain[i]
-       xplaneenc[strip-1]=chenc[i]
-       xplaneped[strip-1]=chped[i]
-       xplanemax[strip-1]=chmax[i]
-       xplanemin[strip-1]=chmin[i]
+        if (strip-1) in [952-952, 1535-952, 1121-952, 1169-952,1191-952]:
+            print ("X%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
+        xplanerms[strip-1]=chrms[i]
+        xplanegain[strip-1]=chgain[i]
+        xplaneenc[strip-1]=chenc[i]
+        xplaneped[strip-1]=chped[i]
+        xplanemax[strip-1]=chmax[i]
+        xplanemin[strip-1]=chmin[i]
 
+exit()
 utmp = uplaneenc
 utmp = np.delete(utmp,324) 
 utmp = np.delete(utmp,325-1) 

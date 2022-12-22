@@ -59,6 +59,8 @@ fp = sys.argv[1]
 with open(fp, 'rb') as fn:
     rawdata = pickle.load(fn)
 
+rawdata = rawdata[0]
+
 fp = fp[0:-4] + ".set"
 with open(fp, 'rb') as fn:
     fesets = pickle.load(fn)
