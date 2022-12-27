@@ -1,7 +1,7 @@
 #-----------------------------------------------------------------------
 # Author: Rado
 # email: radofana@gmail.com
-# last update: 11/01/2022
+# last update: 12/15/2022
 #----------------------------------------------------------------------
 
 from typing_extensions import dataclass_transform
@@ -12,7 +12,7 @@ def was_femb_saved(sourceDir='', temperature='RT', dataname='Bias5V', new_femb_d
     This function checks if the femb data in the folder new_femb_dir is already saved in temperature/dataname.csv.
     sourceDir: parent folder of the csv file, e.g: D:/IO-1865-1C/QC/analysis,
     temperature: LN or RT
-    dataname: Bias5V, LArASIC, ColdDATA or ColdADC
+    dataname: Bias5V, LArASIC, ColDATA or ColdADC
     new_femb_dir: name of the folder where the data is located
     '''
     try:
@@ -67,7 +67,15 @@ def rms(pldata, nevent, nfembs, logs_env=dict()):
             return rms_dict, ped_dict
 
 class QC_analysis:
-    def __init__(self, datadir='', output_dir='', temperature='RT', dataType='power_measurement'):
+    def __init__(self, datadir='', output_dir='', temperature='RT', dataType='power_measurement', fembs_to_ignore={}):
+        '''
+            fembs_to_ignore: a dictionary of the data folder and a list of femb_ids to ignore.
+                            This variable is used if there's a repetition caused by issue during 
+                            the test in the data.
+                                key: data_folder_name
+                                value: list of the femb_ids to ignore
+                            len(fembs_to_ignore) == 0 if there is no fembs we need to ignore
+        '''
         try:
             os.mkdir('/'.join([output_dir, temperature]))
         except:
@@ -107,6 +115,8 @@ class QC_analysis:
         self.input_data_dir = new_data_dir
         #self.input_data_dir = ['/'.join([datadir, onefolder, self.particularDataFolderName]) for onefolder in os.listdir(datadir) if temperature in onefolder]
         self.bin_filenames = os.listdir(self.input_data_dir[0]) ## the *.bin filenames are the same for all the folders
+
+        self.fembs_to_ignore = fembs_to_ignore
 
     def read_bin(self, filename, input_data_dir):
         with open('/'.join([input_data_dir, filename]), 'rb') as fp:
@@ -203,9 +213,27 @@ class QC_analysis:
                 folderName_col = ['_'.join([str(femb_id), folderName[-2], folderName[-1]]) for femb_id in rms_dict['femb_ids']]
                 rms_dict['folderName'] = folderName_col
                 ped_dict['folderName'] = folderName_col
-
-                rms_df = pd.concat([rms_df, pd.DataFrame(rms_dict)])
-                ped_df = pd.concat([ped_df, pd.DataFrame(ped_dict)])
+                
+                #---------------------------TIDY CODE---------------------------
+                tmp_rms_df = pd.DataFrame(rms_dict)
+                tmp_ped_df = pd.DataFrame(ped_dict)
+                if len(self.fembs_to_ignore) != 0:
+                    # print(len(self.fembs_to_ignore))
+                    for data_folder, _femb_ids in self.fembs_to_ignore.items():
+                        # print(inputdatadir)
+                        # print(data_folder)
+                        input_datafolder = '_'.join(inputdatadir.split('/')[-2].split('_')[:-2])
+                        # print(input_datafolder)
+                        if data_folder == input_datafolder:
+                            # print(_femb_ids)
+                            for _femb_id in _femb_ids:
+                                tmp_rms_df = tmp_rms_df[tmp_rms_df['femb_ids'] != _femb_id]
+                                tmp_ped_df = tmp_ped_df[tmp_ped_df['femb_ids'] != _femb_id]
+                #------------------------------------------------------
+                rms_df = pd.concat([rms_df, tmp_rms_df])
+                ped_df = pd.concat([ped_df, tmp_ped_df])
+                # rms_df = pd.concat([rms_df, pd.DataFrame(rms_dict)])
+                # ped_df = pd.concat([ped_df, pd.DataFrame(ped_dict)])
             rms_df.to_csv('/'.join([self.output_analysis_dir, 'RMS', csv_name]), index=False)
             ped_df.to_csv('/'.join([self.output_analysis_dir, 'Pedestal', csv_name]), index=False)
 
@@ -236,7 +264,7 @@ class QC_analysis:
         elif dataname=='LArASIC':
             name = 'PWR_FE'
             indexData = 1
-        elif dataname=='ColdDATA':
+        elif dataname=='ColDATA':
             name = 'PWR_CD'
             indexData = 2
         elif dataname=='ColdADC':
@@ -260,6 +288,18 @@ class QC_analysis:
             femb_ids.append(logs_env['femb id'][femb])
             toytpc.append(logs_env['toytpc'])
 
+        input_datadirname = '_'.join(sourceDataDir.split('/')[-2].split('_')[:-2])
+        tt = [k for k, v in self.fembs_to_ignore.items() if k == input_datadirname]
+        if len(tt) == 1:
+                _femb_ids = self.fembs_to_ignore[tt[0]]
+                for _femb_id in _femb_ids:
+                    indices_to_exclude = [i for i,x in enumerate(femb_ids) if x==_femb_id]
+                    for index_femb in indices_to_exclude:
+                        del femb_ids[index_femb]
+                        del toytpc[index_femb]
+                        del V_meas[index_femb]
+                        del I_meas[index_femb]
+                        del P_meas[index_femb]
         return (title, dirname, femb_ids, toytpc, V_meas, I_meas, P_meas)
 
     def save_PWRdata_from_allFolders(self, dataname='bias', pwr_test_types=['SE_200mVBL', 'SE_SDF_200mVBL', 'DIFF_200mVBL']):
@@ -282,6 +322,7 @@ class QC_analysis:
                 femb_ids += tmp_femb_ids
                 toytpc += tmp_toytpc
                 title = tmp_title
+            
             #csv_name = '_'.join([title, '.csv'])
             tmp_out_df = pd.DataFrame({
                 #'FEMB_ID_': [femb.split('_')[-1] for femb in femb_ids],
@@ -290,6 +331,8 @@ class QC_analysis:
                 'P_meas_'+'_'.join(pwr.split('_')[:-1]): P_meas})
             out_df = pd.concat([out_df, tmp_out_df], axis=1)
             all_femb_ids = femb_ids
+            if (self.particularDataFolderName=='PWR_Cycle') & (pwr != 'SE_200mVBL'):
+                all_femb_ids = ['{}_0'.format(femb) for femb in femb_ids]
             all_toytpc = toytpc ## -- new line
         all_femb_ids = [femb for femb in all_femb_ids]
         final_df = pd.DataFrame({'FEMB_ID': all_femb_ids})
@@ -350,16 +393,16 @@ class QC_analysis:
                 
 # save all informations from the *.bin files to csv
 # PWR_Meas
-def save_allInfo_PWR_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[]):
+def save_allInfo_PWR_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[], fembs_to_ignore={}):
     for T in temperature_list:
-        qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T, dataType='power_measurement')
+        qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T, dataType='power_measurement', fembs_to_ignore=fembs_to_ignore)
         print('Saving data for {}.....'.format(T))
         for dataname in tqdm(dataname_list):
             qc.save_PWRdata_from_allFolders(dataname=dataname)
 # PWR_Cycle
-def save_allInfo_PWRCycle_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[]):
+def save_allInfo_PWRCycle_tocsv(data_input_dir='', output_dir='', temperature_list=[], dataname_list=[], fembs_to_ignore={}):
     for T in temperature_list:
-            qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T, dataType='PWR_Cycle')
+            qc = QC_analysis(datadir=data_input_dir, output_dir=output_dir, temperature=T, dataType='PWR_Cycle', fembs_to_ignore=fembs_to_ignore)
             print('Saving data from {}......'.format(T))
             for dataname in tqdm(dataname_list):
                 qc.save_PWRCycle_from_allFolders(dataname=dataname)
@@ -423,10 +466,11 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         if len(tmp_list_csv)==0:
             temperature = '/'.join([temperature, 'PWR_Meas'])
         path_to_csv = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
-        data_df = pd.read_csv(path_to_csv)
+        data_df = pd.read_csv(path_to_csv, dtype={'FEMB_ID': str})
         # get the right columns
         columns = [col for col in data_df.columns if data_meas in col]
         # selected dataframe
+        data_df['FEMB_ID'] = data_df['FEMB_ID'].astype(str)
         selected_df = pd.concat([data_df['FEMB_ID'], data_df[columns]], axis=1)
         
         figTitle = data_meas
@@ -441,10 +485,11 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
             # calculate the mean and standard deviation
             mean = np.mean(selected_df[col])
             std = np.std(selected_df[col])
+            selected_df = selected_df.sort_values(by=['FEMB_ID', col], ascending=True)
             plt.plot(selected_df['FEMB_ID'].astype(str), selected_df[col], label='__'.join([figLegends[i], 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)]), 
                     marker=marker, markersize=12)
         plt.title('_'.join([figTitle, data_csvname]))
-        # plt.xticks(fontsize=15)
+        plt.xticks(fontsize=10)
         # plt.yticks(fontsize=15)
         plt.xlabel('FEMB_ID')
         plt.ylabel(''.join([data_meas, '(', unit_data, ')']))
@@ -454,8 +499,10 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
             os.mkdir('/'.join([csv_source_dir, temperature, 'plots']))
         except:
             pass
-        plt.savefig('/'.join([csv_source_dir, temperature, 'plots', '_'.join([figTitle, data_csvname, '.png'])]))
+        path_to_plot = '/'.join([csv_source_dir, temperature, 'plots', '_'.join([figTitle, data_csvname, '.png'])])
+        plt.savefig(path_to_plot)
         plt.clf() # clear figure
+        plt.close()
 
 # PWR_Meas plots for all measured_info_list and temperature_list
 def all_PWR_Meas_plots(csv_source_dir='', measured_info_list=[], temperature_list=[], dataname_list=[]):
@@ -476,18 +523,18 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], 
     PWR_consumption here is the sum of all P_meas 
     ==> We will have a dictionary for SE, SE_SDF and DIFF
     '''
-    df_SE = pd.DataFrame()
-    df_SE_SDF = pd.DataFrame()
-    df_DIFF = pd.DataFrame()
     #----------> PWR_Meas <------------
     if power=='PWR_Meas':
+        df_SE = pd.DataFrame()
+        df_SE_SDF = pd.DataFrame()
+        df_DIFF = pd.DataFrame()
         FEMB_ID = pd.Series([], dtype=object)
         for data_csvname in all_data_types:
             path_to_csv = '/'.join([csv_source_dir, temperature, data_csvname + '.csv'])
-            df = pd.read_csv(path_to_csv)
+            df = pd.read_csv(path_to_csv, dtype={'FEMB_ID': str})
             col_id = ['FEMB_ID']
             cols = [col for col in df.columns if 'P_meas' in col] # we need the columns of Power measurement
-            FEMB_ID = df[col_id]
+            FEMB_ID = df[col_id].astype(str)
             selected_df = df[cols]
         
             tmp_df_SE = selected_df[cols[0]]
@@ -511,6 +558,10 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], 
 
     #--> PWR_Cycle <------
     elif power=='PWR_Cycle':
+        df_SE = pd.DataFrame()
+        df_SE_SDF = pd.DataFrame()
+        df_DIFF = pd.DataFrame()
+
         FEMB_ID_se = pd.Series([], dtype=object)
         FEMB_ID_sdf = pd.Series([], dtype=object)
         for part_dataname in all_data_types:
@@ -572,9 +623,12 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
                 # calculate mean and std
                 mean = np.mean(pwr_df[col])
                 std = np.std(pwr_df[col])
+                # pwr_df['FEMB_ID'] = pwr_df['FEMB_ID'].astype(str)
+                pwr_df = pwr_df.sort_values(by=['FEMB_ID', col], ascending=True)
                 label = '_'.join(col.split('_')[2:])
                 label = '__'.join([label, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)])
                 plt.plot(pwr_df['FEMB_ID'].astype(str), pwr_df[col], marker='.', markersize=12, label=label, color=colors[i])
+            plt.xticks(fontsize=10)
             plt.xlabel('FEMB_ID')
             plt.ylabel('PWR_Consumption(W)')
             # plt.ylim(ylim)
@@ -596,8 +650,12 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         pwr_se.drop('cycle', axis=1, inplace=True)
         # PWR_SE_SDF and PWR_DIFF
         pwr_sesdf_diff['FEMB_ID'] = pwr_sesdf_diff['FEMB_ID'].astype(str)
+        pwr_sesdf_diff[['FEMB_ID', 'cycle']] = pwr_sesdf_diff.FEMB_ID.str.split('_', expand=True)
         pwr_sesdf_diff = pwr_sesdf_diff.sort_values(by='FEMB_ID', ascending=True)
-        pwr_sesdf_diff['FEMB_ID'] = ['\n'.join([str(femb), '0']) for femb in pwr_sesdf_diff['FEMB_ID']]
+        pwr_sesdf_diff['FEMB_ID'] = pwr_sesdf_diff[['FEMB_ID', 'cycle']].agg('\n'.join, axis=1)
+        pwr_sesdf_diff.drop('cycle', axis=1, inplace=True)
+
+        # pwr_sesdf_diff['FEMB_ID'] = ['\n'.join([str(femb), '0']) for femb in pwr_sesdf_diff['FEMB_ID']]
         ##
         # mean and std for SE, SE_SDF and DIFF
         mean_SE = np.mean(pwr_se['PWR_Cons_SE'])
@@ -610,22 +668,22 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         std_DIFF = np.std(pwr_sesdf_diff['PWR_Cons_DIFF'])
         #
         # produce the plot of the power consumption
-        plt.figure(figsize=(40, 10))
+        plt.figure(figsize=(25, 10))
         ## SE
         plt.plot(pwr_se['FEMB_ID'], pwr_se['PWR_Cons_SE'], marker='.', markersize=20, color=colors[0],
                 label='__'.join(['SE', 'mean = {:.3f}'.format(mean_SE), 'std = {:.3f}'.format(std_SE)]))
-        plt.xticks(pwr_se['FEMB_ID'], fontsize=13)
+        plt.xticks(pwr_se['FEMB_ID'], fontsize=10) # need small tick labels
         # SE_SDF
         plt.plot(pwr_sesdf_diff['FEMB_ID'], pwr_sesdf_diff['PWR_Cons_SE_SDF'], marker='.', markersize=20, color=colors[1],
                 label='__'.join(['SE_SDF', 'mean = {:.3f}'.format(mean_SE_SDF), 'std = {:.3f}'.format(std_SE_SDF)]))
         # DIFF
         plt.plot(pwr_sesdf_diff['FEMB_ID'], pwr_sesdf_diff['PWR_Cons_DIFF'], marker='.', markersize=20, color=colors[2],
                 label='__'.join(['DIFF', 'mean = {:.3f}'.format(mean_DIFF), 'std = {:.3f}'.format(std_DIFF)]))
-        plt.yticks(fontsize=25);plt.yticks(fontsize=25)
+        plt.yticks(fontsize=12);plt.yticks(fontsize=25)
         plt.xlabel('FEMB_ID\nCycle', fontsize=15)
-        plt.ylabel('PWR_Consumption(W)', fontsize=20)
-        plt.title('Power consumption for the PWR_Cycle', fontsize=25)
-        plt.legend(fontsize=25)
+        plt.ylabel('PWR_Consumption(W)', fontsize=12)
+        plt.title('Power consumption for the PWR_Cycle', fontsize=12)
+        plt.legend(fontsize=12)
         # figname = 'power_consumption_{}'.format(T)
         figname = 'power_consumption_{}_PWR_Cycle'.format(T)
         tmp_output_dir = '/'.join([output_dir, T, 'PWR_Cycle', figname + '.png'])
@@ -643,7 +701,7 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
     Same for other datatypes.
     '''
     temperature = 'LN' # we only have PWR_Cycle on LN
-    dataname_list = ['Bias5V', 'ColdADC', 'ColdDATA', 'LArASIC']
+    dataname_list = ['Bias5V', 'ColdADC', 'ColDATA', 'LArASIC']
     colors=['blue','orange','green']
     #
     # create a folder nammed 'plots' to save the plots
@@ -655,7 +713,7 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
     pwr_test_types = ['SE', 'SE_SDF', 'DIFF']
     for dataname in dataname_list:
         figurename = '_'.join([dataname, measured_param + '.png'])
-        plt.figure(figsize=(45,7))
+        plt.figure(figsize=(25,7))
         for i, pwr in enumerate(pwr_test_types):
             df = pd.DataFrame()
             # figname = ''
@@ -678,7 +736,7 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
                 # plt.figure(figsize=(30, 10))
                 plt.plot(df['FEMB_ID'], df[param_meas], marker='.', markersize=15, color=colors[i],
                         label='_'.join([pwr, 'mean = {:.3f}'.format(mean), 'std = {:.3f}'.format(std)]))
-                plt.xticks(df['FEMB_ID'], fontsize=20);plt.yticks(fontsize=30)
+                plt.xticks(df['FEMB_ID'], fontsize=10);plt.yticks(fontsize=30)
                 plt.xlabel('FEMB_ID\ncycle', fontsize=20)
                 #
             else:
@@ -686,10 +744,14 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
                 csvname = '_'.join([dataname, 'SE_SDF_DIFF']) + '.csv'
                 path_to_datafile = '/'.join([csv_source_dir, csvname])
                 df = pd.read_csv(path_to_datafile)
+                df[['FEMB_ID', 'cycle']] = df.FEMB_ID.str.split('_', expand=True)
                 # sort the dataframe by 'FEMB_ID'
-                df['FEMB_ID'] = df['FEMB_ID'].astype(str)
-                df = df.sort_values(by='FEMB_ID', ascending=True)
-                df['FEMB_ID'] = ['\n'.join([str(femb), '0']) for femb in df['FEMB_ID']]
+                # df['FEMB_ID'] = df['FEMB_ID'].astype(str)
+                df = df.sort_values(by=['FEMB_ID', 'cycle'], ascending=True)
+                df['FEMB_ID'] = df[['FEMB_ID', 'cycle']].agg('\n'.join, axis=1)
+                df.drop('cycle', axis=1, inplace=True)
+                # df = df.sort_values(by=['FEMB_ID', param_meas], ascending=True)
+                # df['FEMB_ID'] = ['\n'.join([str(femb), '0']) for femb in df['FEMB_ID']]
                 # calculate the mean and std of the df[param_meas]
                 mean = np.mean(df[param_meas])
                 std = np.std(df[param_meas])
@@ -717,5 +779,5 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
     #qc = QC_analysis(datadir='D:/IO-1865-1C/QC/data/', output_dir='D:/IO-1865-1C/QC/analysis', temperature='LN')
     #qc.save_PWRdata_from_allFolders(dataname='Bias5V')
     #qc.save_PWRdata_from_allFolders(dataname='LArASIC')
-    #qc.save_PWRdata_from_allFolders(dataname='ColdDATA')
+    #qc.save_PWRdata_from_allFolders(dataname='ColDATA')
     #qc.save_PWRdata_from_allFolders(datafemb106_femb114_femb111_LN_0pF_R002name='ColdADC')
