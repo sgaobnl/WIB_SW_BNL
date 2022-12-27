@@ -12,7 +12,7 @@ from utils import *
 
 #----------------------------------------------------------------------------
 class ASICDAC:
-    def __init__(self, input_data_dir='', output_dir='', temperature='LN', CALI_number=1, sgp1=False):
+    def __init__(self, input_data_dir='', output_dir='', temperature='LN', CALI_number=1, sgp1=False, fembs_to_ignore={}):
         '''
             input_data_dir: path to the list of data folders,
             CALI_number: can be 1, 2, 3 or 4,
@@ -48,6 +48,7 @@ class ASICDAC:
         # use QC_analysis to get rms instead of writing a new function
         # self.qc_analysis = QC_analysis(self, datadir=input_data_dir, output_dir=output_dir,
         #                                 temperature=self.temperature, dataType='RMS')
+        self.fembs_to_ignore = fembs_to_ignore
     
     def list_bin(self, input_dir='', BL=200, gain=4.7, shapingTime=2.0):
         str_BL = str(BL) + 'mVBL'
@@ -210,7 +211,17 @@ class ASICDAC:
                 if self.sgp1:
                     rms_csvname += '_sgp1'
                 # print(rms_data)
-                pd.DataFrame(rms_dict).to_csv('/'.join([self.output_dirCALI, rms_csvname + '.csv']), index=False)
+                rms_dict_df = pd.DataFrame(rms_dict)
+                # print(rms_dict_df.head())
+                #
+                input_datadirname = '_'.join(path_to_binfolder.split('/')[-2].split('_')[:-2])
+                tt = [k for k, v in self.fembs_to_ignore.items() if k == input_datadirname]
+                if len(tt) == 1:
+                        _femb_ids = self.fembs_to_ignore[tt[0]]
+                        for _femb_id in _femb_ids:
+                            rms_dict_df = rms_dict_df[rms_dict_df['femb_ids'] != _femb_id]
+                #
+                rms_dict_df.to_csv('/'.join([self.output_dirCALI, rms_csvname + '.csv']), index=False)
             else:
                 peak_data = self.decode_onebin_peakvalues(path_to_binFolder=path_to_binfolder, 
                                                                                 bin_filename=list_binfiles[ibin], logs_env=logs_env)
@@ -241,57 +252,67 @@ class ASICDAC:
 
         FEMBs = [0, 1, 2, 3]
         for femb_number in FEMBs:
-            all_peakdata_dict = {}
-            # for ibin in range(len(list_binfiles)):
-            for ibin in range(len(new_bin_files)):
-                # all_rmspeakdata_list.append(peakdata_list[ibin][0][femb_number])
+            #
+            skip = False
+            input_datadirname = '_'.join(path_to_binfolder.split('/')[-2].split('_')[:-2])
+            # print(input_datadirname)
+            tt = [k for k, v in self.fembs_to_ignore.items() if k == input_datadirname]
+            # print(self.fembs_to_ignore.keys())
+            if len(tt) == 1:
+                _femb_ids = self.fembs_to_ignore[tt[0]]
+                for _femb_id in _femb_ids:
+                    if _femb_id == info_logs['femb id']['femb{}'.format(femb_number)]:
+                        skip = True
+                        print('FEMB to skip = {}'.format(_femb_id))
+            #
+            if not skip:
+                all_peakdata_dict = {}
+                # for ibin in range(len(list_binfiles)):
+                for ibin in range(len(new_bin_files)):
+                    # all_rmspeakdata_list.append(peakdata_list[ibin][0][femb_number])
 
-                # DAC = peakdata_list[ibin][femb_number][0]
-                DAC = self.get_DAC_fromfilename(bin_filename=new_bin_files[ibin])
-                if DAC!=0:
                     # DAC = peakdata_list[ibin][femb_number][0]
-                    peak_values = peakdata_list[ibin][femb_number][1]
-                    all_peakdata_dict[DAC] = peak_values
-            #
-            # peak and DAC
-            DACs, peaks, CHs = [], [], []
-            for dac, peak_array in all_peakdata_dict.items():
-                tmp_dac = [dac for _ in range(len(peak_array))]
-                tmp_peaks_values = peak_array
-                ch_numbers = [i for i in range(len(peak_array))]
+                    DAC = self.get_DAC_fromfilename(bin_filename=new_bin_files[ibin])
+                    if DAC!=0:
+                        # DAC = peakdata_list[ibin][femb_number][0]
+                        peak_values = peakdata_list[ibin][femb_number][1]
+                        all_peakdata_dict[DAC] = peak_values
+                #
+                # peak and DAC
+                DACs, peaks, CHs = [], [], []
+                for dac, peak_array in all_peakdata_dict.items():
+                    tmp_dac = [dac for _ in range(len(peak_array))]
+                    tmp_peaks_values = peak_array
+                    ch_numbers = [i for i in range(len(peak_array))]
 
-                DACs += tmp_dac
-                peaks += tmp_peaks_values
-                CHs += ch_numbers
+                    DACs += tmp_dac
+                    peaks += tmp_peaks_values
+                    CHs += ch_numbers
 
-            
-            transformed_peakdata_df = pd.DataFrame({
-                'CH': CHs,
-                'peak_value': peaks,
-                'DAC': DACs
-            })
-            self.peakdata_df = pd.DataFrame()
-            self.peakdata_df = transformed_peakdata_df
+                
+                transformed_peakdata_df = pd.DataFrame({
+                    'CH': CHs,
+                    'peak_value': peaks,
+                    'DAC': DACs
+                })
+                self.peakdata_df = pd.DataFrame()
+                self.peakdata_df = transformed_peakdata_df
 
-            # get the femb_id if withlogs
-            femb_id = femb_number
-            if withlogs:
-                # dir_to_logs = '/'.join(path_to_binfolder.split('/')[:-1])
-                # with open('/'.join([dir_to_logs, 'logs_env.bin']), 'rb') as pointer_logs:
-                #     info_logs = pickle.load(pointer_logs)
-                #     logs_env = info_logs
-                #  get the list of femb_ids
-                femb_ids = info_logs['femb id']
-                femb_id = femb_ids['femb{}'.format(femb_number)]
-            peak_csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
-            
-            if self.sgp1:
-                peak_csvname += '_sgp1'
-            # save peakdata with DAC in csv
-            self.peakdata_df.to_csv('/'.join([self.output_dirCALI, peak_csvname + '.csv']), index=False)
-            #
-            # print this line instead of a progessbar
-            print('saved in {}/{}.csv'.format(self.CALI, peak_csvname))
+                # get the femb_id if withlogs
+                femb_id = femb_number
+                if withlogs:
+                    #  get the list of femb_ids
+                    femb_ids = info_logs['femb id']
+                    femb_id = femb_ids['femb{}'.format(femb_number)]
+                peak_csvname = 'peakValues_femb{}_{}mVBL_{}mVfC_{}us'.format(femb_id, self.config[0], config1, config2)
+                
+                if self.sgp1:
+                    peak_csvname += '_sgp1'
+                # save peakdata with DAC in csv
+                self.peakdata_df.to_csv('/'.join([self.output_dirCALI, peak_csvname + '.csv']), index=False)
+                #
+                # print this line instead of a progessbar
+                print('saved in {}/{}.csv'.format(self.CALI, peak_csvname))
         
     #================ use data_df from this part------no need to read the data bin files except logs_env.bin===========
     def plot_peakValue_vs_DAC_allch(self, data_df, figname='', ch_list=range(128)):
@@ -316,6 +337,7 @@ class ASICDAC:
         plt.legend()
         # plt.show()
         plt.savefig('/'.join([self.output_dirCALI, '{}.png'.format(figname)]))
+        plt.close()
 
     # def checkLinearity(self, DAC_values=[], peak_values=[]):
     #     peak_values = np.array(peak_values)
@@ -456,6 +478,7 @@ class ASICDAC:
         plt.xlim([-1, 128])
         plt.title(gains_figname, fontsize=20)
         plt.savefig('/'.join([output_dir, gains_figname + '.png']))
+        plt.close()
         #
         # DAC corresponding to peak_max
         plt.figure(figsize=(12, 7))
@@ -463,6 +486,7 @@ class ASICDAC:
         plt.xlabel('CH');plt.ylabel('DAC_for_peakmax')
         plt.title(gains_figname, fontsize=20)
         plt.savefig('/'.join([output_dir, '_'.join([gains_figname, 'DAC_peakmax', '.png'])]))
+        plt.close()
         print('Figures saved....')
         #
         # save the Gains in a csv file
@@ -472,23 +496,23 @@ class ASICDAC:
 
 #***************************************************************
 # These functions get the peak values and DAC from the bin files
-def Gains_CALI1(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
-    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=1, sgp1=False)
+def Gains_CALI1(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False, fembs_to_ignore={}):
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=1, sgp1=False, fembs_to_ignore=fembs_to_ignore)
     mVfC = [4.7, 7.8, 14.0, 25.0]
     for data_dir in asic.input_dirCALI_list:
         for gain_in_mVfC in mVfC:
             config = [200, gain_in_mVfC, 2.0]
             asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 
-def Gains_CALI2(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False):
-    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=2, sgp1=False)
+def Gains_CALI2(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False, fembs_to_ignore={}):
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=2, sgp1=False, fembs_to_ignore=fembs_to_ignore)
     config = [900, 14.0, 2.0]
     for data_dir in asic.input_dirCALI_list:
         asic.get_peakValues_forallDAC(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
         # asic.get_gains_for_allFEMBs(path_to_binfolder=data_dir, config=config, withlogs=withlogs)
 
-def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False, CALI_number=3):
-    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True)
+def Gains_CALI3_or_CALI4(path_to_dataFolder='', output_dir='', temperature='LN', withlogs=False, fembs_to_ignore={}, CALI_number=3):
+    asic = ASICDAC(input_data_dir=path_to_dataFolder, output_dir=output_dir, temperature=temperature, CALI_number=CALI_number, sgp1=True, fembs_to_ignore=fembs_to_ignore)
     config = [200, 14.0, 2.0]
     if CALI_number==4:
         config = [900, 14.0, 2.0]
@@ -562,27 +586,16 @@ def read_gain_ana(list_path_to_file=[], femb_id='101', gain_larasic='14_0mVfC'):
             df = pd.read_csv(f)
             return df
 
-def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, fembs_to_exclude=[], sgp1=False):
-    # to get results faster, let's hard code some part
-    # list samtec fembs to exclude
-    # samtec_fembs = []
-    # samtec_reports = []
-    # for femb in fembs_to_exclude:
-    #     if femb < 10:
-    #         samtec_fembs.append('femb0{}'.format(femb))
-    #         samtec_reports.append('FEMB0{}'.format(femb))
-    #     else:
-    #         samtec_fembs.append('femb{}'.format(femb))
-    #         samtec_reports.append('FEMB{}'.format(femb))
-    
+def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, listgains=[], fembs_to_exclude=[], sgp1=False, fembs_to_ignore={}):    
     # list larasic gains
-    listgains = ['4_7', '7_8', '14_0', '25_0']
+    # listgains = ['4_7', '7_8', '14_0', '25_0']
     larasic_gains = ['{}mVfC'.format(g) for g in listgains]
 
     # seelct rms files without samtec fembs
     ana_rms_files = []
     # rms_input_dir = '/'.join([input_dir, temperature, 'CALI1', 'rms'])
     rms_input_dir = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'rms'])
+    
     for rms_file in os.listdir(rms_input_dir):
         femb_ana = rms_file.split('_')[0]
         if femb_ana not in fembs_to_exclude:
@@ -595,17 +608,34 @@ def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, femb
             tmp_fembs_to_exclude.append('femb0{}'.format(femb))
         else:
             tmp_fembs_to_exclude.append('femb{}'.format(femb))
-    all_fembs = []
-    for femb_folder in os.listdir(datadir):
-        if 'femb' in femb_folder:
-            folder_name_split = femb_folder.split('_')[:-2]
-            for femb in folder_name_split:
-                all_fembs.append(femb)
+    # modification 12/26/2022
+    # output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
     list_fembs = []
-    for femb in all_fembs:
-        if femb not in tmp_fembs_to_exclude:
-            list_fembs.append(femb.split('femb')[-1])
-
+    if len(tmp_fembs_to_exclude) != 0:
+        all_fembs = []
+        for femb_folder in os.listdir(datadir):
+            if 'femb' in femb_folder:
+                folder_name_split = femb_folder.split('_')[:-2]
+                for femb in folder_name_split:
+                    all_fembs.append(femb)
+        # list_fembs = []
+        for femb in all_fembs:
+            if femb not in tmp_fembs_to_exclude:
+                list_fembs.append(femb.split('femb')[-1])
+    else:
+        calidir = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number)])
+        print(calidir)
+        for file in os.listdir(calidir):
+            if ('.csv' in file) & ('rms' in file):
+                part_filenames = file.split('_')
+                for part in part_filenames:
+                    if 'femb' in part:
+                        part_in_v = False
+                        for k, v in fembs_to_ignore.items():
+                            if part.split('femb')[-1] in v:
+                                part_in_v = True
+                        if not part_in_v:
+                            list_fembs.append(part.split('femb')[-1])
     output_enc = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number), 'ENC'])
     try:
         os.mkdir(output_enc)
@@ -618,13 +648,12 @@ def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, femb
     for csvfile in os.listdir(path_to_gains):
         if '.csv' in csvfile:
             femb = csvfile.split('_')[1]
-            if femb not in tmp_fembs_to_exclude:
+            if (femb not in tmp_fembs_to_exclude) & (femb.split('femb')[-1] in list_fembs):
                 selected_gains_csv.append('/'.join([path_to_gains, csvfile]))
-    
     # get enc for each femb and larasic gains
     for femb in list_fembs:
         for larasicgain in larasic_gains:
-            try:
+            # try:
                 ana_rms = read_rms_ana(list_path_to_file=ana_rms_files, femb_id=femb, gain_larasic=larasicgain)[['channelNumber', 'RMS']]
                 # print(ana_rms.head())
                 ana_gain = read_gain_ana(list_path_to_file=selected_gains_csv, femb_id=femb, gain_larasic=larasicgain)[['CH', 'Gain']]
@@ -644,20 +673,22 @@ def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, femb
                 plt.xlabel('CH')
                 plt.ylabel('ENC(electron)')
                 plt.title(figname)
-                plt.savefig('/'.join([output_enc, figname + '.jpg']))
+                plt.savefig('/'.join([output_enc, figname + '.png']))
+                plt.close()
                 # save the plot of RMS for all channel number in jpg file
                 plt.figure(figsize=(12, 7))
                 plt.plot(df_enc['CH'], df_enc['RMS'], marker='.', markersize=7.5)
                 plt.xlabel('CH')
                 plt.ylabel('RMS')
                 plt.title(figname)
-                plt.savefig('/'.join([output_enc, 'RMS_' + figname + '.jpg']))
+                plt.savefig('/'.join([output_enc, 'RMS_' + figname + '.png']))
+                plt.close()
                 # save dataframe with enc to csv file
                 df_enc.to_csv('/'.join([output_enc, figname + '.csv']), index=False)
                 print('CALI{}/ENC/{} saved'.format(CALI_number, figname + '.csv'))
-            except:
-                print('error : fem = {}, gain = {}'.format(femb, larasicgain))
-            
+            # except:
+            #     print('error : fem = {}, gain = {}'.format(femb, larasicgain))
+
 def distribution_ENC_Gain(csv_source_dir='', CALI_number=1, temperature='LN', larasic_gain='4_7mVfC', fit=False):
     '''
     In this function, the csv files stored in the folder ENC will be used to get
@@ -726,6 +757,7 @@ def distribution_ENC_Gain(csv_source_dir='', CALI_number=1, temperature='LN', la
             plt.title('Gain for {}'.format(figname))
             plt.legend()
             plt.savefig('/'.join([output_dir, 'gain_distribution_CALI{}_fitted.png'.format(CALI_number)]))
+            plt.close()
             #
             #@ plot the distribution of the ENC
             plt.figure(figsize=(10,10))
@@ -737,6 +769,7 @@ def distribution_ENC_Gain(csv_source_dir='', CALI_number=1, temperature='LN', la
             plt.title('ENC for {}'.format(figname))
             plt.legend()
             plt.savefig('/'.join([output_dir, 'enc_distribution_CALI{}_fitted.png'.format(CALI_number)]))
+            plt.close()
         else:
             plt.figure(figsize=(10, 10))
             plt.hist(gain_selected, bins=50)
@@ -746,6 +779,7 @@ def distribution_ENC_Gain(csv_source_dir='', CALI_number=1, temperature='LN', la
             plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
             plt.title('Gain for {}'.format(figname))
             plt.savefig('/'.join([output_dir, 'gain_distribution_CALI{}.png'.format(CALI_number)]))
+            plt.close()
             #
             plt.figure(figsize=(10,10))
             plt.hist(enc_selected, bins=50, log=True)
@@ -753,7 +787,8 @@ def distribution_ENC_Gain(csv_source_dir='', CALI_number=1, temperature='LN', la
             plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
             plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
             plt.title('ENC for {}'.format(figname))
-            plt.savefig('/'.join([output_dir, 'enc_distribution_CALI{}.png'.format(CALI_number)]))        
+            plt.savefig('/'.join([output_dir, 'enc_distribution_CALI{}.png'.format(CALI_number)]))
+            plt.close()        
         #
         #@
         print('Distributions of the gain and enc saved...')
@@ -795,10 +830,170 @@ def separateCSV_foreachFEMB(path_to_csv='', output_path='', datanames=['CALI1'])
                 part_csvname = csvname.split('.')[0]
                 #
                 # dataframe
-                df = pd.read_csv('/'.join([path_to_file, csvname]))
+                df = pd.read_csv('/'.join([path_to_file, csvname]), dtype={'femb_ids': str})
                 femb_ids = df['femb_ids'].unique()
                 for femb in femb_ids:
                     df_femb = df[df['femb_ids']==femb].reset_index().drop('index', axis=1)
                     femb_csvname = '_'.join(['femb{}'.format(femb), part_csvname + '.csv'])
                     df_femb.to_csv('/'.join([output_path_file, femb_csvname]), index=False)
-                    print(femb_csvname)
+                    # print(femb_csvname)
+
+#---------------------------------CODES FROM JUPYTER NOTEBOOK----------------------------------------
+#---------- GainFEMBs vs Gain of LArASIC ------------------------------------------------------------
+def GainFEMBs_vs_GainLArASIC(input_dir, fembs_to_exclude=[]):
+    '''
+        input_dir should be the main folder of the analysis. e.g: '../results/IO-1865-1D/QC_analysis/'
+    '''
+    # gains
+    temperatures = ['LN', 'RT']
+    cali_numbers = ['CALI1', 'CALI2', 'CALI3', 'CALI4']
+
+    for CALI in cali_numbers:
+        plt.figure(figsize=(15, 5))
+        plt.style.use('seaborn-white')
+        plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
+        plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
+        output_dir = '/'.join([input_dir, 'gains_vs_femb'])
+        try:
+            os.mkdir(output_dir)
+        except:
+            pass
+
+        for T in temperatures:
+            configs = []
+            for f in os.listdir('/'.join([input_dir, T, CALI, 'gains'])):
+                if ('.csv' in f) & ('gains' in f):
+                    config1 = f.split('_')[2]
+                    config2 = (f.split('mVBL_')[-1]).split('.')[0]
+                    configs.append('_'.join([config1, config2]))
+            configs = pd.Series(configs)
+            #----------------------
+            mean_per_configs = []
+            std_per_configs = []
+            unique_configs = []
+            for c in configs.unique():
+                tmp_c = c.split('_')
+                p1 = tmp_c[1]
+                p2 = tmp_c[2].split('m')[0]
+                unique_configs.append(float('.'.join([p1, p2])))
+                
+            #----------------------
+            for config in configs.unique():
+                femb_ids = []
+    #             mean_gains = []
+                gains = []
+                sgp1 = False
+                print(config)
+                for f in os.listdir('/'.join([input_dir, T, CALI, 'gains'])):
+                    if ('.csv' in f) & ('gains' in f) & (config in f):
+                        femb_id = f.split('_')[1]
+                        # if femb_id != 'femb111': # failed board --> belongs to previous test : 1C
+                        #     if 'sgp1' in f:
+                        #         sgp1 = True
+                        #     if femb_id == 'femb75':
+                        #         continue
+                        tmp_fembs_to_exclude = ['femb'+femb for femb in fembs_to_exclude]
+                        if femb_id not in tmp_fembs_to_exclude:
+                            # if 'sgp1' in f:
+                            #     sgp1 = True
+                            femb_id = str(femb_id.split('b')[-1])
+                            femb_ids.append(femb_id)
+                            df = pd.read_csv('/'.join([input_dir, T, CALI, 'gains', f]))
+                            gains += list(df['Gain'])
+                print(femb_ids)
+                mean_per_configs.append(np.mean(gains))
+                std_per_configs.append(np.std(gains))
+            df_mean = pd.DataFrame({'gain_larasic': unique_configs, 'mean_gain': mean_per_configs, 'std': std_per_configs})
+            df_mean = df_mean.sort_values(by='gain_larasic', ascending=True)
+
+            plt.errorbar(x=df_mean['gain_larasic'], y=df_mean['mean_gain'], yerr=df_mean['std'], marker='.',
+                        capsize=10, markersize=5, label=T)
+            plt.xticks(df_mean['gain_larasic'], fontsize=15)
+            plt.yticks(fontsize=15)
+        plt.xlabel('Gain of the LArASIC ($mV/fC$)', fontsize=15)
+        plt.ylabel('Gain($e^-/ADC bin$)', fontsize=15)
+        plt.legend(fontsize=15)
+        plt.title('baseline = 200mV, shaping time = 2.0$\mu s$', fontsize=15)
+        plt.savefig('/'.join([output_dir, 'gain_vs_gainLArASIC_{}.png'.format(CALI)]))
+        plt.close()
+#-----------------------------ENC vs FEMB_IDs-------------------------------------------------------------
+def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
+    '''
+        input_dir should be the main folder of the analysis. e.g: '../results/IO-1865-1D/QC_analysis/'
+    '''
+    # enc
+    temperatures = ['LN', 'RT']
+    cali_numbers = ['CALI1', 'CALI2', 'CALI3', 'CALI4']
+    for T in temperatures:
+        for CALI in cali_numbers:
+            output_dir = '/'.join([input_dir, T, CALI, 'enc_vs_femb'])
+            try:
+                os.mkdir(output_dir)
+            except:
+                pass
+
+            configs = []
+            for f in os.listdir('/'.join([input_dir, T, CALI, 'ENC'])):
+                if ('.csv' in f):
+                    config1 = f.split('_')[1]
+                    config2 = (f.split('mVBL_')[-1]).split('.')[0]
+                    configs.append('_'.join([config1, config2]))
+            configs = pd.Series(configs)
+            #
+            plt.figure(figsize=(15, 5))
+            plt.style.use('seaborn-white')
+            plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
+            plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
+            colors = ['red', 'green', 'blue', 'orange']
+            #
+            gain_df = pd.DataFrame()
+            for i, config in enumerate(configs.unique()):
+                femb_ids = []
+                mean_encs = []
+                std_encs = []
+                sgp1 = False
+                for f in os.listdir('/'.join([input_dir, T, CALI, 'ENC'])):
+                    if ('.csv' in f) & (config in f):
+                        femb_id = f.split('_')[0]
+                        if 'sgp1' in f:
+                            sgp1 = True
+                        tmp_fembs_to_exclude = ['femb'+femb for femb in fembs_to_exclude]
+                        # if femb_id == 'femb75':
+                        if femb_id in tmp_fembs_to_exclude:
+                            continue
+                        femb_ids.append(femb_id)
+                        df = pd.read_csv('/'.join([input_dir, T, CALI, 'ENC', f]))
+                        mean_enc = np.mean(df['ENC'])
+                        mean_encs.append(mean_enc)
+                        std_encs.append(np.std(df['ENC']))
+                #
+                tmp_df = pd.DataFrame({'femb': femb_ids, 'enc_{}'.format(config): mean_encs, 'std_{}'.format(config): std_encs})
+                if i==0:
+                    gain_df = pd.concat([gain_df, tmp_df], axis=1)
+                else:
+                    gain_df = gain_df.merge(tmp_df, how='left', on='femb')
+
+            cols = gain_df.columns
+            BL = cols[1].split('_')[1]
+
+            i = 0
+            for ii in range(1, len(cols), 2):
+                config = '_'.join(cols[ii].split('_')[2:])
+                coly = cols[ii]
+                colerr = cols[ii+1]
+                gain_df.sort_values(by='femb', ascending=True, inplace=True)
+                plt.errorbar(x=gain_df['femb'], y=gain_df[coly], yerr=gain_df[colerr], color=colors[i],
+                            capsize=5, label='{}'.format(config))
+                i += 1
+            plt.xlabel('FEMB')
+            plt.ylabel('mean_ENC ($e^-$)')
+            plt.xticks(fontsize=fontsize_xticks)
+
+            plt.title('mean ENC vs FEMB for {} at {}'.format(BL, T))
+            plt.legend()
+            figname = '_'.join([CALI, 'ENC_vs_femb'])
+            if sgp1:
+                figname += '_sgp1'
+            plt.savefig('/'.join([output_dir, figname + '.png']))
+#------------------------------------------------------------------------------------------------------------
+#------------------------------------------------------------------------------------------------------------
