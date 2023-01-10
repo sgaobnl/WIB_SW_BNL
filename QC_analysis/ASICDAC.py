@@ -12,12 +12,13 @@ from utils import *
 
 #----------------------------------------------------------------------------
 class ASICDAC:
-    def __init__(self, input_data_dir='', output_dir='', temperature='LN', CALI_number=1, sgp1=False, fembs_to_ignore={}):
-        '''
+    '''
             input_data_dir: path to the list of data folders,
             CALI_number: can be 1, 2, 3 or 4,
             temperature: can be LN or RT
-        '''
+    '''
+    def __init__(self, input_data_dir='', output_dir='', temperature='LN', CALI_number=1, sgp1=False, fembs_to_ignore={}):
+        
         self.sgp1 = False
         self.step = 4
         if sgp1:
@@ -613,15 +614,28 @@ def get_ENC_CALI(datadir='', input_dir='', temperature='LN', CALI_number=1, list
     list_fembs = []
     if len(tmp_fembs_to_exclude) != 0:
         all_fembs = []
-        for femb_folder in os.listdir(datadir):
+        list_datanames = []
+        if datadir!='':
+            list_datanames = os.listdir(datadir)
+        else:
+            tmp = []
+            for f in os.listdir('/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number)])):
+                if ('rms' in f) & ('.csv' in f):
+                    start = '_'.join(f.split('_')[1:6])
+                    tmp.append(start)
+            list_datanames = list(pd.Series(tmp).unique())
+        for femb_folder in list_datanames:
             if 'femb' in femb_folder:
                 folder_name_split = femb_folder.split('_')[:-2]
                 for femb in folder_name_split:
                     all_fembs.append(femb)
         # list_fembs = []
+        print('*'*100)
+        print(all_fembs)
         for femb in all_fembs:
             if femb not in tmp_fembs_to_exclude:
                 list_fembs.append(femb.split('femb')[-1])
+        print('-->{}'.format(list_fembs))
     else:
         calidir = '/'.join([input_dir, temperature, 'CALI{}'.format(CALI_number)])
         print(calidir)
@@ -853,7 +867,8 @@ def GainFEMBs_vs_GainLArASIC(input_dir, fembs_to_exclude=[]):
         plt.style.use('seaborn-white')
         plt.tick_params(axis='x', direction='out', length=5, width=2, color='black', top=False)
         plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
-        output_dir = '/'.join([input_dir, 'gains_vs_femb'])
+        output_dir = '/'.join([input_dir, 'gainsfemb_vs_gainlarasic'])
+        output_df = pd.DataFrame(dtype=object)
         try:
             os.mkdir(output_dir)
         except:
@@ -892,7 +907,7 @@ def GainFEMBs_vs_GainLArASIC(input_dir, fembs_to_exclude=[]):
                         #         sgp1 = True
                         #     if femb_id == 'femb75':
                         #         continue
-                        tmp_fembs_to_exclude = ['femb'+femb for femb in fembs_to_exclude]
+                        tmp_fembs_to_exclude = ['femb'+str(femb) for femb in fembs_to_exclude]
                         if femb_id not in tmp_fembs_to_exclude:
                             # if 'sgp1' in f:
                             #     sgp1 = True
@@ -903,12 +918,15 @@ def GainFEMBs_vs_GainLArASIC(input_dir, fembs_to_exclude=[]):
                 print(femb_ids)
                 mean_per_configs.append(np.mean(gains))
                 std_per_configs.append(np.std(gains))
-            df_mean = pd.DataFrame({'gain_larasic': unique_configs, 'mean_gain': mean_per_configs, 'std': std_per_configs})
-            df_mean = df_mean.sort_values(by='gain_larasic', ascending=True)
+            df_mean = pd.DataFrame({'gain_larasic_{}'.format(T): unique_configs, 'mean_gain_{}'.format(T): mean_per_configs, 'std_{}'.format(T): std_per_configs})
+            df_mean = df_mean.sort_values(by='gain_larasic_{}'.format(T), ascending=True)
+            #
+            
+            output_df = pd.concat([output_df, df_mean], axis=1)
 
-            plt.errorbar(x=df_mean['gain_larasic'], y=df_mean['mean_gain'], yerr=df_mean['std'], marker='.',
+            plt.errorbar(x=df_mean['gain_larasic_{}'.format(T)], y=df_mean['mean_gain_{}'.format(T)], yerr=df_mean['std_{}'.format(T)], marker='.',
                         capsize=10, markersize=5, label=T)
-            plt.xticks(df_mean['gain_larasic'], fontsize=15)
+            plt.xticks(df_mean['gain_larasic_{}'.format(T)], fontsize=15)
             plt.yticks(fontsize=15)
         plt.xlabel('Gain of the LArASIC ($mV/fC$)', fontsize=15)
         plt.ylabel('Gain($e^-/ADC bin$)', fontsize=15)
@@ -916,6 +934,8 @@ def GainFEMBs_vs_GainLArASIC(input_dir, fembs_to_exclude=[]):
         plt.title('baseline = 200mV, shaping time = 2.0$\mu s$', fontsize=15)
         plt.savefig('/'.join([output_dir, 'gain_vs_gainLArASIC_{}.png'.format(CALI)]))
         plt.close()
+        ## save df_mean in a csv named: meanGain_with_std.csv
+        output_df.to_csv('/'.join([output_dir, 'meanGain_with_std_{}.csv'.format(CALI)]), index=False)
 #-----------------------------ENC vs FEMB_IDs-------------------------------------------------------------
 def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
     '''
@@ -926,7 +946,7 @@ def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
     cali_numbers = ['CALI1', 'CALI2', 'CALI3', 'CALI4']
     for T in temperatures:
         for CALI in cali_numbers:
-            output_dir = '/'.join([input_dir, T, CALI, 'enc_vs_femb'])
+            output_dir = '/'.join([input_dir, T, CALI, 'enc_vs_fembid'])
             try:
                 os.mkdir(output_dir)
             except:
@@ -946,7 +966,7 @@ def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
             plt.tick_params(axis='y', direction='out', length=5, width=2, color='black', right=False)
             colors = ['red', 'green', 'blue', 'orange']
             #
-            gain_df = pd.DataFrame()
+            enc_df = pd.DataFrame()
             for i, config in enumerate(configs.unique()):
                 femb_ids = []
                 mean_encs = []
@@ -963,17 +983,26 @@ def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
                             continue
                         femb_ids.append(femb_id)
                         df = pd.read_csv('/'.join([input_dir, T, CALI, 'ENC', f]))
+                        # try to get rid of outliers
+                        std = np.std(df['ENC'])
+                        mean = np.mean(df['ENC'])
+                        for _ in range(3):
+                            df = df[(df['ENC'] >= (mean-3*std)) & (df['ENC'] <= (mean+3*std))]
+                            mean = np.mean(df['ENC'])
+                            std = np.std(df['ENC'])
                         mean_enc = np.mean(df['ENC'])
                         mean_encs.append(mean_enc)
                         std_encs.append(np.std(df['ENC']))
                 #
                 tmp_df = pd.DataFrame({'femb': femb_ids, 'enc_{}'.format(config): mean_encs, 'std_{}'.format(config): std_encs})
                 if i==0:
-                    gain_df = pd.concat([gain_df, tmp_df], axis=1)
+                    enc_df = pd.concat([enc_df, tmp_df], axis=1)
                 else:
-                    gain_df = gain_df.merge(tmp_df, how='left', on='femb')
+                    enc_df = enc_df.merge(tmp_df, how='left', on='femb')
 
-            cols = gain_df.columns
+            ## save enc and femb_ids in a csv named: enc_with_fembID.csv
+            enc_df.to_csv('/'.join([output_dir, 'enc_with_fembID.csv']), index=False)
+            cols = enc_df.columns
             BL = cols[1].split('_')[1]
 
             i = 0
@@ -981,8 +1010,8 @@ def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
                 config = '_'.join(cols[ii].split('_')[2:])
                 coly = cols[ii]
                 colerr = cols[ii+1]
-                gain_df.sort_values(by='femb', ascending=True, inplace=True)
-                plt.errorbar(x=gain_df['femb'], y=gain_df[coly], yerr=gain_df[colerr], color=colors[i],
+                enc_df.sort_values(by='femb', ascending=True, inplace=True)
+                plt.errorbar(x=enc_df['femb'], y=enc_df[coly], yerr=enc_df[colerr], color=colors[i],
                             capsize=5, label='{}'.format(config))
                 i += 1
             plt.xlabel('FEMB')
