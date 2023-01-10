@@ -166,33 +166,45 @@ def rawdata_dec (raw, runs=1, plot_show_en = False, plot_fn = "./pulse_respons.p
         plt.plot(x, chmax, marker='.',color='r', label = "pp")
         plt.plot(x, chped, marker='.',color='b',  label = "ped")
         plt.plot(x, chmin, marker='.',color='g',  label = "np")
+        for tmpx in range(12):
+            plt.axvline(x=tmpx*128, color = 'r', linestyle='--')
+
     else:
         plt.plot(x, ch_max_map, marker='.',color='r', label = "pp")
         plt.plot(x, ch_ped_map, marker='.',color='b',  label = "ped")
         plt.plot(x, ch_min_map, marker='.',color='g',  label = "np")
+        plt.axvline(x=475, color = 'r', linestyle='--')
+        plt.axvline(x=951, color = 'r', linestyle='--')
+
 
     plt.legend()
     plt.title ("Pulse Distribution @ UTC:" + t0_str)
     plt.xlabel ("CH#")
     plt.ylabel ("ADC / bit" )
-    plt.axvline(x=475, color = 'r', linestyle='--')
-    plt.axvline(x=951, color = 'r', linestyle='--')
     plt.grid()
 
     if rms_flg :
         plt.subplot(222)
-        plt.plot(x, ch_rms_map, marker='.',color='r', label = "RMS")
+        if femb_plt_sq:
+            plt.plot(x, chrms, marker='.',color='r', label = "RMS")
+            for tmpx in range(12):
+                plt.axvline(x=tmpx*128, color = 'r', linestyle='--')
+
+        else:
+            plt.plot(x, ch_rms_map, marker='.',color='r', label = "RMS")
+            plt.axvline(x=475, color = 'm', linestyle='--')
+            plt.axvline(x=951, color = 'm', linestyle='--')
         plt.legend()
         plt.title ("RMS Noise Distribution @ UTC:" + t0_str)
         plt.xlabel ("CH# (According to CRP mapping)")
         plt.ylabel ("ADC RMS Noise / bit" )
         plt.ylim((0,50))
         plt.grid()
-        plt.axvline(x=475, color = 'm', linestyle='--')
-        plt.axvline(x=951, color = 'm', linestyle='--')
 
     if rms_flg :
         plt.subplot(223)
+        #for chp in range(370, 400, 1):
+        #    print (chp, ch_rms_map[chp])
         plt.plot(x, np.array(ch_rms_map)*39, marker='.',color='r', label = "RMS")
         plt.legend()
         plt.title ("ENC Distribution @ UTC:" + t0_str)

@@ -57,12 +57,12 @@ chped = []
 chmax = []
 chmin = []
 chrms = []
-chenc = []
+#chenc = []
 for ch in range(len(rawdata)):
     chnrmsdata= rawdata[ch]
     chninfo = noise_a_chn(chnrmsdata, chnno=ch)
     chrms.append(np.std(chninfo[1]))
-    chenc.append(np.std(chninfo[1])*gains[ch])
+#    chenc.append(np.std(chninfo[1])*gains[ch])
     chmax.append(np.max(chninfo[1]))
     chped.append(np.mean(chninfo[0]))
     chmin.append(np.min(chninfo[0]))

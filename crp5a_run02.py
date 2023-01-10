@@ -145,7 +145,7 @@ for tryx in range(1):
         with open(fp, 'wb') as fn:
             pickle.dump( rawinfo, fn)
             #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
-        rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_response" + ts + ".png", rms_flg=True)
+        rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, femb_plt_sq =1, plot_fn = save_dir + "pulse_response" + ts + ".png", rms_flg=True)
 
 
 print (" Done!")   

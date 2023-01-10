@@ -16,7 +16,7 @@ print ("help: python chkout_powering on on on on")
 #    print('Please specify 4 FEMBs power operation (on or off)')
 #    exit()    
 root_dir = sys.argv[-1]
-save_dir = "D:/CRP5A/" + root_dir + "/FEMB_Powering/"
+save_dir = "D:/CRP5A_3rd/" + root_dir + "/FEMB_Powering/"
 
 fembs = []
 if 'on' in sys.argv[1]:

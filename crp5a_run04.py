@@ -121,7 +121,7 @@ if True:
 
 if True:
     root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A_2nd/" + root_dir + "/" + runno + "/"
+    save_dir = "D:/CRP5A_3rd/" + root_dir + "/" + runno + "/"
     i = 0
     while (True):
         i = i + 1

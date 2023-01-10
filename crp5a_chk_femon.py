@@ -10,8 +10,8 @@ from wib import WIB
 import os
 from rawdata_dec import rawdata_dec 
 
-ext_cali_flg = False
 localclk_cs=False
+ext_cali_flg = False
 
 if len(sys.argv) < 2:
     print('Please specify at least one FEMB # to test')
@@ -19,7 +19,7 @@ if len(sys.argv) < 2:
     exit()    
 
 save = True
-sample_N = 1
+sample_N = 10
 fembs = [int(a) for a in sys.argv[1:5]] 
 ips = ["10.73.137.27", "10.73.137.29", "10.73.137.31"]
 
@@ -34,18 +34,6 @@ if True:
     for ip in ips:
         while True:
             chk.wib = WIB(ip) 
-#            if ip == "10.73.137.27":
-#                fembs=[0,1,3]
-#            else:
-#                fembs=[0,1,2,3]
-            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
-
-    
-            ####################WIB init################################
-            #check if WIB is in position
-            #chk.wib_init()
-            ####################FEMBs Configuration################################
-            #step 1
             #reset all FEMBs on WIB
             chk.femb_cd_rst()
             
@@ -79,8 +67,7 @@ if True:
                 chk.femb_cfg(femb_id, adac_pls_en )
                 if ext_cali_flg == True:
                     chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
-            #align_flg = chk.data_align()
-            break
+            align_flg = chk.data_align()
             if align_flg:
                 break
             else:
@@ -115,14 +102,7 @@ if True:
 
     if adac_pls_en:
         for ip in ips:
-#            if ip == "10.73.137.27":
-#                fembs=[0,1,3]
-#            else:
-#                fembs=[0,1,2,3]
-
-
             chk.wib = WIB(ip) 
-        
             for femb_id in fembs:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
 
@@ -130,28 +110,26 @@ mon_paras = []
 if True: # FE monitoring 
     for ip in ips:
         chk.wib = WIB(ip) 
-#        if ip == "10.73.137.27":
-#            fembs=[0,1,3]
-#        else:
-#            fembs=[0,1,2,3]
    
         sps = 3
-        chips = 1
+        chips = 8
         if True:
             print ("monitor bandgap reference")
             mon_refs = {}
             for mon_chip in range(chips):
                 adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=2, mon_chip=mon_chip, sps=sps)
+                mon_ts=time.time_ns()
                 mon_refs[f"chip{mon_chip}_bandgap"] = adcrst
-            mon_paras.append([ip,mon_refs])
+            mon_paras.append([ip,mon_refs,mon_ts])
         
         if True:
             print ("monitor temperature")
             mon_temps = {}
             for mon_chip in range(chips):
                 adcrst = chk.wib_fe_mon(femb_ids=fembs, mon_type=1, mon_chip=mon_chip, sps=sps)
+                mon_ts=time.time_ns()
                 mon_temps[f"chip{mon_chip}_temper"] = adcrst
-            mon_paras.append([ip,mon_temps])
+            mon_paras.append([ip,mon_temps, mon_ts])
 
 #        if True:
 #            print ("ADC reference voltages")

@@ -6,6 +6,7 @@ import wib_pb2 as wibpb
 from wib import WIB
 import sys
 import time, datetime, random, statistics
+from datetime import datetime
 import numpy as np
 #from fpdf import FPDF
 
@@ -59,6 +60,7 @@ def system_clock_select(wib, localclk_cs=False, fp1_ptc0_sel=0, cmd_stamp_sync =
         
 
         rdreg = wib_peek(wib, 0xA00c0004)
+        rdreg = rdreg&0xfffeffff
         if fp1_ptc0_sel == 0:
             print ("timing master is available through backplane (PTC)")
             wib_poke(wib, 0xA00c0004, (rdreg&0xFFFFFFDF)) #backplane
@@ -86,9 +88,9 @@ def system_clock_select(wib, localclk_cs=False, fp1_ptc0_sel=0, cmd_stamp_sync =
         print ("WIB Reg addr 0xA00c000C, value = 0x%x"%rdreg)
 
 
-    rdreg = wib_peek(wib, 0xA00c000C)
-    wib_poke(wib, 0xA00c000C, (rdreg&0xFFFFFFFB))
-    print ("disable time stame sync")
+#    rdreg = wib_peek(wib, 0xA00c000C)
+#    wib_poke(wib, 0xA00c000C, (rdreg&0xFFFFFFFB))
+#    print ("disable time stame sync")
 
 
     #set edge_to_act_delay

@@ -18,7 +18,7 @@ if len(sys.argv) < 2:
     exit()    
 
 save = True
-sample_N = 10
+sample_N = 20
 
 fembs = [int(a) for a in sys.argv[1:5]] 
 
@@ -46,7 +46,7 @@ if True:
             #check if WIB is in position
             chk.wib_init()
             ####################FEMBs Configuration################################
-            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+#            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
             #step 1
             #reset all FEMBs on WIB
             chk.femb_cd_rst()
@@ -67,7 +67,7 @@ if True:
                                     [0xB, 0x08, 0, 0, 0xDF, 0x33, 0x89, 0x67, 1],
                                   ]
             
-            #LArASIC register configuratiou
+            #LArASIC register configuration
                 if ext_cali_flg == True:
                     swdac = 2
                     dac = 0
@@ -82,11 +82,11 @@ if True:
                 if ext_cali_flg == True:
                     chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
             align_flg = chk.data_align()
-            break
             if align_flg:
                 break
             else:
-                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+                pass
+#                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
         if ext_cali_flg == True:
             #enable 10MHz output 
@@ -101,20 +101,12 @@ if True:
 
     pwr_meas = []
     for ip in ips:
-#        if ip == "10.73.137.27":
-#            fembs=[0,1,3]
-#        else:
-#            fembs=[0,1,2,3]
         chk.wib = WIB(ip) 
         pwr = chk.get_sensors()
         pwr_meas.append([ip, pwr])
 
     if adac_pls_en:
         for ip in ips:
-#            if ip == "10.73.137.27":
-#                fembs=[0,1,3]
-#            else:
-#                fembs=[0,1,2,3]
             chk.wib = WIB(ip) 
         
             for femb_id in fembs:
@@ -122,7 +114,7 @@ if True:
 
 if True:
     root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
+    save_dir = "D:/CRP5A_3rd/" + root_dir + "/" + runno + "/"
 
     i = 0
     while (True):

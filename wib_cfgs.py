@@ -2,6 +2,7 @@ import low_level_commands as llc
 from wib import WIB
 import copy
 import sys, time, random
+from datetime import datetime
 from fe_asic_reg_mapping import FE_ASIC_REG_MAPPING
 
 class WIB_CFGS( FE_ASIC_REG_MAPPING):
@@ -454,6 +455,9 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
     def femb_cfg(self, femb_id, adac_pls_en = False):
         refi= 0
         while True:
+            rdreg = llc.wib_peek(self.wib, 0xA00C000C)
+            llc.wib_poke(self.wib, 0xA00C000C, rdreg&0xfffffffb) #disable sync 
+
             self.femb_cd_cfg(femb_id)
             self.femb_adc_cfg(femb_id)
             self.femb_fe_cfg(femb_id)
@@ -745,16 +749,17 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                         self.wib = WIB(ip)
                         rdreg = llc.wib_peek(self.wib, 0xA00C0080)
                         if rdreg&0x03 == 0x03:
+                            print ("Recived %d of %d triggers"%((i+1), num_samples))
                             spy_full_flgs = True
                             buf0_end_addr = llc.wib_peek(self.wib, 0xA00C0094)
                             buf1_end_addr = llc.wib_peek(self.wib, 0xA00C0098)
-                            if buf0_end_addr == buf1_end_addr:
+                            if (abs(buf0_end_addr - buf1_end_addr)<32) or (abs(buf1_end_addr - buf0_end_addr)<32):
                                 spy_full_flgs = True
+                                rawdata = self.wib.acquire_rawdata(buf0, buf1, ignore_failure,trigger_command)
+                                data_ip.append((ip, rawdata, buf0_end_addr, trigger_rec_ticks, trigger_command))
                             else:
-                                spy_full_flgs = False
-                            rawdata = self.wib.acquire_rawdata(buf0, buf1, ignore_failure,trigger_command)
-                            data_ip.append((ip, rawdata, buf0_end_addr, trigger_rec_ticks, trigger_command))
-                            #print (ip, len(rawdata), len(rawdata[0]))
+                                print ("Two buffers out of synced")
+                                pass
                         else:
                             spy_full_flgs = False
                             wib_ip = ip
@@ -764,7 +769,7 @@ class WIB_CFGS( FE_ASIC_REG_MAPPING):
                         break
                     else:
                         print ("No external trigger received, Wait a second with WIB IP %s"%wib_ip)
-                        time.sleep(1)
+                        time.sleep(0.1)
 
             data.append(data_ip)
         return data

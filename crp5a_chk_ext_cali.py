@@ -34,7 +34,7 @@ if True:
     for ip in ips:
         while True:
             chk.wib = WIB(ip) 
-            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+#            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
             ####################WIB init################################
             #check if WIB is in position
@@ -77,7 +77,8 @@ if True:
             if align_flg:
                 break
             else:
-                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+                pass
+                #chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
         if ext_cali_flg == True:
             #enable 10MHz output 

@@ -44,6 +44,7 @@ if True:
             #check if WIB is in position
             #chk.wib_init()
             chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+
             ####################FEMBs Configuration################################
             #step 1
             #reset all FEMBs on WIB
@@ -71,8 +72,8 @@ if True:
                     dac = 0
                 else:
                     swdac = 1
-                    dac = 0x30
-                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac, slk0=0, slk1=0 )
+                    dac = 0x20
+                chk.set_fe_board(sts=1, snc=1,sg0=0, sg1=0, st0=1, st1=1, swdac=swdac, dac=dac, slk0=0, slk1=1 )
                 #chk.set_fe_board(sts=0, snc=1,sg0=0, sg1=0, st0=0, st1=0, swdac=swdac, dac=dac )
                 cfg_paras_rec.append( (femb_id, copy.deepcopy(chk.adcs_paras), copy.deepcopy(chk.regs_int8), adac_pls_en) )
             #step 3
@@ -80,7 +81,6 @@ if True:
                 if ext_cali_flg == True:
                     chk.femb_cd_gpio(femb_id, cd1_0x26 = 0x00,cd1_0x27 = 0x1f, cd2_0x26 = 0x00,cd2_0x27 = 0x1f)
             align_flg = chk.data_align()
-            break
             if align_flg:
                 break
             else:
@@ -138,7 +138,7 @@ if True:
         pickle.dump( rawinfo, fn)
         #pickle.dump( [rawdata, pwr_meas, cfg_paras_rec, trigger_command, trigger_rec_ticks, buf0_end_addr, buf1_end_addr], fn)
 
-    chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, plot_fn = save_dir + "pulse_respons.png")
+    chped, chmax, chmin, chped = rawdata_dec(raw=rawinfo, runs=1, plot_show_en = False, femb_plt_sq =0, plot_fn = save_dir + "pulse_respons.png")
 #
 #    for ch in range(len(chped)):
 #        if (chped[ch] < 4000) and ((chmax[ch]-chped[ch]) > 4000):

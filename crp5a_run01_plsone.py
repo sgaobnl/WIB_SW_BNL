@@ -43,7 +43,7 @@ if True:
             ####################WIB init################################
             #check if WIB is in position
             #chk.wib_init()
-            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+#            chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
             ####################FEMBs Configuration################################
             #step 1
             #reset all FEMBs on WIB
@@ -99,7 +99,8 @@ if True:
             if align_flg:
                 break
             else:
-                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+                pass
+#                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
         if ext_cali_flg == True:
             #enable 10MHz output 
@@ -127,7 +128,7 @@ if True:
 
 if True:
     root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A_2nd/" + root_dir + "/" + runno + "/"
+    save_dir = "D:/CRP5A_3rd/" + root_dir + "/" + runno + "/"
 
     i = 0
     while (True):

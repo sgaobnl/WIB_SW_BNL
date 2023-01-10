@@ -77,7 +77,8 @@ if True:
             if align_flg:
                 break
             else:
-                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
+                pass
+#                chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
 
         if ext_cali_flg == True:
             #enable 10MHz output 
@@ -86,10 +87,6 @@ if True:
             chk.wib_mon_switches(dac0_sel=0,dac1_sel=0,dac2_sel=0,dac3_sel=0, mon_vs_pulse_sel=1, inj_cal_pulse=0) 
     
 if True:
-    for ip in ips:
-        chk.wib = WIB(ip) 
-        chk.wib_timing(localclk_cs=localclk_cs, fp1_ptc0_sel=0, cmd_stamp_sync = 0x0)
-
     time.sleep(0.5)
 
     rawdata = chk.wib_acq_raw_extrig(wibips=ips, fembs=fembs, num_samples=sample_N, trigger_command=0x00,trigger_rec_ticks=0x3f000, trigger_timeout_ms = 200000) 
@@ -108,7 +105,7 @@ if True:
 
 if True:
     root_dir = sys.argv[-1]
-    save_dir = "D:/CRP5A_FC/" + root_dir + "/" 
+    save_dir = "D:/CRP5A_3rd/" + root_dir + "/" 
     if (os.path.exists(save_dir)):
         pass
     else:

@@ -115,7 +115,7 @@ if True:
                 chk.femb_adac_cali(femb_id) #disable interal calibraiton pulser from RUN01
 
 if True:
-    save_dir = "D:/CRP5A/" + root_dir + "/" + runno + "/"
+    save_dir = "D:/CRP5A_3rd/" + root_dir + "/" + runno + "/"
     i = 0
     while (True):
         i = i + 1
