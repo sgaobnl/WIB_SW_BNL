@@ -9,6 +9,9 @@ import time, datetime, random, statistics
 from QC_tools import QC_tools
 from fpdf import FPDF
 
+import PIL
+from PIL import Image
+
 
 ####### Input FEMB slots #######
 
@@ -16,8 +19,18 @@ if len(sys.argv) < 2:
     print('Please specify at least one FEMB # to test')
     print('Usage: python wib.py 0')
     exit()
-
+print(sys.argv)
+##  set default value for input ===============
+if sys.argv[1] == 'default':
+    sys.argv = ['chkout_test.py', '0', '1', '2', '3', 'save', '10']
+#    print('11')
+#    print(sys.argv)
+else:
+    sys.argv[1] = sys.argv
+#    print('00')
+##  ===========================================
 if 'save' in sys.argv:
+#    print('1')
     save = True
     for i in range(len(sys.argv)):
         if sys.argv[i] == 'save':
@@ -26,11 +39,11 @@ if 'save' in sys.argv:
     sample_N = int(sys.argv[pos+1] )
     sys.argv.remove('save')
 else:
+#    print('0')
     save = False
     sample_N = 1
 
 fembs = [int(a) for a in sys.argv[1:pos]]
-
 ####### Input test information #######
 
 logs={}
@@ -63,7 +76,7 @@ logs['date']=datetime.datetime.now().strftime("%m_%d_%Y_%H_%M_%S")
 
 ####### Create data save directory #######
 
-datadir = "D:/IO-1826-1B/CHKOUT/data/"
+datadir = "D:/IO-1865-1D-40B/CHKOUT/data/"
 for key,femb_no in fembNo.items():
     datadir = datadir + "femb{}_".format(femb_no)
 
@@ -91,7 +104,7 @@ fp = datadir + "logs_env.bin"
 with open(fp, 'wb') as fn:
      pickle.dump(logs, fn)
 
-reportdir = "D:/IO-1865-1D/CHKOUT/reports/"
+reportdir = "D:/IO-1865-1D-40B/CHKOUT/reports/"
 PLOTDIR = {}
 
 for ifemb,femb_no in fembNo.items():
@@ -206,6 +219,8 @@ qc_tools = QC_tools()
 pldata = qc_tools.data_decode(rawdata)
 pldata = np.array(pldata)
 
+print("debug_00")
+
 qc_tools.PrintMON(fembNo, nchips, mon_refs, mon_temps, mon_adcs, PLOTDIR)
 
 for ifemb,femb_no in fembNo.items():
@@ -249,9 +264,19 @@ for ifemb,femb_no in fembNo.items():
 
     chk_image = fp_data+".png"
     pdf.image(chk_image,3,120,200,120)
+    
+##  ============    sum these png photo ===============
+    list_im = [pwr_image, mon_image, chk_image]
+    imgs    = [ Image.open(i) for i in list_im ]
+    imgs_comb = np.vstack([i for i in imgs])
+    imgs_comb = Image.fromarray( imgs_comb)
+    imgs_comb.save(os.path.join( plotdir) + 'sum_report.png')
+##  ===================================================
 
     outfile = plotdir+'report.pdf'
     pdf.output(outfile, "F")
+    
+    print("Debug01")
 
 t2=time.time()
 print(t2-t1)

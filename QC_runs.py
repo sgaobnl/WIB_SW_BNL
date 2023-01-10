@@ -49,7 +49,7 @@ class QC_Runs:
 
         ####### Create data saving directory #######
 
-        save_dir = "D:/IO-1865-1D/QC/data/"
+        save_dir = "D:/IO-1865-1D-40B/QC/data/"
         for key,femb_no in self.fembNo.items():
             save_dir = save_dir + "femb{}_".format(femb_no)
 

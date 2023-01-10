@@ -3,6 +3,7 @@ import json
 import numpy as np
 import platform
 import wib_pb2 as wibpb
+from wib import WIB
 
 import sys
 import time, datetime, random, statistics
