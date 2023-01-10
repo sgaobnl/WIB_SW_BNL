@@ -163,7 +163,7 @@ def run_ASICDAC(inputdir, savedir, temperatures, fembs_to_exclude=[], fembs_to_i
             for larasic_gain in larasic_gains:
                 distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI_number, temperature=temperature, larasic_gain=larasic_gain, fit=True)
                 distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI_number, temperature=temperature, larasic_gain=larasic_gain, fit=False)
-    ## GainFEMBs = f(GainLArASIC)
+    # GainFEMBs = f(GainLArASIC)
     GainFEMBs_vs_GainLArASIC(input_dir=savedir, fembs_to_exclude=fembs_to_exclude)
     #
     ## ENC = f(FEMB_IDs)
@@ -181,23 +181,24 @@ if __name__ == '__main__':
     #------------------------------------------------------
     # lab 1-216: IO-1865-1C (old fembs)
     # hothstor: IO-1865-1D (new fembs)
-    inputdir, savedir = get_input_output_dirs(where='hothstor', folderName='IO-1865-1D')
-    # inputdir, savedir = '', '../results/IO-1865-1D/QC_analysis'
-    # inputdir, savedir = get_input_output_dirs(where='1-216', folderName='IO-1865-1C')
+    # inputdir, savedir = get_input_output_dirs(where='hothstor', folderName='IO-1865-1D')
+    # inputdir, savedir = '', '../results/IO-1865-1C/minisas'
+    inputdir, savedir = get_input_output_dirs(where='1-216', folderName='IO-1865-1C')
     # inputdir, savedir = get_input_output_dirs(where='local', folderName='')
     #------------------------------------------------------
     
     temperatures = ['LN', 'RT']
 
-    fembs_to_ignore = {
-        "femb46_femb54_femb55_femb2": ['46', '2'],
-        "femb0013_femb0075_femb0056_femb0026": ['0075'],
-        "femb0011_femb0079_femb0008_femb0073": ['0073']
-    }
+    # fembs_to_ignore = {
+    #     "femb46_femb54_femb55_femb2": ['46', '2'],
+    #     "femb0013_femb0075_femb0056_femb0026": ['0075'],
+    #     "femb0011_femb0079_femb0008_femb0073": ['0073']
+    # }
+    fembs_to_ignore = {}
     # fembs_to_ignore = input_fembs_to_ignore() # if you want to input the fembs to ignore manually, uncomment this line
     # print(fembs_to_ignore)
-    # run_PWR_Meas(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore)
-    # run_RMS_Pedestal(inputdir=inputdir, savedir=savedir, femb_to_exclude=[], fembs_to_ignore=fembs_to_ignore)
+    run_PWR_Meas(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore)
+    run_RMS_Pedestal(inputdir=inputdir, savedir=savedir, femb_to_exclude=[], fembs_to_ignore=fembs_to_ignore)
     run_ASICDAC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[], fembs_to_ignore=fembs_to_ignore)
-    # run_PWR_Cycle(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore)
-    #run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[111])
+    run_PWR_Cycle(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore)
+    run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[111])
