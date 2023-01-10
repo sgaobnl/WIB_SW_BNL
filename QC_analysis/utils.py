@@ -3,8 +3,6 @@
 # email: radofana@gmail.com
 # last update: 10/19/2022
 #----------------------------------------------------------------------
-
-from importlib.resources import path
 import sys
 sys.path.append('..')
 import os

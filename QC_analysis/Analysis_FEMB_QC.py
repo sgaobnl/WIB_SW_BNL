@@ -321,6 +321,11 @@ def saveCorrectedCSV(path_to_csv='', femb_list=[], output_path='', datanames=['P
     for dataname in datanames:
         path_to_file = '/'.join([path_to_csv, dataname])
         output_path_to_file = '/'.join([output_path, dataname])
+        try: ################# new
+            os.mkdir(output_path_to_file)
+        except OSError:
+            print(OSError)
+
         for csvname in os.listdir(path_to_file):
             dataFrame = pd.read_csv('/'.join([path_to_file, csvname]))
             dataFrame = removeInfo_for_FEMBs(dataFrame=dataFrame, femb_list=femb_list)
