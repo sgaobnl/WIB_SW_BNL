@@ -1,7 +1,7 @@
 '''
     Author: Rado Razakamiandra
     email: radofana@gmail.com
-    last update: 12/22/2022
+    last update: 12/27/2022
 '''
 import os
 from fpdf import FPDF
@@ -19,6 +19,7 @@ class PDF(FPDF):
         self.y_pos = 0
         self.title = title
         self.temperatures = temperatures
+        self.sourceDir = sourceDir # parent folder
         self.sourceDirs = ['/'.join([sourceDir, T]) for T in self.temperatures]
 
     def header(self):
@@ -179,10 +180,43 @@ class PDF(FPDF):
         # let's run the script to add the power consumption in the pdf file here
         self.PWR_Consumption()
 
+    def Gain(self):
+        print('## Adding Gain.....')
+        sourceGain = '/'.join([self.sourceDir, 'gainsfemb_vs_gainlarasic'])
+        self.add_page()
+        y_pos = self.y_pos + 15
+        self.set_y(y_pos)
+        self.set_font('Times', 'IB', 10)
+        self.cell(210, 10, 'Gain of FEMBs vs Gain of LArASIC', 0, 1, 'C')
+        y_pos += 5
+        # for imgfile in os.listdir(sourceGain):
+        x_pos = 0
+        icali = 1
+        for i in range(2):
+            y_pos += 10
+            for j in range(2):
+                CALI = 'CALI{}'.format(icali)
+                imgfile = 'gain_vs_gainLArASIC_{}.png'.format(CALI)
+                self.set_font('Times', 'I', 7)
+                # y_pos += 10
+                self.set_y(y_pos)
+                self.set_x(x_pos)
+                self.cell(100, 10, '{}'.format(imgfile.split('.')[0]), 0, 1, 'C')
+                y_pos += 10
+                # self.set_y(y_pos)
+                path_to_img = '/'.join([sourceGain, imgfile])
+                self.image(path_to_img, x_pos, y_pos, 100, 50)
+                icali += 1
+                x_pos += 100
+                y_pos -= 10
+            x_pos = 0
+            y_pos += 50
+        
 if __name__ == '__main__':
     sourceDir = '../results/IO-1865-1D/QC_analysis'
     pdf = PDF(title='Universal Performance Analysis FEMB QC', temperatures=['LN', 'RT'], sourceDir=sourceDir)
-    pdf.RMS_Pedestal()
-    pdf.PWR_Measurement()
+    # pdf.RMS_Pedestal()
+    # pdf.PWR_Measurement()
+    pdf.Gain()
     # pdf.PWR_Consumption()
     pdf.output('{}/tuto.pdf'.format(sourceDir), 'F')
