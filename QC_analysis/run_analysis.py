@@ -58,7 +58,7 @@ def input_fembs_to_ignore():
         answer1 = input('Do you want to enter more folder ? (y/other) ::>')
     return fembs_to_ignore
 
-def run_PWR_Meas(inputdir, savedir, fembs_to_ignore={}):
+def run_PWR_Meas(inputdir, savedir, fembs_to_ignore={}, fembs_to_exclude=[]):
     # ------------------------------------------------------
     measured_info = ['P_meas', 'V_meas', 'I_meas']
     temperatures = ['LN', 'RT']
@@ -68,9 +68,9 @@ def run_PWR_Meas(inputdir, savedir, fembs_to_ignore={}):
     save_allInfo_PWR_tocsv(data_input_dir=inputdir, output_dir=savedir, temperature_list=temperatures, dataname_list=dataname_list, fembs_to_ignore=fembs_to_ignore)
     
     # produce all the plots
-    all_PWR_Meas_plots(csv_source_dir=savedir, measured_info_list=measured_info, temperature_list=temperatures, dataname_list=dataname_list)
+    all_PWR_Meas_plots(csv_source_dir=savedir, measured_info_list=measured_info, temperature_list=temperatures, dataname_list=dataname_list, fembs_to_exclude=fembs_to_exclude)
     ### Get power consumption ------- PWR_Meas------------
-    plot_PWR_Consumption(csv_source_dir=savedir, temperatures=temperatures,
+    plot_PWR_Consumption(csv_source_dir=savedir, temperatures=temperatures, fembs_to_exclude=fembs_to_exclude,
                         all_data_types=dataname_list, output_dir=savedir, powerType='PWR_Meas')
 
 def run_RMS_Pedestal(inputdir, savedir, femb_to_exclude=[], fembs_to_ignore={}):
@@ -125,7 +125,7 @@ def run_RMS_Pedestal(inputdir, savedir, femb_to_exclude=[], fembs_to_ignore={}):
                                                      ylabel=dataname,
                                                      addToTitle='', skewed=True, ylim=ylim900)
 
-def run_PWR_Cycle(inputdir, savedir, fembs_to_ignore={}):
+def run_PWR_Cycle(inputdir, savedir, fembs_to_ignore={}, fembs_to_exclude=[]):
     measured_info = ['P_meas', 'V_meas', 'I_meas']
     # temperatures = ['LN', 'RT']
     temperatures = ['LN']
@@ -135,34 +135,34 @@ def run_PWR_Cycle(inputdir, savedir, fembs_to_ignore={}):
     #
     # try to plot PWRCycle
     for m_param in measured_info:
-       plot_PWR_Cycle(csv_source_dir='{}/LN/PWR_Cycle'.format(savedir), measured_param=m_param)
+       plot_PWR_Cycle(csv_source_dir='{}/LN/PWR_Cycle'.format(savedir), measured_param=m_param, fembs_to_exclude=fembs_to_exclude)
     # power consumption for PWR_Cycle
     plot_PWR_Consumption(csv_source_dir=savedir, all_data_types=dataname_list,
-                       output_dir=savedir, powerType='PWR_Cycle')
+                       output_dir=savedir, powerType='PWR_Cycle', fembs_to_exclude=fembs_to_exclude)
     #--------------------------------------------------------------------------------------------------
 
 def run_ASICDAC(inputdir, savedir, temperatures, fembs_to_exclude=[], fembs_to_ignore={}):
-    for temperature in temperatures:
-        Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore)
-        Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore)
-        Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore, CALI_number=3)
-        Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore, CALI_number=4)
-        savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
-        #
-        separateCSV_foreachFEMB(path_to_csv='/'.join([savedir, temperature]), output_path='/'.join([savedir, temperature]), datanames=['CALI1', 'CALI2', 'CALI3', 'CALI4'])
-        #********************************ENC***************************************************************
-        CALI_numbers = [1, 2, 3, 4]
-        listgains = ['4_7', '7_8', '14_0', '25_0']
-        for CALI_number in CALI_numbers:
-            if CALI_number!=1:
-                listgains = ['14_0']
-            get_ENC_CALI(datadir=inputdir, input_dir=savedir, temperature=temperature, CALI_number=CALI_number, listgains=listgains,
-                        fembs_to_exclude=fembs_to_exclude, fembs_to_ignore=fembs_to_ignore)
-            larasic_gains = ['{}mVfC'.format(g) for g in listgains]
-            # for CALI in CALI_numbers:
-            for larasic_gain in larasic_gains:
-                distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI_number, temperature=temperature, larasic_gain=larasic_gain, fit=True)
-                distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI_number, temperature=temperature, larasic_gain=larasic_gain, fit=False)
+    # for temperature in temperatures:
+        # Gains_CALI1(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore)
+        # Gains_CALI2(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore)
+        # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore, CALI_number=3)
+        # Gains_CALI3_or_CALI4(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature, withlogs=True, fembs_to_ignore=fembs_to_ignore, CALI_number=4)
+        # savegains(path_to_dataFolder=inputdir, output_dir=savedir, temperature=temperature) # <==== FUNCTION TO RUN
+        # #
+        # separateCSV_foreachFEMB(path_to_csv='/'.join([savedir, temperature]), output_path='/'.join([savedir, temperature]), datanames=['CALI1', 'CALI2', 'CALI3', 'CALI4'])
+        # #********************************ENC***************************************************************
+        # CALI_numbers = [1, 2, 3, 4]
+        # listgains = ['4_7', '7_8', '14_0', '25_0']
+        # for CALI_number in CALI_numbers:
+        #     if CALI_number!=1:
+        #         listgains = ['14_0']
+        #     get_ENC_CALI(datadir=inputdir, input_dir=savedir, temperature=temperature, CALI_number=CALI_number, listgains=listgains,
+        #                 fembs_to_exclude=fembs_to_exclude, fembs_to_ignore=fembs_to_ignore)
+        #     larasic_gains = ['{}mVfC'.format(g) for g in listgains]
+        #     # for CALI in CALI_numbers:
+        #     for larasic_gain in larasic_gains:
+        #         distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI_number, temperature=temperature, larasic_gain=larasic_gain, fit=True)
+        #         distribution_ENC_Gain(csv_source_dir=savedir, CALI_number=CALI_number, temperature=temperature, larasic_gain=larasic_gain, fit=False)
     # GainFEMBs = f(GainLArASIC)
     GainFEMBs_vs_GainLArASIC(input_dir=savedir, fembs_to_exclude=fembs_to_exclude)
     #
@@ -182,8 +182,8 @@ if __name__ == '__main__':
     # lab 1-216: IO-1865-1C (old fembs)
     # hothstor: IO-1865-1D (new fembs)
     # inputdir, savedir = get_input_output_dirs(where='hothstor', folderName='IO-1865-1D')
-    # inputdir, savedir = '', '../results/IO-1865-1C/minisas'
-    inputdir, savedir = get_input_output_dirs(where='1-216', folderName='IO-1865-1C')
+    inputdir, savedir = '', '../results/IO-1865-1C/minisas'
+    # inputdir, savedir = get_input_output_dirs(where='1-216', folderName='IO-1865-1C')
     # inputdir, savedir = get_input_output_dirs(where='local', folderName='')
     #------------------------------------------------------
     
@@ -197,8 +197,8 @@ if __name__ == '__main__':
     fembs_to_ignore = {}
     # fembs_to_ignore = input_fembs_to_ignore() # if you want to input the fembs to ignore manually, uncomment this line
     # print(fembs_to_ignore)
-    run_PWR_Meas(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore)
-    run_RMS_Pedestal(inputdir=inputdir, savedir=savedir, femb_to_exclude=[], fembs_to_ignore=fembs_to_ignore)
-    run_ASICDAC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[], fembs_to_ignore=fembs_to_ignore)
-    run_PWR_Cycle(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore)
-    run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[111])
+    # run_PWR_Meas(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore, fembs_to_exclude=[111])
+    # run_RMS_Pedestal(inputdir=inputdir, savedir=savedir, femb_to_exclude=[], fembs_to_ignore=fembs_to_ignore)
+    run_ASICDAC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[111], fembs_to_ignore=fembs_to_ignore)
+    # run_PWR_Cycle(inputdir=inputdir, savedir=savedir, fembs_to_ignore=fembs_to_ignore, fembs_to_exclude=[111])
+    # run_MON_FE_MON_ADC(inputdir=inputdir, savedir=savedir, temperatures=temperatures, fembs_to_exclude=[111])
