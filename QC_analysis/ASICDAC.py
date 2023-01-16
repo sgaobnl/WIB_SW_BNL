@@ -908,14 +908,16 @@ def GainFEMBs_vs_GainLArASIC(input_dir, fembs_to_exclude=[]):
                         #     if femb_id == 'femb75':
                         #         continue
                         tmp_fembs_to_exclude = ['femb'+str(femb) for femb in fembs_to_exclude]
+                        # tmp_fembs_to_exclude = [f'{femb_id}' for femb_id in fembs_to_exclude]
                         if femb_id not in tmp_fembs_to_exclude:
+                            # print(femb_id)
                             # if 'sgp1' in f:
                             #     sgp1 = True
                             femb_id = str(femb_id.split('b')[-1])
                             femb_ids.append(femb_id)
                             df = pd.read_csv('/'.join([input_dir, T, CALI, 'gains', f]))
                             gains += list(df['Gain'])
-                print(femb_ids)
+                # print(femb_ids)
                 mean_per_configs.append(np.mean(gains))
                 std_per_configs.append(np.std(gains))
             df_mean = pd.DataFrame({'gain_larasic_{}'.format(T): unique_configs, 'mean_gain_{}'.format(T): mean_per_configs, 'std_{}'.format(T): std_per_configs})
@@ -925,7 +927,7 @@ def GainFEMBs_vs_GainLArASIC(input_dir, fembs_to_exclude=[]):
             output_df = pd.concat([output_df, df_mean], axis=1)
 
             plt.errorbar(x=df_mean['gain_larasic_{}'.format(T)], y=df_mean['mean_gain_{}'.format(T)], yerr=df_mean['std_{}'.format(T)], marker='.',
-                        capsize=10, markersize=5, label=T)
+                        elinewidth=2, markersize=5, label=T)
             plt.xticks(df_mean['gain_larasic_{}'.format(T)], fontsize=15)
             plt.yticks(fontsize=15)
         plt.xlabel('Gain of the LArASIC ($mV/fC$)', fontsize=15)
@@ -980,19 +982,24 @@ def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
                         tmp_fembs_to_exclude = ['femb'+femb for femb in fembs_to_exclude]
                         # if femb_id == 'femb75':
                         if femb_id in tmp_fembs_to_exclude:
-                            continue
-                        femb_ids.append(femb_id)
-                        df = pd.read_csv('/'.join([input_dir, T, CALI, 'ENC', f]))
-                        # try to get rid of outliers
-                        std = np.std(df['ENC'])
-                        mean = np.mean(df['ENC'])
-                        for _ in range(3):
-                            df = df[(df['ENC'] >= (mean-3*std)) & (df['ENC'] <= (mean+3*std))]
-                            mean = np.mean(df['ENC'])
-                            std = np.std(df['ENC'])
-                        mean_enc = np.mean(df['ENC'])
-                        mean_encs.append(mean_enc)
-                        std_encs.append(np.std(df['ENC']))
+                            pass
+                        else:
+                            femb_ids.append(femb_id)
+                            df = pd.read_csv('/'.join([input_dir, T, CALI, 'ENC', f]))
+                            #
+                            ##>> try to get rid of outliers---------------------------------------------- skip this line now
+                            # std = np.std(df['ENC'])
+                            # mean = np.mean(df['ENC'])
+                            # for _ in range(3):
+                            #     df = df[(df['ENC'] >= (mean-3*std)) & (df['ENC'] <= (mean+3*std))]
+                            #     mean = np.mean(df['ENC'])
+                            #     std = np.std(df['ENC'])
+                            ##>>--------------------------------------------------------------------------------------------
+                            #
+                            mean_enc = np.mean(df['ENC'])
+                            mean_encs.append(mean_enc)
+                            std_encs.append(np.std(df['ENC']))
+                print(femb_ids)
                 #
                 tmp_df = pd.DataFrame({'femb': femb_ids, 'enc_{}'.format(config): mean_encs, 'std_{}'.format(config): std_encs})
                 if i==0:
@@ -1012,7 +1019,7 @@ def ENC_vs_FEMB_ids(input_dir, fembs_to_exclude=[], fontsize_xticks=10):
                 colerr = cols[ii+1]
                 enc_df.sort_values(by='femb', ascending=True, inplace=True)
                 plt.errorbar(x=enc_df['femb'], y=enc_df[coly], yerr=enc_df[colerr], color=colors[i],
-                            capsize=5, label='{}'.format(config))
+                            elinewidth=2.5, label='{}'.format(config), alpha=0.5)
                 i += 1
             plt.xlabel('FEMB')
             plt.ylabel('mean_ENC ($e^-$)')
