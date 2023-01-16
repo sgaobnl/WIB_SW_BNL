@@ -449,7 +449,7 @@ def removeFEMB_from_T(csv_source_dir='', output_dir='', temperature='LN', dataty
                 print('new {} saved'.format(f))
 #
 # produce plots of PWR_Meas vs femb_id
-def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_meas='P_meas', marker='.'):
+def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', data_meas='P_meas', marker='.', fembs_to_exclude=[]):
         unit_data = ''
         # ylim = []
         if data_meas=='P_meas':
@@ -472,7 +472,12 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         # selected dataframe
         data_df['FEMB_ID'] = data_df['FEMB_ID'].astype(str)
         selected_df = pd.concat([data_df['FEMB_ID'], data_df[columns]], axis=1)
-        
+        #
+        ##>> Exclude the FEMBs in fembs_to_exclude
+        for femb_id in fembs_to_exclude:
+            selected_df = selected_df[selected_df['FEMB_ID'] != str(femb_id)]
+        ##<<
+
         figTitle = data_meas
         #
         # figLegends follow the same order as columns
@@ -505,14 +510,14 @@ def one_plot_PWR(csv_source_dir='', temperature='LN', data_csvname='Bias5V', dat
         plt.close()
 
 # PWR_Meas plots for all measured_info_list and temperature_list
-def all_PWR_Meas_plots(csv_source_dir='', measured_info_list=[], temperature_list=[], dataname_list=[]):
+def all_PWR_Meas_plots(csv_source_dir='', measured_info_list=[], temperature_list=[], dataname_list=[], fembs_to_exclude=[]):
     mpl.rcParams.update({'figure.max_open_warning': 0})
     marker = '.' # add this marker to the plots
     for T in temperature_list:
         for type_data in dataname_list:
             print('Producing the plots for {}.....'.format(T))
             for meas in tqdm(measured_info_list):
-                one_plot_PWR(csv_source_dir=csv_source_dir, temperature=T, data_csvname=type_data, data_meas=meas, marker=marker)
+                one_plot_PWR(csv_source_dir=csv_source_dir, temperature=T, data_csvname=type_data, data_meas=meas, marker=marker, fembs_to_exclude=fembs_to_exclude)
 
 
 ##
@@ -585,6 +590,7 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], 
                     # print(tmp_df_SE.columns)
                     df_SE = pd.concat([df_SE, tmp_df_SE], axis=1)
                 else:
+                    selected_df['FEMB_ID'] = [f'{femb_id}_0' for femb_id in selected_df['FEMB_ID']]
                     FEMB_ID_sdf = selected_df['FEMB_ID']
                     tmp_df_SE_SDF['_'.join([cols[0], csv.split('.')[0]])] = selected_df[cols[0]]
                     tmp_df_DIFF['_'.join([cols[1], csv.split('.')[0]])] = selected_df[cols[1]]
@@ -604,16 +610,22 @@ def get_PWR_consumption(csv_source_dir='', temperature='LN', all_data_types=[], 
         return (final_df_SE, final_df_others)
     #--------> End PWR_Cycle <--------
 
-def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_types=[], output_dir='', powerType='PWR_Meas'):
-    # ylim = [5, 10] # I noticed the value of the power consumption between 5W and 10W
+def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_types=[], output_dir='', powerType='PWR_Meas', fembs_to_exclude=[]):
+    '''
+        Some FEMBs were excluded when we introduced the argument fembs_to_ignore, however, in case we still need to exclude other FEMBs,
+        we can use fembs_to_exclude.
+    '''
     colors=['blue','orange','green']
     if powerType=='PWR_Meas':
         for T in temperatures:
-            # tmp_csvfile = [f for f in os.listdir('/'.join([csv_source_dir, temperatures])) if '.csv' in f]
-            # print(tmp_csvfile)
-            # if len(tmp_csvfile)==0:
             Temp_T = '/'.join([T, 'PWR_Meas']) # remove this line if there's any error
             pwr_df = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=Temp_T, all_data_types=all_data_types)
+            #
+            ##>> Exclude FEMBs in fembs_to_exclude
+            for femb_id in fembs_to_exclude:
+                pwr_df = pwr_df[pwr_df['FEMB_ID'] != str(femb_id)]
+            ##<<
+            #
             # figname = 'power_consumption_{}'.format(T)
             figname = 'power_consumption_{}_PWR_Meas'.format(T)
             tmp_output_dir = '/'.join([output_dir, T, figname])
@@ -644,6 +656,12 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         pwr_se, pwr_sesdf_diff = get_PWR_consumption(csv_source_dir=csv_source_dir, temperature=T, all_data_types=all_data_types, power='PWR_Cycle')
         # PWR_SE
         pwr_se[['FEMB_ID', 'cycle']] = pwr_se.FEMB_ID.str.split('_', expand=True)
+        #
+        ##>> Exclude FEMBs in fembs_to_exclude
+        for femb_id in fembs_to_exclude:
+            pwr_se = pwr_se[pwr_se['FEMB_ID'] != str(femb_id)]
+        ##<<
+        #
         # sort the dataframe by 'FEMB_ID' and cycle
         pwr_se = pwr_se.sort_values(by=['FEMB_ID', 'cycle'], ascending=True)
         pwr_se['FEMB_ID'] = pwr_se[['FEMB_ID', 'cycle']].agg('\n'.join, axis=1)
@@ -651,6 +669,12 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         # PWR_SE_SDF and PWR_DIFF
         pwr_sesdf_diff['FEMB_ID'] = pwr_sesdf_diff['FEMB_ID'].astype(str)
         pwr_sesdf_diff[['FEMB_ID', 'cycle']] = pwr_sesdf_diff.FEMB_ID.str.split('_', expand=True)
+        #
+        ##>> Exclude FEMBs in fembs_to_exclude
+        for femb_id in fembs_to_exclude:
+            pwr_sesdf_diff = pwr_sesdf_diff[pwr_sesdf_diff['FEMB_ID'] != str(femb_id)]
+        ##<<
+        #
         pwr_sesdf_diff = pwr_sesdf_diff.sort_values(by='FEMB_ID', ascending=True)
         pwr_sesdf_diff['FEMB_ID'] = pwr_sesdf_diff[['FEMB_ID', 'cycle']].agg('\n'.join, axis=1)
         pwr_sesdf_diff.drop('cycle', axis=1, inplace=True)
@@ -695,7 +719,7 @@ def plot_PWR_Consumption(csv_source_dir='', temperatures=['LN', 'RT'], all_data_
         
 
 # plot power cycle
-def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
+def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas', fembs_to_exclude=[]):
     '''
     In this function, we need to combine the data of Bias_SE, Bias_SE_SDF and Bias_DIFF.
     Same for other datatypes.
@@ -726,6 +750,12 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
                 path_to_datafile = '/'.join([csv_source_dir, csvname])
                 df = pd.read_csv(path_to_datafile)
                 df[['FEMB_ID', 'cycle']] = df.FEMB_ID.str.split('_', expand=True)
+                #
+                ##>> Exclude FEMBs in fembs_to_exclude
+                for femb_id in fembs_to_exclude:
+                    df = df[df['FEMB_ID'] != str(femb_id)]
+                ##<<
+                #
                 # sort the dataframe by 'FEMB_ID' and cycle
                 df = df.sort_values(by=['FEMB_ID', 'cycle'], ascending=True)
                 df['FEMB_ID'] = df[['FEMB_ID', 'cycle']].agg('\n'.join, axis=1)
@@ -743,7 +773,17 @@ def plot_PWR_Cycle(csv_source_dir='', measured_param='V_meas'):
                 figname = '_'.join([dataname, pwr])
                 csvname = '_'.join([dataname, 'SE_SDF_DIFF']) + '.csv'
                 path_to_datafile = '/'.join([csv_source_dir, csvname])
-                df = pd.read_csv(path_to_datafile)
+                df = pd.read_csv(path_to_datafile, dtype={'FEMB_ID': str})
+                #
+                ##>> Exclude FEMBs in fembs_to_exclude
+                for femb_id in fembs_to_exclude:
+                    df = df[df['FEMB_ID'] != str(femb_id)]
+                ##<<
+                #
+                # add 0 as cycle
+                femb_list = ['{}_0'.format(femb_id) for femb_id in df['FEMB_ID']]
+                df['FEMB_ID'] = femb_list
+                # print(df.head())
                 df[['FEMB_ID', 'cycle']] = df.FEMB_ID.str.split('_', expand=True)
                 # sort the dataframe by 'FEMB_ID'
                 # df['FEMB_ID'] = df['FEMB_ID'].astype(str)
