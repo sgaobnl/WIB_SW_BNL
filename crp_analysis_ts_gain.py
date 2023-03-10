@@ -17,7 +17,7 @@ if (os.path.exists(fdir)):
     for root, dirs, files in os.walk(fdir):
         break
 
-for fbin in files:
+for fbin in files[:]:
     if ".avg" in fbin:
         fp = fdir + fbin
         print (fp)

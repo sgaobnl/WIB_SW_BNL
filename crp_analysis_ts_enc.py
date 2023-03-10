@@ -109,8 +109,8 @@ for i in range(3*4*128):
     #print(i, plane, strip)
 
     if plane==1:
-        if (strip-1) in [54, 55, 324, 325, 326, 327, 328, 329, 330]:
-            print ("U%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
+#        if (strip-1) in [54, 55, 324, 325, 326, 327, 328, 329, 330]:
+#            print ("U%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
         uplanerms[strip-1]=chrms[i]
         uplaneenc[strip-1]=chenc[i]
         uplanegain[strip-1]=chgain[i]
@@ -118,8 +118,8 @@ for i in range(3*4*128):
         uplanemax[strip-1]=chmax[i]
         uplanemin[strip-1]=chmin[i]
     if plane==2:
-        if (strip-1) in [524-476,525-476, 530-476]:
-            print ("V%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
+#        if (strip-1) in [524-476,525-476, 530-476]:
+#            print ("V%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
         vplanerms[strip-1]=chrms[i]
         vplaneenc[strip-1]=chenc[i]
         vplanegain[strip-1]=chgain[i]
@@ -127,8 +127,8 @@ for i in range(3*4*128):
         vplanemax[strip-1]=chmax[i]
         vplanemin[strip-1]=chmin[i]
     if plane==3:
-        if (strip-1) in [952-952, 1535-952, 1121-952, 1169-952,1191-952]:
-            print ("X%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
+#        if (strip-1) in [952-952, 1535-952, 1121-952, 1169-952,1191-952]:
+#            print ("X%d, FEMB%d, CH%d, RMS%5.3f, ENC%d"%(strip-1, i//128, i%128, chrms[i],  chenc[i]))
         xplanerms[strip-1]=chrms[i]
         xplanegain[strip-1]=chgain[i]
         xplaneenc[strip-1]=chenc[i]
@@ -136,7 +136,7 @@ for i in range(3*4*128):
         xplanemax[strip-1]=chmax[i]
         xplanemin[strip-1]=chmin[i]
 
-exit()
+#exit()
 utmp = uplaneenc
 utmp = np.delete(utmp,324) 
 utmp = np.delete(utmp,325-1) 
@@ -193,7 +193,9 @@ chs = np.arange(12*128)
 fig = plt.figure(figsize=(14,8))
 plt.rcParams.update({'font.size':12})
 plt.subplot(321)
-plt.plot(chs, ch_rms_map, marker='.',color='r', label = "RMS")
+plt.plot(chs[0:476], ch_rms_map[0:476], marker='.',color='r', label = "U")
+plt.plot(chs[476:476*2], ch_rms_map[476:476*2], marker='.',color='b', label = "V")
+plt.plot(chs[476*2:], ch_rms_map[476*2:], marker='.',color='g', label = "X")
 plt.legend()
 plt.title ("RMS Noise Distribution")
 plt.xlabel ("CH# (According to CRP mapping)")
@@ -204,7 +206,9 @@ plt.axvline(x=475, color = 'm', linestyle='--')
 plt.axvline(x=951, color = 'm', linestyle='--')
 
 plt.subplot(323)
-plt.plot(chs, np.array(ch_gain_map), marker='.',color='b', label = "Gain")
+plt.plot(chs[0:476], np.array(ch_gain_map)[0:476], marker='.',color='r', label = "U")
+plt.plot(chs[476:476*2], np.array(ch_gain_map)[476:476*2], marker='.',color='b', label = "V")
+plt.plot(chs[476*2:], np.array(ch_gain_map)[476*2:], marker='.',color='g', label = "X")
 plt.legend()
 plt.title ("Inverted Gain Distribution")
 plt.xlabel ("CH# (According to CRP mapping)")
@@ -215,12 +219,14 @@ plt.axvline(x=475, color = 'm', linestyle='--')
 plt.axvline(x=951, color = 'm', linestyle='--')
 
 plt.subplot(325)
-plt.plot(chs, np.array(ch_enc_map), marker='.',color='g', label = "ENC")
+plt.plot(chs[0:476], np.array(ch_enc_map)[0:476], marker='.',color='r', label = "U")
+plt.plot(chs[476:476*2], np.array(ch_enc_map)[476:476*2], marker='.',color='b', label = "V")
+plt.plot(chs[476*2:], np.array(ch_enc_map)[476*2:], marker='.',color='g', label = "X")
 plt.legend()
 plt.title ("ENC Distribution")
 plt.xlabel ("CH# (According to CRP mapping)")
 plt.ylabel ("ENC / e-" )
-plt.ylim((0,1000))
+plt.ylim((0,2000))
 plt.grid()
 plt.axvline(x=475, color = 'm', linestyle='--')
 plt.axvline(x=951, color = 'm', linestyle='--')
@@ -272,7 +278,8 @@ for x in range(0, 128*12, 128):
 #
 plt.tight_layout()
 
-plt.show()
+#plt.show()
+plt.savefig(fp[0:-4] + ".png")
 plt.close()
 
 

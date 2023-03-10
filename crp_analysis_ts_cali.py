@@ -33,7 +33,8 @@ if (os.path.exists(fdir)):
         break
 
 for fbin in files:
-    if ".dat" in fbin:
+    #if (".dat" in fbin) and ("02_12_09" in fbin):
+    if (".dat" in fbin) :
         fp = fdir + fbin
         print (fp)
     else:
@@ -46,6 +47,15 @@ for fbin in files:
 #    tmts_wib0 = tmts_wibs[0]
 #    tmts_wib1 = tmts_wibs[1]
 #    tmts_wib2 = tmts_wibs[2]
+#    fig = plt.figure(figsize=(14,8))
+#    plt.rcParams.update({'font.size':12})
+##
+#    tmts_wib0 = np.array(tmts_wibs[0]) - tmts_wibs[0][0]
+#    plt.plot(tmts_wib0[0:10000], rawdata[0][0:10000], marker='.',color='r', label = "waveform")
+#    plt.show()
+#    plt.close()
+#    exit()
+
     
     
     avgs = []
@@ -76,6 +86,16 @@ for fbin in files:
                     tdata = tdata + np.array(rawdata[ch][post:post+period]) 
                     cnti += 1
         tdata = tdata/cnti
+
+#        fig = plt.figure(figsize=(14,8))
+#        plt.rcParams.update({'font.size':12})
+#        #tmts_wib0 = np.array(tmts_wibs[0]) - tmts_wibs[0][0]
+#        #plt.plot(tmts_wib0[0:10000], rawdata[0][0:10000], marker='.',color='r', label = "waveform")
+#        plt.plot(tdata)
+#        plt.show()
+#        plt.close()
+#        exit()
+
         avgs.append(tdata)
     
     fp = fp[0:-4] + ".avg"
